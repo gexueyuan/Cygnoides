@@ -149,13 +149,13 @@ int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en)
 
 
 
-int32_t vam_get_peer_relative_dir(uint8_t *pid)
+int32_t vam_get_peer_relative_dir(vam_stastatus_t local,vam_stastatus_t remote)
 {
     int32_t delta, r;
 
-    delta = (int32_t)vsm_get_relative_dir(&p_vam->local,&sta);
+    delta = (int32_t)vsm_get_relative_dir(&local,&remote);
 
-    if ((delta <= 10)||(p_vam->local.speed < 1.0f)||(sta.speed < 1.0f)){
+    if ((delta <= 10)||(local.speed < 1.0f)||(remote.speed < 1.0f)){
         r = 1;
     }
     else{

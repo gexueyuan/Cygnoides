@@ -16,7 +16,7 @@
 #include "cv_cms_def.h"
 #include "cv_vsa.h"
 #include "key.h"
-
+#include "math.h"
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -39,17 +39,6 @@ uint32_t  vsa_position_classify(vam_stastatus_t local, vam_stastatus_t remote)
 {
     return -1;
 }
-
-
-uint32_t vsa_offset(double local, double remote)
-{
-    
-    double local,remote;
-
-    
-
-}
-
 
 
 
@@ -76,11 +65,13 @@ void  vsa_preprocess( list_head_t *neighbour_info )
 
         p_pnt->vsa_position.vsa_location = vsa_position_classify(p_vam->local,p_sta->s);
 
-        p_pnt->vsa_position.lat_offset = 
+        p_pnt->vsa_position.lat_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
 
-        p_pnt->vsa_position.lon_offset = 
+        p_pnt->vsa_position.lon_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
 
         p_pnt->vsa_position.dir = 
+
+        p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(vam_stastatus_t local,vam_stastatus_t remote)
 
         list_add(&p_pnt->list,&p_vsa->position_list);
 
