@@ -1,0 +1,298 @@
+/*****************************************************************************
+ Copyright(C) Beijing Carsmart Technology Co., Ltd.
+ All rights reserved.
+ 
+ @file   : rtmp_data.c
+ @brief  : This file is port from ralink's linux driver
+ @author : wangyifeng
+ @history:
+           2014-9-28    wangyifeng    Created file
+           ...
+******************************************************************************/
+#include <string.h>
+#include "..\include\rt_include.h"
+
+extern RTMP_ADAPTER rtmp_adapter;
+extern int32_t wnet_dataframe_recv(uint8_t *databuf, uint32_t datalen);
+
+/*****************************************************************************
+ * declaration of variables and functions                                    *
+*****************************************************************************/
+static UCHAR BroadcastAddr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+static UCHAR BssidForV2V[] = {0x00, 0x63, 0x73, 0x76, 0x32, 0x76};
+static UCHAR BeaconFixedEle[] = 
+{
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* timestamp */
+    0x64, 0x00, /* beacon interval */
+    0x22, 0x04, /* CapabilityInfo: IBSS, short preamble, short slot time */
+    0x00, 0x07, 0x5f, 0x63, 0x73, 0x76, 0x32, 0x76, 0x5f,/* ssid: _csv2v_ */
+    0x01, 0x08, 0x82, 0x84, 0x8b, 0x0c, 0x12, 0x96, 0x18, 0x24,/* supported rates */
+    0xDD, 0x00, /* vendor specific */
+};
+
+
+
+/*****************************************************************************
+ * implementation of functions                                               *
+*****************************************************************************/
+
+
+VOID STARxDoneInterruptHandle(
+    IN PRTMP_ADAPTER pAd,
+    IN PUCHAR        pData,
+    IN ULONG         RxBufferLength)
+{
+    RX_BLK RxCell;
+    PRXWI_STRUC pRxWI;
+    PHEADER_802_11 pHeader;
+    PUCHAR pRxPacket;
+    ULONG ThisFrameLen;
+
+    /* The RXDMA field is 4 bytes, now just use the first 2 bytes. The Length including the (RXWI + MSDU + Padding)*/
+    ThisFrameLen = *pData + (*(pData+1)<<8);
+    if (ThisFrameLen == 0) {        
+        DBGPRINT(RT_DEBUG_TRACE, "RXDMALen is zero.\n");     
+        return;
+    }   
+    if ((ThisFrameLen&0x3) != 0) {
+        DBGPRINT(RT_DEBUG_ERROR, "RXDMALen not multiple of 4.[%ld]\n", ThisFrameLen);
+        return;
+    }
+
+    if ((ThisFrameLen + 8)> RxBufferLength) {
+        /* 8 for (RT2870_RXDMALEN_FIELD_SIZE + sizeof(RXINFO_STRUC))*/
+        DBGPRINT(RT_DEBUG_TRACE, "FrameLen(0x%lx) outranges,RxBufLen=0x%lx\n", 
+                        ThisFrameLen, RxBufferLength);
+        return;
+    }
+
+    /* skip USB frame length field*/
+    pData += RT2870_RXDMALEN_FIELD_SIZE;
+    pRxWI = (PRXWI_STRUC)pData;
+
+    if (pRxWI->MPDUtotalByteCount > ThisFrameLen) {
+        DBGPRINT(RT_DEBUG_ERROR, "%s():pRxWIMPDUtotalByteCount(%d) large than RxDMALen(%ld)\n", 
+                                    __FUNCTION__, pRxWI->MPDUtotalByteCount, ThisFrameLen);
+        return;
+    }
+
+    /* copy RxD*/
+    RxCell.RxD = *(PRXINFO_STRUC)(pData + ThisFrameLen);
+
+    /* get rx data buffer */
+    pRxWI = (PRXWI_STRUC) pData;
+    if (pRxWI->MPDUtotalByteCount < sizeof(HEADER_802_11)) {
+        DBGPRINT(RT_DEBUG_TRACE, "FrameLen(0x%lx) is less than mac802.11 header\n");
+        return;
+    }
+
+    /* Filter the received frame */
+    pHeader = (PHEADER_802_11) (pData + RXWI_SIZE);
+    if (pHeader->FC.Type != BTYPE_MGMT) {
+        return;
+    }
+    if (pHeader->FC.SubType != SUBTYPE_BEACON){
+        return;
+    }
+    //osal_printf("<"); /* Indicate RX is in process, for debug only */
+    if (memcmp(pHeader->Addr3, BssidForV2V, MAC_ADDR_LEN) != 0) {
+        return;
+    }
+
+    pRxPacket = (PUCHAR)(pData + RXWI_SIZE + sizeof(HEADER_802_11));
+
+    {/* Parse the the element of V2V */
+        #define SKIP_LEN 12
+        PUCHAR pPayload;
+        UCHAR ElementID, ElementLen;
+        INT PayloadLen;
+
+        pPayload = pRxPacket + SKIP_LEN; /* skip fixed element in the beacon */
+        PayloadLen = ThisFrameLen - RXWI_SIZE + sizeof(HEADER_802_11) - SKIP_LEN;
+        
+        while (PayloadLen > 0) {
+            ElementID = *pPayload++;
+            ElementLen = *pPayload++;
+            if (ElementID == 0xDD) {
+               //osal_printf("."); /* Indicate RX is in process, for debug only */
+               wnet_dataframe_recv(pPayload, (UINT32)ElementLen);
+               break;
+            }
+            pPayload += ElementLen;
+            PayloadLen -= (ElementLen + 2);
+        }
+
+    }
+
+    /* build RxCell 
+    RxCell.pRxWI = pRxWI;
+    RxCell.pHeader = pHeader;
+    RxCell.pRxPacket = pRxPacket;
+    RxCell.pData = (UCHAR *) pHeader;
+    RxCell.DataSize = pRxWI->MPDUtotalByteCount;
+    RxCell.Flags = 0;
+    */
+    RxCell.Flags = RxCell.Flags;
+}
+
+VOID    RTUSBBulkReceive(
+    IN    PVOID    pAd,
+    UCHAR *pData, 
+    INT Length)
+{
+    STARxDoneInterruptHandle((PRTMP_ADAPTER)pAd, pData, Length);
+}
+
+
+
+
+/*
+    Must be run in Interrupt context
+    This function handle RT2870 specific TxDesc and cpu index update and kick the packet out.
+ */
+int RtmpUSBMgmtKickOut(
+    IN RTMP_ADAPTER     *pAd, 
+    IN UCHAR             QueIdx,
+    IN PUCHAR            pSrcBufVA,
+    IN UINT             SrcBufLen)
+{
+    PTXINFO_STRUC    pTxInfo;
+    ULONG            BulkOutSize;
+    UCHAR            padLen;
+    INT                i;
+    
+    pTxInfo = (PTXINFO_STRUC)(pSrcBufVA - TXINFO_SIZE);
+    memset(pTxInfo, 0, TXINFO_SIZE);
+    pTxInfo->USBDMATxPktLen = SrcBufLen;
+    pTxInfo->QSEL = FIFO_EDCA;
+    pTxInfo->USBDMANextVLD = FALSE; /*NextValid;   Need to check with Jan about this.*/
+    pTxInfo->USBDMATxburst = FALSE;
+    pTxInfo->WIV = TRUE;
+
+    /* Build our URB for USBD*/
+    BulkOutSize = SrcBufLen + TXINFO_SIZE;
+    padLen = 4 - (BulkOutSize&3);
+    for (i=0;i<padLen;i++) {
+        *(pSrcBufVA+SrcBufLen+i) = 0;
+    }
+    
+    /* Now do hardware-depened kick out.*/
+    usb_bulkout(pAd->pUsb_Dev, pTxInfo, BulkOutSize+padLen);
+    //rt_kprintf(">");
+    #if 0
+    {
+        int i;
+        int len = BulkOutSize+padLen;
+        UCHAR *d = (UCHAR *)pTxInfo;
+        
+        rt_kprintf("============dump data============\n");
+        for(i=0;i<len;i++){
+            rt_kprintf("0x%02x, ", *(d+i));
+            if ((i%8)==7) rt_kprintf("\n");
+        }
+        rt_kprintf("\n===============end===============\n");
+    }
+    #endif
+    //RTUSBKickBulkOut(pAd);
+    
+    return 0;
+}
+
+
+NDIS_STATUS MlmeHardTransmitMgmt(
+    IN    PRTMP_ADAPTER    pAd,
+    IN    UCHAR    QueIdx,
+    IN    PUCHAR            pSrcBufVA,
+    IN    UINT            SrcBufLen)
+{
+    PTXWI_STRUC     pTxWI;
+
+    pTxWI = (PTXWI_STRUC)(pSrcBufVA - TXWI_SIZE);
+
+    {
+        memset(pTxWI, 0, TXWI_SIZE);
+
+        pTxWI->FRAG= FALSE;
+
+        pTxWI->CFACK = FALSE;
+        pTxWI->TS= FALSE;
+        pTxWI->AMPDU = FALSE;
+        pTxWI->ACK = FALSE;
+        pTxWI->txop= IFS_BACKOFF;
+        
+        pTxWI->NSEQ = FALSE;
+            
+        pTxWI->WirelessCliID = RESERVED_WCID;
+        pTxWI->MPDUtotalByteCount = SrcBufLen;
+        pTxWI->PacketId = PID_MGMT;
+
+        switch (pAd->CommonCfg.TxRate) {
+        case 6: /* 6M */
+            pTxWI->BW = BW_20;
+            pTxWI->MCS = MCS_RATE_6;
+            pTxWI->PHYMODE = MODE_OFDM;
+            break;
+            
+        case 2: /* 2M */
+            pTxWI->BW = BW_20;
+            pTxWI->MCS = MCS_SHORTP_RATE_2;
+            pTxWI->PHYMODE = MODE_CCK;
+            break;
+
+        default: /* others used 1M */
+            pTxWI->BW = BW_20;
+            pTxWI->MCS = MCS_LONGP_RATE_1;
+            pTxWI->PHYMODE = MODE_CCK;
+            break;
+        }
+
+        pTxWI->PacketId = pTxWI->MCS;
+    }
+
+    RtmpUSBMgmtKickOut(pAd, QueIdx, (PUCHAR)pTxWI, SrcBufLen+TXWI_SIZE);
+
+    return NDIS_STATUS_SUCCESS;
+}
+
+
+
+UINT RtmpMACHeaderResvLength(VOID)
+{
+    UINT length;
+    
+    length = (TXINFO_SIZE + TXWI_SIZE 
+                + sizeof(HEADER_802_11) 
+                + sizeof(BeaconFixedEle) /* beacon's fixed element */);
+
+    return length;
+}
+
+
+void RtmpSendFrame(unsigned char *pPayload, unsigned int PayloadLen)
+{
+    PRTMP_ADAPTER    pAd = &rtmp_adapter;
+    PHEADER_802_11    pHeader_802_11;
+
+    /* fill the vendor specific element */
+    pPayload -= sizeof(BeaconFixedEle);
+    memcpy(pPayload, BeaconFixedEle, sizeof(BeaconFixedEle));
+    *(pPayload+sizeof(BeaconFixedEle)-1) = PayloadLen; /* Attention! PayloadLen must be less than 256 */
+    PayloadLen += sizeof(BeaconFixedEle);
+
+    /* fill the 802.11 header */
+    pHeader_802_11 = (PHEADER_802_11)(pPayload - sizeof(HEADER_802_11));
+    memset(pHeader_802_11, 0, sizeof(HEADER_802_11));
+    pHeader_802_11->FC.Type = BTYPE_MGMT;
+    pHeader_802_11->FC.SubType = SUBTYPE_BEACON;
+    pHeader_802_11->Sequence = pAd->Sequence++;
+    if (pAd->Sequence >0xfff) {
+        pAd->Sequence = 0;
+    }
+    COPY_MAC_ADDR(pHeader_802_11->Addr1, BroadcastAddr);
+    COPY_MAC_ADDR(pHeader_802_11->Addr2, pAd->CurrentAddress);
+    COPY_MAC_ADDR(pHeader_802_11->Addr3, BssidForV2V);
+
+    MlmeHardTransmitMgmt(pAd, 0, (PUCHAR)pHeader_802_11, PayloadLen+sizeof(HEADER_802_11));
+}
+
+

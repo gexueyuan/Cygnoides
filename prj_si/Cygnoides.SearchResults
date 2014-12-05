@@ -1,0 +1,28 @@
+---- vsa_envar_t Matches (29 in 4 files) ----
+Cv_cms_def.h (include):    vsa_envar_t vsa;
+Cv_sys_manager.c (app\sys):	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_sys_manager.c (app\sys):	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
+Cv_sys_manager.c (app\sys):	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa.h (include):}vsa_envar_t;
+Cv_vsa.h (include):typedef int (*vsa_app_handler)(vsa_envar_t *p_vsa, void *p_msg);
+Cv_vsa.h (include):rt_err_t vsa_add_event_queue(vsa_envar_t *p_vsa, 
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = p_
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa_main.c (app\vsa):	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa_main.c (app\vsa): @param   : vsa_envar_t *p_vsa  
+Cv_vsa_main.c (app\vsa):static int crd_judge(vsa_envar_t *p_vsa)
+Cv_vsa_main.c (app\vsa):static int rear_end_judge(vsa_envar_t *p_vsa)
+Cv_vsa_main.c (app\vsa):static int crd_local_judge(vsa_envar_t *p_vsa)
+Cv_vsa_main.c (app\vsa):static int crd_proc(vsa_envar_t *p_vsa, void *arg)
+Cv_vsa_main.c (app\vsa):static int ebd_judge(vsa_envar_t *p_vsa)
+Cv_vsa_main.c (app\vsa):static int ebd_proc(vsa_envar_t *p_vsa, void *arg)
+Cv_vsa_main.c (app\vsa):static int vbd_judge(vsa_envar_t *p_vsa)
+Cv_vsa_main.c (app\vsa):static int vbd_proc(vsa_envar_t *p_vsa, void *arg)
+Cv_vsa_main.c (app\vsa):static void vsa_default_proc(vsa_envar_t *p_vsa, void *arg)
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
+Cv_vsa_main.c (app\vsa):rt_err_t vsa_add_event_queue(vsa_envar_t *p_vsa, 
+Cv_vsa_main.c (app\vsa):    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+Cv_vsa_main.c (app\vsa):    memset(p_vsa, 0, sizeof(vsa_envar_t));
