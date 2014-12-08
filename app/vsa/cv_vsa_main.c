@@ -10,6 +10,12 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
+#define MODULE_NAME "vsa"
+#include "cv_osal_dbg.h"
+OSAL_DEBUG_ENTRY_DEFINE(vsa)
+
 
 #include "components.h"
 #include "cv_vam.h"
@@ -656,17 +662,22 @@ rt_err_t vsa_add_event_queue(vsa_envar_t *p_vsa,
                              uint32_t msg_argc,
                              void    *msg_argv)
 {
-    rt_err_t err = RT_ENOMEM;
-    sys_msg_t msg;
+    int err = OSAL_STATUS_NOMEM;
+    sys_msg_t *p_msg;
 
-    msg.id = msg_id;
-    msg.len = msg_len;
-    msg.argc = msg_argc;
-    msg.argv = msg_argv;
-    err = rt_mq_send(p_vsa->queue_vsa, &msg, sizeof(sys_msg_t));
+    p_msg = osal_malloc(sizeof(sys_msg_t));
+    if (p_msg){
+        p_msg->id = msg_id;
+        p_msg->len = msg_len;
+        p_msg->argc = msg_argc;
+        p_msg->argv = msg_argv;
+        err = osal_queue_send(p_vsa->queue_vsa,p_msg);
+    }
 
-    if (err != RT_EOK){
-        rt_kprintf("%s: failed=[%d], msg=%04x\n", __FUNCTION__, err, msg_id);
+    if (err != OSAL_STATUS_SUCCESS){
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                                   __FUNCTION__, err, msg_id);
+        osal_free(p_msg);
     }
 
     return err;
