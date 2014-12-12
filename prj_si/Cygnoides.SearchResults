@@ -1,5 +1,14 @@
----- OSAL_DEBUG_ENTRY_DEFINE Matches (4 in 3 files) ----
-Cv_osal_dbg.h (include):#define  OSAL_DEBUG_ENTRY_DEFINE(module) \
-Cv_osal_dbg.h (include):#define  OSAL_DEBUG_ENTRY_DEFINE(module)
-Cv_sys_manager.c (app\sys):OSAL_DEBUG_ENTRY_DEFINE(sysc)
-Cv_vam_util.c (app\vam):OSAL_DEBUG_ENTRY_DEFINE(vam)
+---- neighbour_list Matches (13 in 6 files) ----
+Cv_sys_manager.c (app\sys):		if(list_empty(&(p_cms_envar->vam.neighbour_list)))		
+Cv_vam.h (include):    list_head_t neighbour_list;
+Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vam_main.c (app\vam):    INIT_LIST_HEAD(&p_vam->neighbour_list);
+Cv_vam_vsm.c (app\vam):	list_for_each_entry(pos, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vam_vsm.c (app\vam):    		list_move(&p_sta->list, &p_vam->neighbour_list);
+Cv_vam_vsm.c (app\vam):    list_head_t *head = &p_vam->neighbour_list;
+Cv_vam_vsm.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vsa_main.c (app\vsa):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+Cv_vsa_main.c (app\vsa):	if(list_empty(&p_vam->neighbour_list))

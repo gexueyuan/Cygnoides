@@ -14,7 +14,7 @@
 #define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
 #define MODULE_NAME "vsa"
 #include "cv_osal_dbg.h"
-OSAL_DEBUG_ENTRY_DEFINE(vsa)
+//OSAL_DEBUG_ENTRY_DEFINE(vsa)
 
 
 #include "components.h"
@@ -29,6 +29,8 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 *****************************************************************************/
 #define VSA_TIMER_PERIOD         SECOND_TO_TICK(1)
 #define VSA_EBD_SEND_PERIOD      SECOND_TO_TICK(5)
+#define VSA_POS_PERIOD           MS_TO_TICK(10)
+#define DIRECTION_DIVIDE         22.5f
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -41,20 +43,97 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
  @param   : None
  @return  : 
 *****************************************************************************/
-uint32_t  vsa_position_classify(vam_stastatus_t local, vam_stastatus_t remote)
+uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatus_t *remote,double distance_1_2)
 {
-    return -1;
+    uint32_t error = POSITION_ERROR;
+
+    double lat1, lng1, lat2, lng2, lat3, lng3;
+    double distance_2_3;
+    double angle, delta;
+
+    /* reference point */
+    lat1 = local->pos.lat;
+    lng1 = local->pos.lon;
+
+    /* destination point */
+    lat2 = remote->pos.lat;
+    lng2 = remote->pos.lon;
+
+    /* temp point */
+    lat3 = lat1;
+    lng3 = lng2;
+
+    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
+    angle = acos(distance_2_3/distance_1_2)*180/PI;
+
+    /* calculate the relative angle against north, clockwise  */
+    if (lat2 >= lat1){
+    /* north */
+        if (lng2 >= lng1){
+        /* easts */
+            //equal
+        }
+        else{
+            angle = 360-angle;
+        }
+    }
+    else{
+    /* south */
+        if (lng2 >= lng1){
+        /* easts */
+            angle = 180-angle;
+        }
+        else{
+            angle = 180+angle;
+        }
+    }
+
+    /* calculate the angle detra between local front and remote position  */
+    if (angle > local->dir){
+        delta = angle - local.dir;
+    }
+    else{
+        delta = local->dir - angle;
+    }
+
+    if((delta >360.0f)||(delta <0.0f)) return POSITION_ERROR;
+/****************
+    if (delta > 180){
+        delta = 360 - delta;
+    }
+**********************/
+
+/*divide posiotion to 8 pieces*/
+
+
+    if((delta > 15*DIRECTION_DIVIDE)||(delta <= DIRECTION_DIVIDE))
+       return AHEAD;
+    else if((delta > DIRECTION_DIVIDE)&&(delta <= 3*DIRECTION_DIVIDE))
+       return AHEAD_RIGHT;
+    else if((delta > 3*DIRECTION_DIVIDE)&&(delta <= 5*DIRECTION_DIVIDE))
+       return RIGHT;
+    else if((delta > 5*DIRECTION_DIVIDE)&&(delta <= 7*DIRECTION_DIVIDE))
+       return BEHIND_RIGHT;
+    else if((delta > 7*DIRECTION_DIVIDE)&&(delta <= 9*DIRECTION_DIVIDE))
+       return BEHIND;
+    else if((delta > 9*DIRECTION_DIVIDE)&&(delta <= 11*DIRECTION_DIVIDE))
+       return BEHIND_LEFT;
+    else if((delta > 11*DIRECTION_DIVIDE)&&(delta <= 13*DIRECTION_DIVIDE))
+       return LEFT;
+    else if((delta > 13*DIRECTION_DIVIDE)&&(delta <= 15*DIRECTION_DIVIDE))
+       return AHEAD_LEFT;    
+    else return POSITION_ERROR;
 }
 
 
 
 /*****************************************************************************
- @funcname: vsa_preprocess
+ @funcname: timer_preprocess_pos_callback
  @brief   : preprocess for vsa module,information from neighbourlist
  @param   : None
  @return  : 
 *****************************************************************************/
-void  vsa_preprocess( list_head_t *neighbour_info )
+void  timer_preprocess_pos_callback( void *neighbour_info )
 {
     
     vam_envar_t *p_vam = p_vam_envar;
@@ -62,29 +141,84 @@ void  vsa_preprocess( list_head_t *neighbour_info )
     vam_sta_node_t *p_sta = NULL;
     vsa_position_node_t *p_pnt = NULL;
     vam_stastatus_t sta;
+    double temp_dis;
+    int8_t i = 0;
 
-    rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
+    if(!list_empty(&p_vam->neighbour_list)){
+        
+        vam_get_local_status(p_vam);
 
-	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+        rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
 
-        memcpy(p_pnt->pid,p_sta->s.pid,RCP_TEMP_ID_LEN);
+        list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
 
-        p_pnt->vsa_position.vsa_location = vsa_position_classify(p_vam->local,p_sta->s);
+            if(i > (VAM_NEIGHBOUR_MAXNUM - 1))
+                return;
+            else
+                p_pnt = &p_vsa->position_node[i++];
+      
+            memcpy(p_pnt->pid,p_sta->s.pid,RCP_TEMP_ID_LEN);
+      
+            temp_dis = getDistanceVer2(p_vam->local.pos.lat,p_vam->local.pos.lon,
+                        p_sta->s.pos.lat,p_sta->s.pos.lon);
+          
+            p_pnt->vsa_position.vsa_location = vsa_position_classify(&p_vam->local,&p_sta->s,temp_dis);
+      
+            p_pnt->vsa_position.relative_speed = p_vam->local.speed - p_sta->s.speed;
+            
+            p_pnt->vsa_position.lat_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
+      
+            p_pnt->vsa_position.lon_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
+      
+            p_pnt->vsa_position.linear_distance = (uint32_t)temp_dis;
 
-        p_pnt->vsa_position.lat_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
+            p_pnt->vsa_position.safe_distance = (int32_t)((p_vam->local.speed*2.0f - p_sta->s.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
+                
+            p_pnt->vsa_position.dir = p_sta->s.dir;
+      
+            p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&p_vam->local,&p_sta->s);
+      
+            list_add(&p_pnt->list,&p_vsa->position_list);
 
-        p_pnt->vsa_position.lon_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
+        }
+        rt_sem_release(p_vam->sem_sta); 
 
-        p_pnt->vsa_position.dir = 
-
-        p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(vam_stastatus_t local,vam_stastatus_t remote)
-
-        list_add(&p_pnt->list,&p_vsa->position_list);
-
-	}
-    rt_sem_release(p_vam->sem_sta); 
-    
+        if (p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
+                (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);
+            }
+        }
+    else {
+           if(p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
+               (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(NULL);
+            }
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "no neighour exist!");
+    }
 }
+
+/*****************************************************************************
+ @funcname: vsa_find_pn
+ @brief   : find position node in position link list
+ @param   : None
+ @return  : 
+*****************************************************************************/
+vsa_position_node_t *vsa_find_pn(vsa_envar_t *p_vsa, uint8_t *temporary_id)
+{
+    vsa_position_node_t *p_pn = NULL, *pos;
+
+	list_for_each_entry(pos, vsa_position_node_t, &p_vsa->position_list, list){
+        if (memcmp(pos->vsa_position.pid, temporary_id, RCP_TEMP_ID_LEN) == 0){
+            p_pn = pos;
+            break;
+        }
+	}
+    /* not found */
+    if (p_pn == NULL){
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa position node need updating!");
+                        
+    }
+    return p_pn;
+}
+
 
 void vsa_local_status_update(void* parameter)
 {
@@ -102,7 +236,6 @@ void vsa_peer_status_update(void *parameter)
 
 	if(p_sta)
 		{
-    		memcpy(&p_vsa->remote, p_sta, sizeof(vam_stastatus_t));
     		vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
 			if(!(p_cms_envar->sys.led_priority&(1<<SYS_MSG_BSM_UPDATE)))
 			sys_add_event_queue(&p_cms_envar->sys,SYS_MSG_BSM_UPDATE, 0, HI_OUT_BSM_UPDATE, NULL);
@@ -153,13 +286,13 @@ void vsa_start(void)
             0 - no alert
             1 - alert
 *****************************************************************************/
-static int crd_judge(vsa_envar_t *p_vsa)
+static int crd_judge(vsa_position_node_t *p_node)
 {
     int32_t dis_actual, dis_alert;
-
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     /* put the beginning only in order to output debug infomations */
-    dis_actual = vam_get_peer_relative_pos(p_vsa->remote.pid,1);
-    dis_alert = (int32_t)((p_vsa->local.speed*2.0f - p_vsa->remote.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
+    dis_actual = p_node->vsa_position.linear_distance;
+    dis_alert = p_node->vsa_position.safe_distance;//(int32_t)((p_vsa->local.speed*2.0f - p_vsa->remote.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
     /* end */
 
     if (p_vsa->local.speed <= p_vsa->working_param.danger_detect_speed_threshold){
@@ -172,7 +305,7 @@ static int crd_judge(vsa_envar_t *p_vsa)
         return 0;
     }
 
-    if (vam_get_peer_relative_dir(p_vsa->remote.pid) < 0){
+    if (p_node->vsa_position.flag_dir < 0){
 		
         return 0;
     }
@@ -283,160 +416,24 @@ static int crd_proc(vsa_envar_t *p_vsa, void *arg)
     vam_envar_t *p_vam = &p_cms_envar->vam;
 	vsa_crd_node_t *p_crd = NULL,*pos = NULL;
 	vsa_crd_rear_node_t *p_rear = NULL,*pos_rear = NULL;
+    vsa_position_node_t *p_pnt = NULL,*pos_pnt;
 	rt_bool_t  crd_flag,crd_rear_flag;
-    
-    switch(p_msg->id){
-        case VSA_MSG_LOCAL_UPDATE:
-			//rt_kprintf("update information in crd \n\n");
-			//vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
-			if ((p_vsa->alert_pend & (1<<VSA_ID_CRD))||(p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR))){
-				}
-			else
-			crd_local_judge(p_vsa);
-            err = 0;
-            break;
+    if(list_empty(&p_vsa->position_list))
+        return err;
+    else
+        list_for_each_entry(pos_pnt,vsa_position_node_t,&p_vsa->position_list,list){
+
             
-        case VSA_MSG_PEER_UPDATE:
-
-            if (p_vsa->alert_mask & (1<<VSA_ID_CRD)){
-                if (crd_judge(p_vsa) > 0){
-					
-					rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
-
-					if(list_empty(&p_vsa->crd_list))
-						{
-							p_crd = (vsa_crd_node_t*)rt_malloc(sizeof(vsa_crd_node_t));
-							memcpy(p_crd->pid,p_vsa->remote.pid,RCP_TEMP_ID_LEN);			
-							list_add(&p_crd->list,&p_vsa->crd_list);
-						}
-					else
-					  list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list)
-							{
-								if(memcmp(p_vsa->remote.pid,pos->pid,RCP_TEMP_ID_LEN) == 0)
-									{
-										crd_flag = RT_FALSE;
-										break;
-									}	
-								else
-									crd_flag = RT_TRUE;
-							}
-					if(crd_flag )
-						{
-							p_crd = (vsa_crd_node_t*)rt_malloc(sizeof(vsa_crd_node_t));
-							memcpy(p_crd->pid,p_vsa->remote.pid,RCP_TEMP_ID_LEN);			
-							list_add(&p_crd->list,&p_vsa->crd_list);
-						}	
-					rt_sem_release(p_vam->sem_sta);					
-                /* danger is detected */    
-                    if (p_vsa->alert_pend & (1<<VSA_ID_CRD)){
-                    /* do nothing */    
-                    }
-                    else{
-                    /* inform system to start alert */
-                        p_vsa->alert_pend |= (1<<VSA_ID_CRD);
-                        sys_add_event_queue(&p_cms_envar->sys, \
-                                            SYS_MSG_START_ALERT, 0, VSA_ID_CRD, NULL);
-                    }
-                }
-                else{
-					
-					rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
-					
-					  list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list)					
-							{
-								if(memcmp(p_vsa->remote.pid,pos->pid,RCP_TEMP_ID_LEN) == 0)
-									{
-								   		list_del(&pos->list);
-										rt_free((vsa_crd_node_t*)list_entry(&pos->list,vsa_crd_node_t,list));
-									}	
-									
-					  		}	
-					  
-					 rt_sem_release(p_vam->sem_sta);				  
-						
-                    if ((p_vsa->alert_pend & (1<<VSA_ID_CRD))&&(list_empty(&p_vsa->crd_list))){
-                    /* inform system to stop alert */
-                        p_vsa->alert_pend &= ~(1<<VSA_ID_CRD);
-                        sys_add_event_queue(&p_cms_envar->sys, \
-                                            SYS_MSG_STOP_ALERT, 0, VSA_ID_CRD, NULL);
-                    }
-                }
-            }
 
 
-            if (p_vsa->alert_mask & (1<<VSA_ID_CRD_REAR)){
-                if (rear_end_judge(p_vsa) > 0){
-					
-					rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
 
-					if(list_empty(&p_vsa->crd_rear_list))
-						{
-							p_rear = (vsa_crd_rear_node_t*)rt_malloc(sizeof(vsa_crd_rear_node_t));
-							memcpy(p_rear->pid,p_vsa->remote.pid,RCP_TEMP_ID_LEN);			
-							list_add(&p_rear->list,&p_vsa->crd_rear_list);
-						}
-					else
-					  list_for_each_entry(pos_rear,vsa_crd_rear_node_t,&p_vsa->crd_rear_list,list)
-							{
-								if(memcmp(p_vsa->remote.pid,pos_rear->pid,RCP_TEMP_ID_LEN) == 0)
-									{
-										crd_rear_flag = RT_FALSE;
-										break;
-									}	
-								else
-									crd_rear_flag = RT_TRUE;
-							}
-					if(crd_rear_flag )
-						{
-							p_rear= (vsa_crd_rear_node_t*)rt_malloc(sizeof(vsa_crd_rear_node_t));
-							memcpy(p_rear->pid,p_vsa->remote.pid,RCP_TEMP_ID_LEN);			
-							list_add(&p_rear->list,&p_vsa->crd_rear_list);
-						}	
-					rt_sem_release(p_vam->sem_sta);					
-                /* danger is detected */    
-                    if (p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR)){
-                    /* do nothing */    
-                    }
-                    else{
-                    /* inform system to start alert */
-                        p_vsa->alert_pend |= (1<<VSA_ID_CRD_REAR);
-                        sys_add_event_queue(&p_cms_envar->sys, \
-                                            SYS_MSG_START_ALERT, 0, VSA_ID_CRD_REAR, NULL);
-                    }
-                }
-                else{
-					
-					rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
-					
-					  list_for_each_entry(pos_rear,vsa_crd_rear_node_t,&p_vsa->crd_rear_list,list)					
-							{
-								if(memcmp(p_vsa->remote.pid,pos_rear->pid,RCP_TEMP_ID_LEN) == 0)
-									{
-								   		list_del(&pos_rear->list);
-										rt_free((vsa_crd_rear_node_t*)list_entry(&pos_rear->list,vsa_crd_rear_node_t,list));
-									}	
-									
-					  		}	
-					  
-					 rt_sem_release(p_vam->sem_sta);				  
-						
-                    if ((p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR))&&(list_empty(&p_vsa->crd_rear_list))){
-                    /* inform system to stop alert */
-                        p_vsa->alert_pend &= ~(1<<VSA_ID_CRD_REAR);
-                        sys_add_event_queue(&p_cms_envar->sys, \
-                                            SYS_MSG_STOP_ALERT, 0, VSA_ID_CRD_REAR, NULL);
-                    }
-                }
-            }
 
-            err = 0;
-   
-            break;
-            
-        default:
-            break;
-    }
 
+
+
+
+
+        }
     return err;
 }
 
@@ -447,13 +444,6 @@ void timer_ebd_send_callback(void* parameter)
 	sys_add_event_queue(&p_cms_envar->sys,SYS_MSG_ALARM_CANCEL, 0, VSA_ID_EBD, NULL);
                                             
 }
-
-void timer_position_prepro_callback(void* parameter)
-{
-    	
-                                            
-}
-
 
 static int ebd_judge(vsa_envar_t *p_vsa)
 {
@@ -700,28 +690,33 @@ void vsa_init()
 	
 	INIT_LIST_HEAD(&p_vsa->crd_list);	
 	INIT_LIST_HEAD(&p_vsa->crd_rear_list);
+	INIT_LIST_HEAD(&p_vsa->position_list);	
+
+
+    for(int i = 0;i< VAM_NEIGHBOUR_MAXNUM;i++){
+        list_add_tail(&p_vsa->position_node[i].list, &p_vsa->position_list);
+    }
 	//INIT_LIST_HEAD(&p_vsa->vbd_list);
 
     p_vsa->alert_mask = (1<<VSA_ID_CRD)|(1<<VSA_ID_CRD_REAR)|(1<<VSA_ID_VBD)|(1<<VSA_ID_EBD);
 
     /* os object for vsa */
-    p_vsa->queue_vsa = rt_mq_create("q-vsa", sizeof(sys_msg_t), VSA_QUEUE_SIZE, RT_IPC_FLAG_FIFO);
+    p_vsa->queue_vsa = osal_queue_create("q-vsa",  VSA_QUEUE_SIZE);
     RT_ASSERT(p_vsa->queue_vsa != RT_NULL);
     
-	 p_vsa->task_vsa = rt_thread_create("t-vsa",
+	p_vsa->task_vsa = osal_task_create("t-vsa",
                            rt_vsa_thread_entry, p_vsa,
                            RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY, 20);
-    RT_ASSERT(p_vsa->task_vsa != RT_NULL)
-    rt_thread_startup(p_vsa->task_vsa);
 
-    p_vsa->timer_ebd_send = rt_timer_create("tm-ebd",timer_ebd_send_callback,NULL,\
+    p_vsa->timer_ebd_send = osal_timer_create("tm-ebd",timer_ebd_send_callback,NULL,\
         VSA_EBD_SEND_PERIOD,RT_TIMER_FLAG_ONE_SHOT); 					
     RT_ASSERT(p_vsa->timer_ebd_send != RT_NULL);
 
-    p_vsa->timer_position_prepro = rt_timer_create("tm-pos",\
-        void(* timeout)(void * parameter),void * parameter,rt_tick_t time,rt_uint8_t flag);
+    p_vsa->timer_position_prepro = osal_timer_create("tm-pos",\
+        timer_preprocess_pos_callback,NULL,VSA_POS_PERIOD,RT_TIMER_FLAG_PERIODIC);
 
-	rt_kprintf("vsa module initial\n");
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
+                             
 }
 
 /*****************************************************************************
@@ -732,6 +727,6 @@ void vsa_init()
 *****************************************************************************/
 void vsa_deinit()
 {
-	rt_kprintf("vsa module initial\n");
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
 }
 

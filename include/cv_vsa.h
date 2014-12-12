@@ -25,13 +25,16 @@ enum VSA_APP_ID{
 
 /* target classification locations */
 
-enum _VSA_TARGET_LOCATION{
-    AHEAD_LEFT = 0,
+enum VSA_TARGET_LOCATION{
+    POSITION_ERROR = 0,
     AHEAD,
-    AHEAD_RIGHT,
-    BEHIND_LEFT,
+    AHEAD_RIGHT,   
+    RIGHT,
+    BEHIND_RIGHT,
     BEHIND,
-    BEHIND_RIGHT
+    BEHIND_LEFT,   
+    LEFT,
+    AHEAD_LEFT
 };
 
 typedef struct _vsa_info{
@@ -47,6 +50,8 @@ typedef struct _vsa_info{
     float lon_offset;
 
     uint32_t linear_distance;
+
+    uint32_t safe_distance;
 
     float dir;
 
@@ -107,12 +112,12 @@ typedef struct _vsa_envar{
     
 
     /* os related */
-    rt_thread_t task_vsa;
-    rt_mq_t queue_vsa;
+    osal_task_t  *task_vsa;
+    osal_queue_t *queue_vsa;
 
-    rt_timer_t timer_ebd_send;
+    osal_timer_t *timer_ebd_send;
 
-    rt_timer_t timer_position_prepro;
+    osal_timer_t *timer_position_prepro;
                  
 }vsa_envar_t;
 

@@ -149,7 +149,7 @@ int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en)
 
 
 
-int32_t vam_get_peer_relative_dir(vam_stastatus_t local,vam_stastatus_t remote)
+int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastatus_t *remote)
 {
     int32_t delta, r;
 
