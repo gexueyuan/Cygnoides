@@ -28,6 +28,12 @@
 #define FALSE (0)
 #endif
 
+
+/**
+ * Dynamic Memory Function
+ */
+#define OSAL_DMEM_EN (1)
+
 /**
  * RTOS's APIs
  */
@@ -38,7 +44,6 @@
 #elif defined(OS_UCOS)
 #include "cv_osal_ucos.h"
 #endif
-
 
 
 #endif /* __CV_OSAL_H__ */

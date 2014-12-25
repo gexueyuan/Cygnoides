@@ -10,6 +10,7 @@
            ...
 ******************************************************************************/
 #include "..\include\rt_include.h"
+#include "cv_wnet.h"
 
 
 /*****************************************************************************
@@ -768,7 +769,7 @@ EEPROMAddressNum=6, else if 93c66, EEPROMAddressNum=8*/
     csr3.field.Byte5 = pAd->CurrentAddress[5];
     csr3.field.U2MeMask = 0xff;
     RTMP_IO_WRITE32(pAd, MAC_ADDR_DW1, csr3.word);
-    DBGPRINT(RT_DEBUG_INFO,"Current MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
+    DBGPRINT(RT_DEBUG_INFO,"Current MAC: <%02x:%02x:%02x:%02x:%02x:%02x>\n",
                     PRINT_MAC(pAd->CurrentAddress));
 
     /* if not return early. cause fail at emulation.*/
@@ -1653,10 +1654,27 @@ NDIS_STATUS NICLoadFirmware(
 VOID    UserCfgInit(
     IN    PRTMP_ADAPTER pAd)
 {
-    pAd->CommonCfg.Channel = 11;
-    pAd->CommonCfg.TxRate = 6;
+    extern wnet_envar_t *p_wnet_envar;
+    wnet_config_t *p_cfg = &p_wnet_envar->working_param;
 
-    COPY_MAC_ADDR(pAd->CommonCfg.MacAddr, "\x00\x11\x22\x33\x44\x55");
+    if ((p_cfg->channel < 1)||(p_cfg->channel > 13)) {
+        p_cfg->channel = 11; /* default */
+    }
+
+    if ((p_cfg->txrate != 1)&&(p_cfg->txrate != 2)&&(p_cfg->txrate != 6)) {
+        p_cfg->txrate = 6; /* default */
+    }
+
+    pAd->CommonCfg.Channel = p_cfg->channel;
+    pAd->CommonCfg.TxRate = p_cfg->txrate;
+
+    /* Mac address is bind to the CPU's unique ID */
+    pAd->CommonCfg.MacAddr[0] = 0x00;
+    pAd->CommonCfg.MacAddr[1] = 0x11;
+    pAd->CommonCfg.MacAddr[2] = 0x22;
+    pAd->CommonCfg.MacAddr[3] = des(2);
+    pAd->CommonCfg.MacAddr[4] = des(1);
+    pAd->CommonCfg.MacAddr[5] = des(0);
 }
 /*
     ========================================================================
@@ -2108,7 +2126,7 @@ VOID RTMPEnableRxTx(
         RT28xxUsbAsicRadioOn(pAd);
         pAd->CurrentChannel = pAd->CommonCfg.Channel;
         AsicSwitchChannel(pAd, pAd->CurrentChannel, TRUE);
-        DBGPRINT(RT_DEBUG_INFO, "Switch to channel %d\n",pAd->CurrentChannel);
+        DBGPRINT(RT_DEBUG_INFO, "Switch to channel <%d>\n",pAd->CurrentChannel);
     }
 
     DBGPRINT(RT_DEBUG_TRACE, "<== RTMPEnableRxTx\n");    

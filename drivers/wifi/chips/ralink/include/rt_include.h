@@ -855,9 +855,6 @@ VOID    RTUSBBulkReceive(
     UCHAR *pData, 
     INT Length);
 
-UINT RtmpMACHeaderResvLength(VOID);
-
-
 extern USB_DEVICE_ID rtusb_dev_id[];
 extern INT const rtusb_usb_id_len;
 

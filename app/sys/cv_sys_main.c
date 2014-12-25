@@ -35,6 +35,7 @@ extern void param_init(void);
 extern void gps_init(void);
 extern void voc_init(void);
 extern void led_init(void);
+extern void wnet_init(void);
 extern void vam_init(void);
 extern void vsa_init(void);
 extern void sys_init(void);
@@ -63,7 +64,8 @@ void rt_init_thread_entry(void *parameter)
     led_init();
 	rt_key_init();
     usb_init();
-    
+
+    wnet_init();
     vam_init();
     vsa_init();    
     sys_init();
@@ -79,7 +81,9 @@ int rt_application_init(void)
     rt_platform_init();
 
     osal_printf("\n\n");
-    osal_printf("CPU : %dMHz\n", SystemCoreClock/1000000);
+    osal_printf("CID : %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", 
+                des(0), des(1), des(2), des(3), des(4), des(5), des(6), des(7), des(8), des(9), des(10), des(11));
+    osal_printf("CLK : %dMHz\n", SystemCoreClock/1000000);
     osal_printf("Firm: %s[%s,%s %s]\n\n", FIRMWARE_VERSION, FIRMWARE_IDEN, __TIME__, __DATE__);
 
     tid = osal_task_create("init", rt_init_thread_entry, RT_NULL,

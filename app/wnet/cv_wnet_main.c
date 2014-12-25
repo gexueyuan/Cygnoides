@@ -11,46 +11,110 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "wnet"
+#include "cv_osal_dbg.h"
 
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
+#include "cv_wnet.h"
 
-unsigned int RtmpMACHeaderResvLength(void);
-void RtmpSendFrame(unsigned char *pPayload, unsigned int PayloadLen);
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-__align(4) uint8_t wnet_buffer[1024]; /* only a test */
-
+wnet_envar_t *p_wnet_envar = NULL;
 
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
 
-int32_t wnet_dataframe_send(rcp_txinfo_t *txinfo, uint8_t *databuf, uint32_t datalen)
+void wnet_tx_thread_entry(void *parameter)
 {
-    uint8_t *pdest;
-    uint32_t offset = RtmpMACHeaderResvLength();
+    int err;
+    wnet_envar_t *p_wnet = (wnet_envar_t *)parameter;
 
-    pdest = &wnet_buffer[offset];
-    memcpy(pdest, databuf, datalen);
-    RtmpSendFrame(pdest, datalen);
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: ---->\n", __FUNCTION__);
 
-    return 0;
+	while(1){
+	    err = osal_sem_take(p_wnet->sem_wnet_tx, OSAL_WAITING_FOREVER);
+        if (err == OSAL_STATUS_SUCCESS){
+            fp_tx_handler(p_wnet);
+        }
+        else{
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s:failed to take semaphore(%d)\n", \
+                                __FUNCTION__, err);
+        }
+	}
+}
+
+void wnet_rx_thread_entry(void *parameter)
+{
+    int err;
+    wnet_envar_t *p_wnet = (wnet_envar_t *)parameter;
+
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: ---->\n", __FUNCTION__);
+
+	while(1){
+	    err = osal_sem_take(p_wnet->sem_wnet_rx, OSAL_WAITING_FOREVER);
+        if (err == OSAL_STATUS_SUCCESS){
+            fp_rx_handler(p_wnet);
+        }
+        else{
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s:failed to take semaphore(%d)\n", \
+                                __FUNCTION__, err);
+        }
+	}
 }
 
 
-int32_t wnet_dataframe_recv(uint8_t *databuf, uint32_t datalen)
+void wnet_init(void)
 {
-    rcp_rxinfo_t rxinfo;
+    int i;
     
-    vam_rcp_recv(&rxinfo, databuf, datalen);
+    wnet_envar_t *p_wnet;
+    p_wnet_envar = &p_cms_envar->wnet;
+    p_wnet = p_wnet_envar;
 
-    return 0;
+    memset(p_wnet, 0, sizeof(wnet_envar_t));
+    memcpy(&p_wnet->working_param, &p_cms_param->wnet, sizeof(wnet_config_t));
+
+    /**
+     * Initialize the txbuf queue
+     */
+    INIT_LIST_HEAD(&p_wnet->txbuf_waiting_list);
+    INIT_LIST_HEAD(&p_wnet->txbuf_free_list);
+    for(i = 0;i< TXBUF_NUM;i++){
+        list_add_tail(&p_wnet->txbuf[i].list, &p_wnet->txbuf_free_list);
+    }
+
+    /**
+     * Initialize the rxbuf queue
+     */
+    INIT_LIST_HEAD(&p_wnet->rxbuf_waiting_list);
+    INIT_LIST_HEAD(&p_wnet->rxbuf_free_list);
+    for(i = 0;i< RXBUF_NUM;i++){
+        list_add_tail(&p_wnet->rxbuf[i].list, &p_wnet->rxbuf_free_list);
+    }
+
+    /* os object for wnet */
+    p_wnet->sem_wnet_tx = osal_sem_create("wntx", 0);
+    osal_assert(p_wnet->sem_wnet_tx != NULL);
+
+    p_wnet->sem_wnet_rx = osal_sem_create("wnrx", 0);
+    osal_assert(p_wnet->sem_wnet_rx != NULL);
+
+    p_wnet->task_wnet_tx = osal_task_create("wntx",
+                           wnet_tx_thread_entry, p_wnet,
+                           RT_THREAD_STACK_SIZE, RT_WNETTX_THREAD_PRIORITY);
+    osal_assert(p_wnet->task_wnet_tx != NULL);
+
+    p_wnet->task_wnet_rx = osal_task_create("wnrx",
+                           wnet_rx_thread_entry, p_wnet,
+                           RT_THREAD_STACK_SIZE, RT_WNETRX_THREAD_PRIORITY);
+    osal_assert(p_wnet->task_wnet_rx != NULL);
 }
-
-
 
 

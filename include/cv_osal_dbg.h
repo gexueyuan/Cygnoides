@@ -49,7 +49,8 @@ static char *osal_debug_level_str[] = {
 #define OSAL_MODULE_DBGPRT(module, level, fmt, ...)	\
 do { \
     if ((level > OSAL_DEBUG_OFF)&&(level <= osal_module_debug_level)) {\
-        osal_printf("(%d)[%s]%s: "fmt, osal_get_systemtime(), osal_debug_level_str[level], \
+        osal_printf("(%d.%03d)[%s]%s: "fmt, (osal_get_systemtime()/1000), \
+        (osal_get_systemtime()%1000), osal_debug_level_str[level], \
                     module, ##__VA_ARGS__);\
     } \
 } while (0)

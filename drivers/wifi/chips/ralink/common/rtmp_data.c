@@ -11,6 +11,7 @@
 ******************************************************************************/
 #include <string.h>
 #include "..\include\rt_include.h"
+#include "cv_wnet.h"
 
 extern RTMP_ADAPTER rtmp_adapter;
 extern int32_t wnet_dataframe_recv(uint8_t *databuf, uint32_t datalen);
@@ -20,16 +21,16 @@ extern int32_t wnet_dataframe_recv(uint8_t *databuf, uint32_t datalen);
 *****************************************************************************/
 static UCHAR BroadcastAddr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 static UCHAR BssidForV2V[] = {0x00, 0x63, 0x73, 0x76, 0x32, 0x76};
-static UCHAR BeaconFixedEle[] = 
+static UCHAR BeaconFixedElement[] = 
 {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* timestamp */
+//    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* timestamp, reserved for llc */
     0x64, 0x00, /* beacon interval */
     0x22, 0x04, /* CapabilityInfo: IBSS, short preamble, short slot time */
-    0x00, 0x07, 0x5f, 0x63, 0x73, 0x76, 0x32, 0x76, 0x5f,/* ssid: _csv2v_ */
-    0x01, 0x08, 0x82, 0x84, 0x8b, 0x0c, 0x12, 0x96, 0x18, 0x24,/* supported rates */
+    0x00, 0x00, /* ssid(empty) */
     0xDD, 0x00, /* vendor specific */
 };
-
+#define MAC_BODY_RESERVE_LENGTH (8+sizeof(BeaconFixedElement))
+#define MAC_HEADER_LENGTH (24)
 
 
 /*****************************************************************************
@@ -42,7 +43,6 @@ VOID STARxDoneInterruptHandle(
     IN PUCHAR        pData,
     IN ULONG         RxBufferLength)
 {
-    RX_BLK RxCell;
     PRXWI_STRUC pRxWI;
     PHEADER_802_11 pHeader;
     PUCHAR pRxPacket;
@@ -75,9 +75,6 @@ VOID STARxDoneInterruptHandle(
                                     __FUNCTION__, pRxWI->MPDUtotalByteCount, ThisFrameLen);
         return;
     }
-
-    /* copy RxD*/
-    RxCell.RxD = *(PRXINFO_STRUC)(pData + ThisFrameLen);
 
     /* get rx data buffer */
     pRxWI = (PRXWI_STRUC) pData;
@@ -114,25 +111,25 @@ VOID STARxDoneInterruptHandle(
             ElementID = *pPayload++;
             ElementLen = *pPayload++;
             if (ElementID == 0xDD) {
+               wnet_rxinfo_t rxinfo;
+
                //osal_printf("."); /* Indicate RX is in process, for debug only */
-               wnet_dataframe_recv(pPayload, (UINT32)ElementLen);
+               /* construct rxinfo */ 
+               memset(&rxinfo, 0, sizeof(wnet_rxinfo_t));
+               memcpy(&rxinfo.src.mac.addr, pHeader->Addr2, MAC_ADDR_LEN);
+               rxinfo.rssi = pRxWI->RSSI0;
+
+               /* move LLC header */ 
+               pPayload -= 8;
+               memcpy(pPayload, pRxPacket, 8);
+
+               wnet_recv(&rxinfo, pPayload, (UINT32)ElementLen+8);
                break;
             }
             pPayload += ElementLen;
             PayloadLen -= (ElementLen + 2);
         }
-
     }
-
-    /* build RxCell 
-    RxCell.pRxWI = pRxWI;
-    RxCell.pHeader = pHeader;
-    RxCell.pRxPacket = pRxPacket;
-    RxCell.pData = (UCHAR *) pHeader;
-    RxCell.DataSize = pRxWI->MPDUtotalByteCount;
-    RxCell.Flags = 0;
-    */
-    RxCell.Flags = RxCell.Flags;
 }
 
 VOID    RTUSBBulkReceive(
@@ -256,32 +253,29 @@ NDIS_STATUS MlmeHardTransmitMgmt(
 
 
 
-UINT RtmpMACHeaderResvLength(VOID)
+int drv_wifi_mac_header_len(void)
 {
-    UINT length;
-    
-    length = (TXINFO_SIZE + TXWI_SIZE 
+    return (TXINFO_SIZE + TXWI_SIZE 
                 + sizeof(HEADER_802_11) 
-                + sizeof(BeaconFixedEle) /* beacon's fixed element */);
-
-    return length;
+                + sizeof(BeaconFixedElement) /* beacon's fixed element */);
 }
 
-
-void RtmpSendFrame(unsigned char *pPayload, unsigned int PayloadLen)
+int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
 {
     PRTMP_ADAPTER    pAd = &rtmp_adapter;
     PHEADER_802_11    pHeader_802_11;
+    PUCHAR pPayload;
 
     /* fill the vendor specific element */
-    pPayload -= sizeof(BeaconFixedEle);
-    memcpy(pPayload, BeaconFixedEle, sizeof(BeaconFixedEle));
-    *(pPayload+sizeof(BeaconFixedEle)-1) = PayloadLen; /* Attention! PayloadLen must be less than 256 */
-    PayloadLen += sizeof(BeaconFixedEle);
+    pPayload = pdata - MAC_BODY_RESERVE_LENGTH + WNET_LLC_HEADER_LEN;
+    /* move the LLC header */
+    memcpy(pPayload, pdata, WNET_LLC_HEADER_LEN);
+    memcpy(pPayload+WNET_LLC_HEADER_LEN, BeaconFixedElement, sizeof(BeaconFixedElement));
+    *(pPayload+MAC_BODY_RESERVE_LENGTH-1) = length - WNET_LLC_HEADER_LEN; /* Attention! length must be less than 256 */
 
     /* fill the 802.11 header */
-    pHeader_802_11 = (PHEADER_802_11)(pPayload - sizeof(HEADER_802_11));
-    memset(pHeader_802_11, 0, sizeof(HEADER_802_11));
+    pHeader_802_11 = (PHEADER_802_11)(pPayload - MAC_HEADER_LENGTH);
+    memset(pHeader_802_11, 0, MAC_HEADER_LENGTH);
     pHeader_802_11->FC.Type = BTYPE_MGMT;
     pHeader_802_11->FC.SubType = SUBTYPE_BEACON;
     pHeader_802_11->Sequence = pAd->Sequence++;
@@ -292,7 +286,12 @@ void RtmpSendFrame(unsigned char *pPayload, unsigned int PayloadLen)
     COPY_MAC_ADDR(pHeader_802_11->Addr2, pAd->CurrentAddress);
     COPY_MAC_ADDR(pHeader_802_11->Addr3, BssidForV2V);
 
-    MlmeHardTransmitMgmt(pAd, 0, (PUCHAR)pHeader_802_11, PayloadLen+sizeof(HEADER_802_11));
+    MlmeHardTransmitMgmt(pAd, 0, (PUCHAR)pHeader_802_11, \
+                         length-WNET_LLC_HEADER_LEN+MAC_BODY_RESERVE_LENGTH+MAC_HEADER_LENGTH);
+
+    osal_printf("."); /* Indicate TX is in process, for debug only */
+
+    return 0;                         
 }
 
 

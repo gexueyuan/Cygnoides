@@ -15,6 +15,7 @@
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
+#include "cv_wnet.h"
 
 #include "nmea.h"
 
@@ -83,6 +84,8 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
         case VAM_MSG_RCPRX:
             rcp_parse_msg(p_vam, (rcp_rxinfo_t *)p_msg->argv, \
                           (uint8_t *)p_msg->argc, p_msg->len);
+
+            wnet_release_rxbuf(WNET_RXBUF_PTR(p_msg->argv));
             
             break;
 

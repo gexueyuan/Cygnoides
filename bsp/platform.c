@@ -1,3 +1,4 @@
+#include <string.h>
 #include <rtthread.h>
 #include "board.h"
 
@@ -167,6 +168,25 @@ static void rt_hw_spi1_init(void)
 
 #endif /* RT_USING_SPI */
 
+
+static uint8_t device_eletronic_signature[12];
+
+void des_init(void)
+{
+    #define DES_BASE 0x1FFF7A10
+
+    volatile uint32_t *des_reg = (uint32_t *)DES_BASE;
+
+    memcpy(&device_eletronic_signature[0], (void *)des_reg, 4);
+    memcpy(&device_eletronic_signature[4], (void *)(des_reg+1), 4);
+    memcpy(&device_eletronic_signature[8], (void *)(des_reg+2), 4);
+}
+
+uint8_t des(int offset)
+{
+    return device_eletronic_signature[offset];
+}
+
 void rt_platform_init(void)
 {
 	#ifdef RT_USING_SPI
@@ -176,5 +196,6 @@ void rt_platform_init(void)
 	
 //	rt_mems_hw_init("MOTION") ;
     rt_device_init_all();
+    des_init();
 }
 

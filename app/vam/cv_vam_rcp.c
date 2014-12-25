@@ -15,6 +15,7 @@
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
+#include "cv_wnet.h"
 
 
 /*****************************************************************************
@@ -28,63 +29,6 @@ int32_t wnet_dataframe_send(rcp_txinfo_t *txinfo,
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
-__COMPILE_INLINE__ uint16_t cv_ntohs(uint16_t s16)
-{
-	uint16_t ret;
-	uint8_t *s, *d;
-
-	#ifdef BIG_ENDIAN	
-	ret = s16;
-	#else
-	s = (uint8_t *)(&s16);
-	d = (uint8_t *)(&ret) + 1;
-	#endif
-
-	*d-- = *s++;
-	*d-- = *s++;
-
-	return ret;
-}
-
-__COMPILE_INLINE__ uint32_t cv_ntohl(uint32_t l32)
-{
-	uint32_t ret;
-	uint8_t *s, *d;
-
-	#ifdef BIG_ENDIAN	
-	ret = l32;
-	#else
-	s = (uint8_t *)(&l32);
-	d = (uint8_t *)(&ret) + 3;
-	#endif
-
-	*d-- = *s++;
-	*d-- = *s++;
-	*d-- = *s++;
-	*d-- = *s++;
-
-	return ret;
-}
-
-__COMPILE_INLINE__ float cv_ntohf(float f32)
-{
-	float ret;
-	uint8_t *s, *d;
-
-	#ifdef BIG_ENDIAN	
-	ret = f32;
-	#else
-	s = (uint8_t *)(&f32);
-	d = (uint8_t *)(&ret) + 3;
-	#endif
-
-	*d-- = *s++;
-	*d-- = *s++;
-	*d-- = *s++;
-	*d-- = *s++;
-
-	return ret;
-}
 
 
 __COMPILE_INLINE__ int32_t encode_longtitude(float x)
@@ -336,9 +280,17 @@ int vam_rcp_recv(rcp_rxinfo_t *rxinfo, uint8_t *databuf, uint32_t datalen)
 
 int32_t rcp_send_bsm(vam_envar_t *p_vam)
 {
-    rcp_msg_basic_safty_t *p_bsm = &p_vam->bsm;
+    rcp_msg_basic_safty_t *p_bsm;
     vam_stastatus_t *p_local = &p_vam->local;
-    rcp_txinfo_t txbd;
+    wnet_txbuf_t *txbuf;
+    wnet_txinfo_t *txinfo;
+
+    txbuf = wnet_get_txbuf();
+    if (txbuf == NULL) {
+        return -1;
+    }
+
+    p_bsm = (rcp_msg_basic_safty_t *)WNET_TXBUF_DATA_PTR(txbuf);
 
     p_bsm->header.msg_id = RCP_MSG_ID_BSM;
     p_bsm->header.msg_count = p_vam->tx_msg_cnt++;
@@ -357,18 +309,31 @@ int32_t rcp_send_bsm(vam_envar_t *p_vam)
     p_bsm->motion.acce.vert = encode_acce_vert(p_local->acce.vert);
     p_bsm->motion.acce.yaw = encode_acce_yaw(p_local->acce.yaw);
 
-    memset(&txbd, 0, sizeof(rcp_txinfo_t));
-    memset(txbd.dest, 0xFF, RCP_MACADR_LEN);
-    txbd.hops = 1;
+    txinfo = WNET_TXBUF_INFO_PTR(txbuf);
+    memset(txinfo, 0, sizeof(wnet_txinfo_t));
+    memcpy(txinfo->dest.dsmp.addr, "\xFF\xFF\xFF\xFF\xFF\xFF", MACADDR_LENGTH);
+    txinfo->dest.dsmp.aid = 0x00000020;
+    txinfo->protocol = WNET_TRANS_PROT_DSMP;
+    txinfo->encryption = WNET_TRANS_ENCRYPT_NONE;
+    txinfo->prority = WNET_TRANS_RRORITY_NORMAL;
+    txinfo->timestamp = osal_get_systemtime();
 
-    return wnet_dataframe_send(&txbd, (uint8_t *)p_bsm, sizeof(rcp_msg_basic_safty_t));
+    return wnet_send(txinfo, (uint8_t *)p_bsm, sizeof(rcp_msg_basic_safty_t));
 }
 
 int32_t rcp_send_evam(vam_envar_t *p_vam)
 {
     rcp_msg_emergency_vehicle_alert_t *p_evam = &p_vam->evam;
     vam_stastatus_t *p_local = &p_vam->local;
-    rcp_txinfo_t txbd;
+    wnet_txbuf_t *txbuf;
+    wnet_txinfo_t *txinfo;
+
+    txbuf = wnet_get_txbuf();
+    if (txbuf == NULL) {
+        return -1;
+    }
+
+    p_evam = (rcp_msg_emergency_vehicle_alert_t *)WNET_TXBUF_DATA_PTR(txbuf);
 
     p_evam->header.msg_id = RCP_MSG_ID_EVAM;
     p_evam->header.msg_count = p_vam->tx_evam_msg_cnt++;
@@ -389,13 +354,16 @@ int32_t rcp_send_evam(vam_envar_t *p_vam)
     
     p_evam->alert_mask = cv_ntohs(p_local->alert_mask);
 
-    memset(&txbd, 0, sizeof(rcp_txinfo_t));
-    memset(txbd.dest, 0xFF, RCP_MACADR_LEN);
-    txbd.hops = p_vam->working_param.evam_hops;
-    
-    //dump((uint8_t *)p_evam, sizeof(rcp_msg_emergency_vehicle_alert_t));
+    txinfo = WNET_TXBUF_INFO_PTR(txbuf);
+    memset(txinfo, 0, sizeof(wnet_txinfo_t));
+    memcpy(txinfo->dest.dsmp.addr, "\xFF\xFF\xFF\xFF\xFF\xFF", MACADDR_LENGTH);
+    txinfo->dest.dsmp.aid = 0x00000020;
+    txinfo->protocol = WNET_TRANS_PROT_DSMP;
+    txinfo->encryption = WNET_TRANS_ENCRYPT_NONE;
+    txinfo->prority = WNET_TRANS_RRORITY_EMERGENCY;
+    txinfo->timestamp = osal_get_systemtime();
 
-    return wnet_dataframe_send(&txbd, (uint8_t *)p_evam, sizeof(rcp_msg_emergency_vehicle_alert_t));
+    return wnet_send(txinfo, (uint8_t *)p_evam, sizeof(rcp_msg_emergency_vehicle_alert_t));
 }
 
 

@@ -15,6 +15,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <rthw.h>
 #include <rtthread.h>	
 #include <board.h>
 #include <rtdevice.h>
@@ -263,19 +265,27 @@ static __inline void osal_delay(uint32_t ticks)
 
 static __inline uint32_t osal_get_systemtime(void)
 {
-    return rt_tick_get();
+    return rt_hw_tick_get_millisecond();
 }
 
+/**
+ * Notice: The follow IRQ functions are not able to be nested.
+ */
+static rt_base_t cpu_sr;
 static __inline void osal_enter_critical(void)
 {
-    rt_interrupt_enter();
+    cpu_sr = rt_hw_interrupt_disable();
 }
 
 static __inline void osal_leave_critical(void)
 {
-    rt_interrupt_leave();
+    rt_hw_interrupt_enable(cpu_sr);
 }
 
+#if OSAL_DMEM_EN > 0
+void *osal_malloc(uint32_t size);
+void osal_free(void *pointer);
+#else
 static __inline void *osal_malloc(uint32_t size)
 {
     return rt_malloc(size);
@@ -285,6 +295,7 @@ static __inline void osal_free(void *pointer)
 {
     rt_free(pointer);
 }
+#endif
 
 #endif /* __CV_OS_RTT_H__ */
 

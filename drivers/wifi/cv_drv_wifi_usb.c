@@ -64,6 +64,7 @@ static void _usb_bulkout_complete(wifi_usb_adapter_t *adapter)
         Tell the NosWifi module.
     */
     //hedrv_UsbTxDone(0);
+    wnet_send_complete();
 }
 
 static void _usb_control_complete(wifi_usb_adapter_t *adapter)

@@ -12,6 +12,7 @@
 #ifndef __CV_CMS_DEF_H__
 #define __CV_CMS_DEF_H__
 
+#include "cv_wnet.h"
 #include "cv_vam.h"
 #include "cv_vsa.h"
 #include "gsensor.h"
@@ -34,6 +35,11 @@
 #define RT_GPS_THREAD_PRIORITY		21
 #define RT_MEMS_THREAD_PRIORITY		22
 #define RT_HI_THREAD_PRIORITY		25
+
+#define RT_WNETTX_THREAD_PRIORITY   20
+#define RT_WNETRX_THREAD_PRIORITY   20
+
+
 
 #define RT_THREAD_STACK_SIZE   (1024*2)
 
@@ -148,6 +154,10 @@ typedef struct _cfg_param{
 
 	/**************************************************/
 	gsnr_param_t gsnr;
+
+	/*********************WNET*************************/
+    wnet_config_t wnet;
+	
     /******************** DBG *********************/
     uint8_t print_xxx;  /* 0 - disable, 1 - enable */
 
@@ -199,10 +209,69 @@ typedef struct _sys_envar{
 typedef struct _cms_global{
     vam_envar_t vam;
     vsa_envar_t vsa;
+    wnet_envar_t wnet;
 
     sys_envar_t sys;
 }cms_global_t;
 
+
+static __inline uint16_t cv_ntohs(uint16_t s16)
+{
+	uint16_t ret;
+	uint8_t *s, *d;
+
+	#ifdef BIG_ENDIAN	
+	ret = s16;
+	#else
+	s = (uint8_t *)(&s16);
+	d = (uint8_t *)(&ret) + 1;
+	#endif
+
+	*d-- = *s++;
+	*d-- = *s++;
+
+	return ret;
+}
+
+static __inline uint32_t cv_ntohl(uint32_t l32)
+{
+	uint32_t ret;
+	uint8_t *s, *d;
+
+	#ifdef BIG_ENDIAN	
+	ret = l32;
+	#else
+	s = (uint8_t *)(&l32);
+	d = (uint8_t *)(&ret) + 3;
+	#endif
+
+	*d-- = *s++;
+	*d-- = *s++;
+	*d-- = *s++;
+	*d-- = *s++;
+
+	return ret;
+}
+
+static __inline float cv_ntohf(float f32)
+{
+	float ret;
+	uint8_t *s, *d;
+
+	#ifdef BIG_ENDIAN	
+	ret = f32;
+	#else
+	s = (uint8_t *)(&f32);
+	d = (uint8_t *)(&ret) + 3;
+	#endif
+
+	*d-- = *s++;
+	*d-- = *s++;
+	*d-- = *s++;
+	*d-- = *s++;
+
+	return ret;
+}
 
 
 /*****************************************************************************
@@ -217,6 +286,5 @@ int sys_add_event_queue(sys_envar_t *p_sys,
                              uint32_t msg_argc,
                              void    *msg_argv);
 
-extern double vsm_get_relative_pos_immediate(vam_stastatus_t *p_src, uint8_t *payload);
 #endif /* __CV_CMS_DEF_H__ */
 
