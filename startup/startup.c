@@ -25,6 +25,8 @@
 
 /*@{*/
 
+extern void osal_dmem_init(void);
+
 extern int  rt_application_init(void);
 #ifdef RT_USING_FINSH
 extern void finsh_system_init(void);
@@ -80,6 +82,8 @@ void rtthread_startup(void)
     /* init timer system */
     rt_system_timer_init();
 
+    /* independent dynamic memory manager for osal */
+    osal_dmem_init();
 
     rt_system_heap_init((void*)STM32_SRAM_BEGIN, (void*)STM32_SRAM_END);
 

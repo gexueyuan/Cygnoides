@@ -16,7 +16,8 @@
  * definition of micro                                                       *
 *****************************************************************************/
 enum VSA_APP_ID{
-    VSA_ID_CRD = 0,
+    VSA_ID_NONE = 0,
+    VSA_ID_CRD,
     VSA_ID_CRD_REAR,
     VSA_ID_VBD,    
     VSA_ID_EBD,
@@ -27,21 +28,25 @@ enum VSA_APP_ID{
 
 enum VSA_TARGET_LOCATION{
     POSITION_ERROR = 0,
+    AHEAD_LEFT,        
     AHEAD,
     AHEAD_RIGHT,   
     RIGHT,
     BEHIND_RIGHT,
     BEHIND,
     BEHIND_LEFT,   
-    LEFT,
-    AHEAD_LEFT
+    LEFT
 };
 
 typedef struct _vsa_info{
 
     uint8_t pid[RCP_TEMP_ID_LEN];
     
-    uint32_t vsa_location;
+    VSA_TARGET_LOCATION vsa_location;
+
+    float local_speed;
+
+    float remote_speed;
 
     float relative_speed;
 
@@ -104,7 +109,6 @@ typedef struct _vsa_envar{
 
 	/*List head*/	
     list_head_t crd_list;
-    list_head_t crd_rear_list;
     list_head_t position_list;
     //list_head_t ebd_list;
     //list_head_t vbd_list;
@@ -127,23 +131,14 @@ typedef struct _vsa_crd_node{
 
     uint8_t pid[RCP_TEMP_ID_LEN];  //temporary ID
 
+    /* ccw_id = 1(VSA_ID_CRD) is cfcw,ccw_id = 2(VSA_ID_CRD_REAR) is crcw.*/
+    uint8_t ccw_id;
+
     /* private */
     uint16_t life;
     
 
 }vsa_crd_node_t;
-
-typedef struct _vsa_crd_rear_node{
-    /* !!!DON'T modify it!!! */
-    list_head_t list;
-
-    uint8_t pid[RCP_TEMP_ID_LEN];  //temporary ID
-
-    /* private */
-    uint16_t life;
-    
-
-}vsa_crd_rear_node_t;
 
 
 typedef struct _vsa_position_node{

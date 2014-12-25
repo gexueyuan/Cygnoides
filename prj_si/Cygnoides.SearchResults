@@ -1,14 +1,3 @@
----- neighbour_list Matches (13 in 6 files) ----
-Cv_sys_manager.c (app\sys):		if(list_empty(&(p_cms_envar->vam.neighbour_list)))		
-Cv_vam.h (include):    list_head_t neighbour_list;
-Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vam_api.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vam_main.c (app\vam):    INIT_LIST_HEAD(&p_vam->neighbour_list);
-Cv_vam_vsm.c (app\vam):	list_for_each_entry(pos, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vam_vsm.c (app\vam):    		list_move(&p_sta->list, &p_vam->neighbour_list);
-Cv_vam_vsm.c (app\vam):    list_head_t *head = &p_vam->neighbour_list;
-Cv_vam_vsm.c (app\vam):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vsa_main.c (app\vsa):	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-Cv_vsa_main.c (app\vsa):	if(list_empty(&p_vam->neighbour_list))
+---- RT_VSA_THREAD_PRIORITY Matches (2 in 2 files) ----
+Cv_cms_def.h (include):#define RT_VSA_THREAD_PRIORITY		22
+Cv_vsa_main.c (app\vsa):                           RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY, 20);
