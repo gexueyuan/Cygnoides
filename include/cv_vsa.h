@@ -42,7 +42,7 @@ typedef struct _vsa_info{
 
     uint8_t pid[RCP_TEMP_ID_LEN];
     
-    VSA_TARGET_LOCATION vsa_location;
+    uint32_t vsa_location;
 
     float local_speed;
 
@@ -65,6 +65,16 @@ typedef struct _vsa_info{
     uint8_t jump_count;
 
 }vsa_info_t;
+
+
+
+typedef struct _vsa_position_node{
+
+    list_head_t list;
+
+    vsa_info_t vsa_position;
+}vsa_position_node_t;
+
 
 /*****************************************************************************
  * definition of struct                                                      *
@@ -140,13 +150,6 @@ typedef struct _vsa_crd_node{
 
 }vsa_crd_node_t;
 
-
-typedef struct _vsa_position_node{
-
-    list_head_t list;
-
-    vsa_info_t vsa_position;
-}vsa_position_node_t;
 
 
 typedef int (*vsa_app_handler)(vsa_envar_t *p_vsa, void *p_msg);
