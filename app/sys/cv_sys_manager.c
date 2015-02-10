@@ -245,11 +245,12 @@ void timer_human_interface_callback(void* parameter)
 
 void timer_out_vsa_process(void* parameter)
 {
+	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
+
 	int  timevalue;
 	
 	timevalue = HUMAN_ITERFACE_VOC;
 	
-	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
 
 	if(p_vsa->alert_pend & (1<<VSA_ID_EBD))	
 		voc_play(16000, (uint8_t *)bibi_front_16k_8bits, bibi_front_16k_8bitsLen);// vioce,EBD最优先,同时报警选择EBD,VBD次之

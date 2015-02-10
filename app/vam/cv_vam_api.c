@@ -71,10 +71,12 @@ int32_t vam_set_event_handler(uint32_t evt, vam_evt_handler callback)
 
 int32_t vam_get_local_status(vam_stastatus_t *local)
 {
+    vam_stastatus_t *p_local = &(p_vam_envar->local);
+
     if(!local){
         return -1;
     }
-    vam_stastatus_t *p_local = &(p_vam_envar->local);
+
     memcpy(local->pid, p_local->pid, RCP_TEMP_ID_LEN);
     local->timestamp = p_local->timestamp;
     local->dir = p_local->dir;
@@ -153,9 +155,9 @@ int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastat
 {
     int32_t delta, r;
 
-    delta = (int32_t)vsm_get_relative_dir(&local,&remote);
+    delta = (int32_t)vsm_get_relative_dir(local,remote);
 
-    if ((delta <= 10)||(local.speed < 1.0f)||(remote.speed < 1.0f)){
+    if ((delta <= 10)||(local->speed < 1.0f)||(remote->speed < 1.0f)){
         r = 1;
     }
     else{
@@ -177,11 +179,13 @@ int32_t vam_get_peer_relative_speed(uint8_t *pid)
 
 int32_t vam_get_peer_absolute_speed(uint8_t *pid)
 {
-    if(!pid)
-        return -1;
     vam_envar_t *p_vam = p_vam_envar;
     vam_sta_node_t *p_sta = NULL;
     vam_stastatus_t sta;
+
+    if(!pid)
+        return -1;
+
 
     rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
 

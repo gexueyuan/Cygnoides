@@ -60,7 +60,7 @@ typedef struct _vsa_info{
 
     float dir;
 
-    uint8_t flag_dir;
+    int8_t flag_dir;
 
     uint8_t jump_count;
 

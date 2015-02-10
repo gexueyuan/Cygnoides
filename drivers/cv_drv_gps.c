@@ -40,6 +40,8 @@ static void ubx_cfg_msg_std_nmea(ubx_cfg_msg_nmea_id_t nmea_id, uint8_t enable)
 {
     int len = 0;
     uint8_t buf[20];
+    
+	rt_device_t dev; 
   
     gps_ubx_pkt_hdr_t pkt;
     gps_ubx_cfg_msg_t cfg;
@@ -63,7 +65,6 @@ static void ubx_cfg_msg_std_nmea(ubx_cfg_msg_nmea_id_t nmea_id, uint8_t enable)
     ubx_pkt_checknum_calc(buf+2, len-2, &buf[len], &buf[len+1]); 
     len += 2;
 	
-	rt_device_t dev; 
     dev = rt_device_find(RT_GPS_DEVICE_NAME);
 
     rt_device_write(dev, 0, buf, len);    
@@ -117,7 +118,7 @@ void gps_cfg_rate(uint8_t freq)
 {
     uint8_t cfg_pkt[] = {0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xF4, 0x01, 
                          0x01, 0x00, 0x01, 0x00, 0x0B, 0x77};
-
+	rt_device_t dev; 
     switch (freq)
     {
         case 1:
@@ -149,7 +150,6 @@ void gps_cfg_rate(uint8_t freq)
             break;
         }
     }
-	rt_device_t dev; 
     dev = rt_device_find(RT_GPS_DEVICE_NAME);
     rt_device_write(dev, 0, cfg_pkt, sizeof(cfg_pkt));
     
@@ -262,8 +262,9 @@ void gps_init(void)
 
 void gps_deinit(void)
 {
-	memset(&__GPSBuff, 0, sizeof(__GPSBuff));
 	gps_recv_cb = NULL;	
+
+	memset(&__GPSBuff, 0, sizeof(__GPSBuff));
 }
 
 /* shell cmd for debug */

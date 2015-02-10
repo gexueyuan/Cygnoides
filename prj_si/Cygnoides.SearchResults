@@ -1,3 +1,4 @@
----- RT_VSA_THREAD_PRIORITY Matches (2 in 2 files) ----
-Cv_cms_def.h (include):#define RT_VSA_THREAD_PRIORITY		22
-Cv_vsa_main.c (app\vsa):                           RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY, 20);
+---- vbd_judge Matches (3 in 1 files) ----
+Cv_vsa_main.c (app\vsa):    if((peer_alert&VAM_ALERT_MASK_VBD)&&(vbd_judge(p_pnt)>0)){
+Cv_vsa_main.c (app\vsa):static int vbd_judge(vsa_position_node_t *p_node)
+Cv_vsa_main.c (app\vsa):			  if((peer_alert&VAM_ALERT_MASK_VBD)&&(vbd_judge(p_vsa)>0))

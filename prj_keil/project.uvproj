@@ -585,11 +585,6 @@
               <FileType>1</FileType>
               <FilePath>..\drivers\wifi\chips\ralink\chips\rt3070.c</FilePath>
             </File>
-            <File>
-              <FileName>rt_ate.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\wifi\chips\ralink\common\rt_ate.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -639,16 +634,6 @@
               <FileName>usb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\usb.c</FilePath>
-            </File>
-            <File>
-              <FileName>ili9341.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\ili9341.c</FilePath>
-            </File>
-            <File>
-              <FileName>pt8211.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\pt8211.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1548,11 +1533,6 @@
               <FileType>1</FileType>
               <FilePath>..\drivers\wifi\chips\ralink\chips\rt3070.c</FilePath>
             </File>
-            <File>
-              <FileName>rt_ate.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\drivers\wifi\chips\ralink\common\rt_ate.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -1602,16 +1582,6 @@
               <FileName>usb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\usb.c</FilePath>
-            </File>
-            <File>
-              <FileName>ili9341.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\ili9341.c</FilePath>
-            </File>
-            <File>
-              <FileName>pt8211.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\pt8211.c</FilePath>
             </File>
           </Files>
         </Group>

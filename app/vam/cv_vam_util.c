@@ -31,7 +31,6 @@ OSAL_DEBUG_ENTRY_DEFINE(vam)
 *****************************************************************************/
 
 #define EARTH_RADIUS  6371.004
-#define PI 3.1415926
 #define RAD(d) ((d)*PI/180.0)
 
 
@@ -366,7 +365,8 @@ void set_print(void)
 	print_flag = ~print_flag;
 }
 FINSH_FUNCTION_EXPORT(set_print,close or open  information of printing);
-double vsm_get_relative_dir(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
+
+double vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest)
 {
     double delta;
 

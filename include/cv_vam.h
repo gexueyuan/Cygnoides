@@ -19,6 +19,9 @@
 /*****************************************************************************
  * definition of micro                                                       *
 *****************************************************************************/
+
+#define PI 3.1415926
+
 #define RCP_TEMP_ID_LEN 4
 #define RCP_MACADR_LEN 8
 
@@ -227,14 +230,14 @@ void lip_update_local_acc(float x, float y, float z);
 
 double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest);
 double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,uint8_t vsa_print_en);
-double vsm_get_relative_dir(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
+double vsm_get_relative_dir(const vam_stastatus_t *p_src, const vam_stastatus_t *p_dest);
 int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest);
-
+double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 
 int32_t vam_start(void);
 int32_t vam_set_event_handler(uint32_t evt, vam_evt_handler callback);
 int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en);
-int32_t vam_get_peer_relative_dir(uint8_t *pid);
+int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastatus_t *remote);
 int32_t vam_get_peer_alert_status(uint16_t *alert_mask);
 int32_t vam_active_alert(uint32_t alerttype);
 int32_t vam_cancel_alert(uint32_t alerttype);

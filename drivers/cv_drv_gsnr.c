@@ -86,6 +86,8 @@ void gsnr_int_config(FunctionalState state)
 #ifdef GSENSOR_BMA250E
     /* Connect EXTI Line to int1 int2 Pin */
     EXTI_InitTypeDef EXTI_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
 
     SYSCFG_EXTILineConfig(BMA250E_SPI_INT1_EXTI_PORT_SOURCE, BMA250E_SPI_INT1_EXTI_PIN_SOURCE);
     SYSCFG_EXTILineConfig(BMA250E_SPI_INT2_EXTI_PORT_SOURCE, BMA250E_SPI_INT2_EXTI_PIN_SOURCE);
@@ -104,7 +106,6 @@ void gsnr_int_config(FunctionalState state)
 
 
     //使能EXTI1_IRQn中断 
-    NVIC_InitTypeDef NVIC_InitStructure;
 
     NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn; 
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; // 指定抢占式优先级别0 
@@ -690,15 +691,16 @@ static void rt_gsnr_thread_entry(void *parameter)
 void gsnr_init()
 {
     rt_thread_t gsnr_thread;
+        /* load gsnr param from flash */
+	gsnr_param_t *p_gsnr_param = NULL;		
+    p_gsnr_param = &p_cms_param->gsnr;
     if(!drv_init)
     {
         gsnr_drv_init();
         drv_init = 1;
     }
 
-    /* load gsnr param from flash */
-	gsnr_param_t *p_gsnr_param = NULL;		
-    p_gsnr_param = &p_cms_param->gsnr;
+
 
     STATIC_ACC_THR = p_gsnr_param->gsnr_cal_thr/10.0f;
     SHARP_SLOWDOWN_THRESOLD = p_gsnr_param->gsnr_ebd_thr/10.0f;
@@ -741,13 +743,15 @@ void EXTI2_IRQHandler(void)
 
 void gsnr_read(uint8_t reg, uint8_t num)
 {
+    int i = 0;
+    uint8_t data;
+
     if(0 == drv_init)
     {
         gsnr_drv_init();
         drv_init = 1;
     }
-    int i = 0;
-    uint8_t data;
+
     for(i=0; i<num; i++)
     {
 #ifdef GSENSOR_BMA250E
