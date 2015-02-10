@@ -92,21 +92,21 @@ typedef struct
 #define BMA250E_SPI_CS_GPIO_PORT          GPIOB                       /* GPIOB */
 #define BMA250E_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOB
 
-#define BMA250E_SPI_INT1_PIN              GPIO_Pin_1                  /* PB.01 */
+#define BMA250E_SPI_INT1_PIN              GPIO_Pin_0                  /* PB.00 */
 #define BMA250E_SPI_INT1_GPIO_PORT        GPIOB                       /* GPIOC */
 #define BMA250E_SPI_INT1_GPIO_CLK         RCC_AHB1Periph_GPIOB
-#define BMA250E_SPI_INT1_EXTI_LINE        EXTI_Line3
+#define BMA250E_SPI_INT1_EXTI_LINE        EXTI_Line0
 #define BMA250E_SPI_INT1_EXTI_PORT_SOURCE EXTI_PortSourceGPIOB
-#define BMA250E_SPI_INT1_EXTI_PIN_SOURCE  EXTI_PinSource1
-#define BMA250E_SPI_INT1_EXTI_IRQn        EXTI1_IRQn 
+#define BMA250E_SPI_INT1_EXTI_PIN_SOURCE  EXTI_PinSource0
+#define BMA250E_SPI_INT1_EXTI_IRQn        EXTI0_IRQn 
 
-#define BMA250E_SPI_INT2_PIN              GPIO_Pin_2                  /* PB.02 */
+#define BMA250E_SPI_INT2_PIN              GPIO_Pin_1                  /* PB.01 */
 #define BMA250E_SPI_INT2_GPIO_PORT        GPIOB                       /* GPIOB */
 #define BMA250E_SPI_INT2_GPIO_CLK         RCC_AHB1Periph_GPIOB
-#define BMA250E_SPI_INT2_EXTI_LINE        EXTI_Line2
+#define BMA250E_SPI_INT2_EXTI_LINE        EXTI_Line1
 #define BMA250E_SPI_INT2_EXTI_PORT_SOURCE EXTI_PortSourceGPIOB
-#define BMA250E_SPI_INT2_EXTI_PIN_SOURCE  EXTI_PinSource2
-#define BMA250E_SPI_INT2_EXTI_IRQn        EXTI2_IRQn 
+#define BMA250E_SPI_INT2_EXTI_PIN_SOURCE  EXTI_PinSource1
+#define BMA250E_SPI_INT2_EXTI_IRQn        EXTI1_IRQn 
 
 
 /******************************************************************************/

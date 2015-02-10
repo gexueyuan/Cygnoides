@@ -759,6 +759,7 @@ EEPROMAddressNum=6, else if 93c66, EEPROMAddressNum=8*/
     }
 
     /* Set the current MAC to ASIC */    
+    csr2.word = 0;
     csr2.field.Byte0 = pAd->CurrentAddress[0];
     csr2.field.Byte1 = pAd->CurrentAddress[1];
     csr2.field.Byte2 = pAd->CurrentAddress[2];
@@ -2191,6 +2192,33 @@ void rt28xx_init(PRTMP_ADAPTER pAd)
     RTMPEnableRxTx(pAd);
 
     DBGPRINT(RT_DEBUG_INFO, "rt28xx Initialized success\n");
+
+    #ifdef WIFI_TEST_MODE
+    DBGPRINT(RT_DEBUG_INFO, "!NOTICE!!ATE MODE IS RUNNING!\n");
+    #endif
+
+    #ifndef NDEBUG
+    {
+        extern UCHAR *DbgRxFilterAddrTable[];
+
+        if (DbgRxFilterAddrTable[0]) {
+            int i;
+            DBGPRINT(RT_DEBUG_INFO, "!NOTICE!!RX FILTER IS RUNNING!\n");
+            DBGPRINT(RT_DEBUG_INFO, "Below addresses are allowed\n");
+            for (i=0;;i++) {
+                uint8_t *mac;
+                if (DbgRxFilterAddrTable[i] == NULL) {
+                    break;
+                }
+
+                mac = DbgRxFilterAddrTable[i];
+                DBGPRINT(RT_DEBUG_INFO, "  <%02x:%02x:%02x:%02x:%02x:%02x>\n",\
+                    mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+            }
+        }
+    }
+    #endif
+
     return;
 err1:
     DBGPRINT(RT_DEBUG_ERROR, "!!! rt28xx Initialized fail !!!\n");

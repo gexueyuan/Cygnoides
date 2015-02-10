@@ -5,64 +5,47 @@
 
 typedef enum 
 {
-  LED4 = 0,
-  LED3 = 1,
-  LED5 = 2,
-  LED6 = 3,
+  LED0 = 0,
+  LED1 = 1,
+  LED2 = 2,
+  LED3 = 3,
 }Led_TypeDef;
 
-#ifdef HARDWARE_DVB_F401Disco
-#define LEDn  4
-#elif defined HARDWARE_MODULE_V1
+
 #define LEDn  3
-#define LED_RED  LED4
-#define LED_BLUE  LED5
-#define LED_GREEN  LED3
-#elif defined HARDWARE_MODULE_V2
-#define LEDn  3
-#define LED_RED  LED4
-#define LED_BLUE  LED3
-#define LED_GREEN  LED5
+#define LED_RED     LED0
+#define LED_GREEN   LED1
+#define LED_BLUE    LED2
 
 
 
-#endif
+#define LED0_PIN                         GPIO_Pin_13
+#define LED0_GPIO_PORT                   GPIOC
+#define LED0_GPIO_CLK                    RCC_AHB1Periph_GPIOC  
 
-
-#ifdef HARDWARE_DVB_F401Disco
-#define LED4_PIN                         GPIO_Pin_12
-#define LED4_GPIO_PORT                   GPIOD
-#define LED4_GPIO_CLK                    RCC_AHB1Periph_GPIOD  
-  
-#define LED3_PIN                         GPIO_Pin_13
-#define LED3_GPIO_PORT                   GPIOD
-#define LED3_GPIO_CLK                    RCC_AHB1Periph_GPIOD  
-  
-#define LED5_PIN                         GPIO_Pin_14
-#define LED5_GPIO_PORT                   GPIOD
-#define LED5_GPIO_CLK                    RCC_AHB1Periph_GPIOD  
-  
-#define LED6_PIN                         GPIO_Pin_15
-#define LED6_GPIO_PORT                   GPIOD
-#define LED6_GPIO_CLK                    RCC_AHB1Periph_GPIOD
-#elif defined(HARDWARE_MODULE_V1)||defined(HARDWARE_MODULE_V2)
-#define LED3_PIN                         GPIO_Pin_2
-#define LED3_GPIO_PORT                   GPIOC
-#define LED3_GPIO_CLK                    RCC_AHB1Periph_GPIOC  
-  
-#define LED4_PIN                         GPIO_Pin_1
-#define LED4_GPIO_PORT                   GPIOC
-#define LED4_GPIO_CLK                    RCC_AHB1Periph_GPIOC  
-  
-#define LED5_PIN                         GPIO_Pin_0
-#define LED5_GPIO_PORT                   GPIOC
-#define LED5_GPIO_CLK                    RCC_AHB1Periph_GPIOC  
-#endif
+#ifdef USE_I2S3
+#define LED1_PIN                         GPIO_Pin_3
+#define LED1_GPIO_PORT                   GPIOC
+#define LED1_GPIO_CLK                    RCC_AHB1Periph_GPIOC 
+#else
+#define LED1_PIN                         GPIO_Pin_12
+#define LED1_GPIO_PORT                   GPIOC
+#define LED1_GPIO_CLK                    RCC_AHB1Periph_GPIOC  
+#endif  
+#define LED2_PIN                         GPIO_Pin_11
+#define LED2_GPIO_PORT                   GPIOC
+#define LED2_GPIO_CLK                    RCC_AHB1Periph_GPIOC
 
 
 void STM_EVAL_LEDInit(Led_TypeDef Led);
 void STM_EVAL_LEDOn(Led_TypeDef Led);
 void STM_EVAL_LEDOff(Led_TypeDef Led);
 void STM_EVAL_LEDBlink(Led_TypeDef Led);
+
+void led_init(void);
+void led_on(Led_TypeDef led);
+void led_off(Led_TypeDef led);
+void led_blink(Led_TypeDef led);
+
 
 #endif

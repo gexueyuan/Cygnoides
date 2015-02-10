@@ -42,6 +42,9 @@ extern void sys_init(void);
 extern void gsnr_init(void);
 extern int usb_init(void);
 extern int rt_key_init(void);
+extern void mda_init(void);
+extern void Pt8211_AUDIO_Init(uint32_t AudioFreq);
+extern void adpcm_init(void);
 
 cms_global_t cms_envar, *p_cms_envar;
 
@@ -60,16 +63,20 @@ void rt_init_thread_entry(void *parameter)
 
     gps_init();
   	nmea_init();
-    voc_init();
+    //voc_init();
     led_init();
 	rt_key_init();
     usb_init();
 
     wnet_init();
     vam_init();
+    mda_init();
     vsa_init();    
     sys_init();
     gsnr_init();
+    Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
+    adpcm_init();
+    //EVAL_AUDIO_Init(4,100, I2S_AudioFreq_16k);
     //quit...
 }
 

@@ -7,9 +7,7 @@
 #define GSENSOR_LSM303DLHC
 #endif
 
-#ifdef HARDWARE_MODULE_V2
 #define GSENSOR_BMA250E
-#endif
 
 #define GSNR_POLL_TIME_INTERVAL MS_TO_TICK(200)
 
@@ -30,7 +28,7 @@ typedef enum {
     do\
     {\
         if(level <= gsnr_log_lvl) \
-            rt_kprintf(format, ##__VA_ARGS__); \
+            osal_printf(format, ##__VA_ARGS__); \
     }\
     while(0)
 
@@ -55,7 +53,7 @@ typedef struct
     int32_t AcceAhead_x;    
     int32_t AcceAhead_y;
     int32_t AcceAhead_z;
-}gsnr_param_t;
+}gsnr_config_t;
 
 extern GSENSOR_INFO gSensor_Average, gSensor_Threshold, Acce_Sum, Acce_V;
 extern uint8_t AdjustGsensor;

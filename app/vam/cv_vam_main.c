@@ -11,13 +11,20 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "vam"
+#include "cv_osal_dbg.h"
+
 
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
 #include "cv_wnet.h"
-
 #include "nmea.h"
+
+
+
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -28,12 +35,11 @@
 #define NEIGHBOUR_LIFE_ACCUR         SECOND_TO_TICK(1)
 #define EVAM_SEND_PERIOD_DEFAULT     MS_TO_TICK(50)
 
-
 extern void timer_send_bsm_callback(void* parameter);
 extern void timer_bsm_pause_callback(void* parameter);
-extern void timer_gps_life_callback(void* parameter);
-extern void timer_neigh_time_callback(void* parameter);
 extern void timer_send_evam_callback(void* parameter);
+extern void timer_neigh_time_callback(void* parameter);
+extern void timer_gps_life_callback(void* parameter);
 
 vam_envar_t *p_vam_envar;
 
@@ -47,11 +53,11 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
 {
     switch(p_msg->id){
         case VAM_MSG_START:
-
-            rt_kprintf("%s: start\n", __FUNCTION__);
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: VAM_MSG_START\n", 
+                                __FUNCTION__);
 
             p_vam->flag |= VAM_FLAG_RX;
-            rt_timer_start(p_vam->timer_neighbour_life);
+            osal_timer_start(p_vam->timer_neighbour_life);
             
             if (p_vam->working_param.bsm_boardcast_mode != BSM_BC_MODE_DISABLE){
                 p_vam->flag |= VAM_FLAG_TX_BSM;
@@ -67,7 +73,7 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
             }
 
             p_vam->flag &= ~(VAM_FLAG_RX|VAM_FLAG_TX_BSM);
-            rt_timer_stop(p_vam->timer_neighbour_life);
+            osal_timer_stop(p_vam->timer_neighbour_life);
             
             break;
 
@@ -78,11 +84,14 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
             if (p_msg->argc == RCP_MSG_ID_EVAM){
                 rcp_send_evam(p_vam);
             }
+            if (p_msg->argc == RCP_MSG_ID_RSA){
+                rcp_send_rsa(p_vam);
+            }
 
             break;
 
         case VAM_MSG_RCPRX:
-            rcp_parse_msg(p_vam, (rcp_rxinfo_t *)p_msg->argv, \
+            rcp_parse_msg(p_vam, (wnet_rxinfo_t *)p_msg->argv, \
                           (uint8_t *)p_msg->argc, p_msg->len);
 
             wnet_release_rxbuf(WNET_RXBUF_PTR(p_msg->argv));
@@ -103,56 +112,62 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
     }
 }
 
-void rt_vam_thread_entry(void *parameter)
+void vam_thread_entry(void *parameter)
 {
     rt_err_t err;
-    sys_msg_t msg, *p_msg = &msg;
+    sys_msg_t *p_msg;
     vam_envar_t *p_vam = (vam_envar_t *)parameter;
 
-    rt_kprintf("%s: ---->\n", __FUNCTION__);
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: ---->\n", __FUNCTION__);
 
 	while(1){
-        err = rt_mq_recv(p_vam->queue_vam, p_msg, sizeof(sys_msg_t), RT_WAITING_FOREVER);
+        err = osal_queue_recv(p_vam->queue_vam, &p_msg, RT_WAITING_FOREVER);
         if (err == RT_EOK){
             vam_main_proc(p_vam, p_msg);
-            //rt_free(p_msg);
+            osal_free(p_msg);
         }
         else{
-            rt_kprintf("%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: osal_queue_recv error [%d]\n",\
+                            __FUNCTION__, err);
         }
 	}
 }
 
-rt_err_t vam_add_event_queue(vam_envar_t *p_vam, 
+int vam_add_event_queue(vam_envar_t *p_vam, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
                              uint32_t msg_argc,
                              void    *msg_argv)
 {
-    rt_err_t err = RT_ENOMEM;
-    sys_msg_t msg;
+    int err = OSAL_STATUS_NOMEM;
+    sys_msg_t *p_msg;
 
-    msg.id = msg_id;
-    msg.len = msg_len;
-    msg.argc = msg_argc;
-    msg.argv = msg_argv;
-    err = rt_mq_send(p_vam->queue_vam, &msg, sizeof(sys_msg_t));
+    p_msg = osal_malloc(sizeof(sys_msg_t));
+    if (p_msg) {
+        p_msg->id = msg_id;
+        p_msg->len = msg_len;
+        p_msg->argc = msg_argc;
+        p_msg->argv = msg_argv;
+        err = osal_queue_send(p_vam->queue_vam, p_msg);
+    }
 
-    if (err != RT_EOK){
-        rt_kprintf("%s: failed=[%d], msg=%04x\n", __FUNCTION__, err, msg_id);
+    if (err != OSAL_STATUS_SUCCESS) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                           __FUNCTION__, err, msg_id);
+        osal_free(p_msg);                   
     }
 
     return err;
 }
 
-rt_err_t vam_add_event_queue_2(vam_envar_t *p_vam, void *p_msg)
+int vam_add_event_queue_2(vam_envar_t *p_vam, void *p_msg)
 {
-    rt_err_t err;
+    int err;
     
-    err = rt_mq_send(p_vam->queue_vam, p_msg, sizeof(sys_msg_t));
-    if (err != RT_EOK){
-        rt_kprintf("%s: failed=[%d], msg=%04x\n", __FUNCTION__, err, \
-                  ((sys_msg_t *)p_msg)->id);
+    err = osal_queue_send(p_vam->queue_vam, p_msg);
+    if (err != OSAL_STATUS_SUCCESS){
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                         __FUNCTION__, err, ((sys_msg_t *)p_msg)->id);
     }
 
     return err;
@@ -182,40 +197,39 @@ void vam_init(void)
         list_add_tail(&p_vam->remote[i].list, &p_vam->sta_free_list);
     }
 
-    /* os object for vam */
-    p_vam->queue_vam = rt_mq_create("q-vam", sizeof(sys_msg_t), VAM_QUEUE_SIZE, RT_IPC_FLAG_FIFO);
-    RT_ASSERT(p_vam->queue_vam != RT_NULL);
-    
-	 p_vam->task_vam = rt_thread_create("t-vam",
-                           rt_vam_thread_entry, p_vam,
-                           RT_VAM_THREAD_STACK_SIZE, RT_VAM_THREAD_PRIORITY, 20);
-    RT_ASSERT(p_vam->task_vam != RT_NULL)
-    rt_thread_startup(p_vam->task_vam);
+     /* os object for vam */
+    p_vam->queue_vam = osal_queue_create("q-vam", VAM_QUEUE_SIZE);
+    osal_assert(p_vam->queue_vam != RT_NULL);
+   
+	p_vam->task_vam = osal_task_create("t-vam",
+                           vam_thread_entry, p_vam,
+                           RT_VAM_THREAD_STACK_SIZE, RT_VAM_THREAD_PRIORITY);
+    osal_assert(p_vam->task_vam != RT_NULL)
 
     p_vam->timer_send_bsm = osal_timer_create("tm-sb",timer_send_bsm_callback,p_vam,\
-        BSM_SEND_PERIOD_DEFAULT,TRUE); 					
-    RT_ASSERT(p_vam->timer_send_bsm != NULL);
+        BSM_SEND_PERIOD_DEFAULT, RT_TIMER_FLAG_PERIODIC); 					
+    osal_assert(p_vam->timer_send_bsm != NULL);
 
-    p_vam->timer_bsm_pause = rt_timer_create("tm-bp",timer_bsm_pause_callback,p_vam,\
+    p_vam->timer_bsm_pause = osal_timer_create("tm-bp",timer_bsm_pause_callback,p_vam,\
         BSM_PAUSE_HOLDTIME_DEFAULT,RT_TIMER_FLAG_ONE_SHOT); 					
-    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
+    osal_assert(p_vam->timer_bsm_pause != RT_NULL);
 
-    p_vam->timer_send_evam = rt_timer_create("tm-se",timer_send_evam_callback, p_vam,\
+    p_vam->timer_send_evam = osal_timer_create("tm-se",timer_send_evam_callback, p_vam,\
         EVAM_SEND_PERIOD_DEFAULT,RT_TIMER_FLAG_PERIODIC); 					
-    RT_ASSERT(p_vam->timer_send_evam != RT_NULL);
+    osal_assert(p_vam->timer_send_evam != RT_NULL);
 
-    p_vam->timer_gps_life = rt_timer_create("tm-gl",timer_gps_life_callback,p_vam,\
-        BSM_GPS_LIFE_DEFAULT,RT_TIMER_FLAG_ONE_SHOT); 					
-    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
+    p_vam->timer_gps_life = osal_timer_create("tm-gl",timer_gps_life_callback,p_vam,\
+        BSM_GPS_LIFE_DEFAULT, RT_TIMER_FLAG_ONE_SHOT); 					
+    osal_assert(p_vam->timer_gps_life != RT_NULL);
 
-    p_vam->timer_neighbour_life = rt_timer_create("tm-nl",timer_neigh_time_callback,p_vam,\
-        NEIGHBOUR_LIFE_ACCUR,RT_TIMER_FLAG_PERIODIC); 					
-    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
+    p_vam->timer_neighbour_life = osal_timer_create("tm-nl",timer_neigh_time_callback,p_vam,\
+        NEIGHBOUR_LIFE_ACCUR, RT_TIMER_FLAG_PERIODIC); 					
+    osal_assert(p_vam->timer_neighbour_life != RT_NULL);
 
-    p_vam->sem_sta = rt_sem_create("s-sta", 1, RT_IPC_FLAG_PRIO);
-    RT_ASSERT(p_vam->sem_sta != RT_NULL);
+    p_vam->sem_sta = osal_sem_create("s-sta", 1);
+    osal_assert(p_vam->sem_sta != RT_NULL);
 
-	rt_kprintf("vam module initial\n");
+	OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n");
 }
 
 /*****************************************************************************
@@ -226,7 +240,7 @@ void vam_init(void)
 *****************************************************************************/
 void vam_deinit()
 {
-	rt_kprintf("vam module initial\n");
+	OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module deinit\n");
 }
 
 
@@ -234,21 +248,21 @@ void dump_pos(vam_stastatus_t *p_sta)
 {
     char str[64];
 
-    rt_kprintf("------------sta---------\n");
-    rt_kprintf("PID:%02x-%02x-%02x-%02x\n", p_sta->pid[0], p_sta->pid[1]\
+    osal_printf("------------sta---------\n");
+    osal_printf("PID:%02x-%02x-%02x-%02x\n", p_sta->pid[0], p_sta->pid[1]\
                                           , p_sta->pid[2], p_sta->pid[3]);
     sprintf(str,"%f", p_sta->pos.lat);
-    rt_kprintf("pos.lat:%s\n", str);
+    osal_printf("pos.lat:%s\n", str);
     sprintf(str,"%f", p_sta->pos.lon);
-    rt_kprintf("pos.lon:%s\n", str);
+    osal_printf("pos.lon:%s\n", str);
     sprintf(str,"%f", p_sta->pos.elev);
-    rt_kprintf("pos.elev:%s\n", str);
+    osal_printf("pos.elev:%s\n", str);
     sprintf(str,"%f", p_sta->pos.accu);
-    rt_kprintf("pos.accu:%s\n", str);
+    osal_printf("pos.accu:%s\n", str);
     sprintf(str,"%f", p_sta->dir);
-    rt_kprintf("pos.heading:%s\n", str);
+    osal_printf("pos.heading:%s\n", str);
     sprintf(str,"%f", p_sta->speed);
-    rt_kprintf("pos.speed:%s\n", str);
-    rt_kprintf("------------end---------\n");
+    osal_printf("pos.speed:%s\n", str);
+    osal_printf("------------end---------\n");
 }
 

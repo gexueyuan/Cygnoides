@@ -18,6 +18,11 @@
 #define MODULE_NAME "WiFi"
 #include "cv_osal_dbg.h"
 
+/*
+ *  For WiFi Test only
+ */
+//#define WIFI_ATE_MODE
+
 /* 
     DEBUG CODE 
 */

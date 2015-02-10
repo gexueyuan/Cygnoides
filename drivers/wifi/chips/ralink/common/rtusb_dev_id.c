@@ -29,6 +29,7 @@
 /* module table */
 USB_DEVICE_ID rtusb_dev_id[] = {
 #ifdef RT3070
+    {USB_DEVICE(0x148F,0x2870)}, /* Ralink 2870 */
     {USB_DEVICE(0x148F,0x3070)}, /* Ralink 3070 */
     {USB_DEVICE(0x148F,0x3071)}, /* Ralink 3071 */
     {USB_DEVICE(0x148F,0x3072)}, /* Ralink 3072 */

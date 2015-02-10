@@ -25,6 +25,7 @@ OSAL_DEBUG_ENTRY_DEFINE(sysc)
 #include "key.h"
 #include "cv_vsa.h"
 
+
 #define HUMAN_ITERFACE_DEFAULT         SECOND_TO_TICK(1)
 
 #define HUMAN_ITERFACE_VOC         	   SECOND_TO_TICK(3)
@@ -32,6 +33,10 @@ OSAL_DEBUG_ENTRY_DEFINE(sysc)
 #define HUMAN_ITERFACE_GPS_VOC         SECOND_TO_TICK(5)
 
 #define BREATH_CYCLE                   300 
+
+
+#define AUDIO_START_ADDRESS     58 /* Offset relative to audio file header size */
+
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
@@ -39,12 +44,25 @@ extern const unsigned char bibi_front_16k_8bits[];
 extern const unsigned char bibi_behind_16k_8bits[];
 extern const unsigned int bibi_front_16k_8bitsLen;
 extern const unsigned int bibi_behind_16k_8bitsLen;
+extern const uint16_t AUDIO_SAMPLE[];
 extern void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length);
-extern void led_on(led_color_t led);
-extern void led_off(led_color_t led);
-extern void led_blink(led_color_t led);
+extern void led_on(Led_TypeDef led);
+extern void led_off(Led_TypeDef led);
+extern void led_blink(Led_TypeDef led);
 
 extern int param_set(uint8_t param, int32_t value);
+extern uint32_t Pt8211_AUDIO_Play(uint16_t * pBuffer,uint32_t Size);
+extern const unsigned short AUDIO_SAMPLE[];
+
+
+
+void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length)
+{
+
+}
+
+extern void adpcm_play(char* pBuffer, uint32_t Size);
+
 //extern void Delay(volatile uint32_t nCount);
 /*****************************************************************************
  * implementation of functions                                               *
@@ -128,12 +146,23 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			break;
 			
 		case SYS_MSG_KEY_PRESSED:
-			if(p_msg->argc == C_UP_KEY)
-			vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
+			if(p_msg->argc == C_UP_KEY){
+                
+			    vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
+                p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
+                p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
+
+               rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
+              //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
+                
+             //Pt8211_AUDIO_Play((uint16_t*)(AUDIO_SAMPLE), bibi_front_16k_8bitsLen);
+             }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
 					rt_kprintf("gsnr param is resetting .....\n");
 					param_set(19,0);
+                    
+                   // Pt8211_AUDIO_Play((uint16_t*)(AUDIO_SAMPLE), bibi_front_16k_8bitsLen);
 					//rt_kprintf("restart......\n\n");
 					//NVIC_SystemReset();
 			}
@@ -245,10 +274,8 @@ void timer_human_interface_callback(void* parameter)
 
 void timer_out_vsa_process(void* parameter)
 {
-	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
-
 	int  timevalue;
-	
+	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
 	timevalue = HUMAN_ITERFACE_VOC;
 	
 
@@ -422,18 +449,14 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
 		||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
 		{
-			p_sys->led_color.r = 1;//r=1,b=0,g=0
-			p_sys->led_color.b = 0;
-			p_sys->led_color.g = 0;
+			p_sys->led_color = LED_RED;//r=1,b=0,g=0
 		    p_sys->led_blink_duration = 0xFFFF;
             p_sys->led_blink_period = 15;
             p_sys->led_blink_cnt = 0;
 	}
 	else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS)))
 		{
-			p_sys->led_color.r = 1;//r=1,b=0,g=1
-			p_sys->led_color.b = 0;
-			p_sys->led_color.g = 1;
+			p_sys->led_color = LED_GREEN;//r=1,b=0,g=1
 			p_sys->led_blink_duration= 0xFFFF;
             p_sys->led_blink_period = 15;
             p_sys->led_blink_cnt = 0;
@@ -441,18 +464,14 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 	else if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
 		{
-			p_sys->led_color.r = 0;//r=1,b=0,g=1
-			p_sys->led_color.b = 0;
-			p_sys->led_color.g = 1;
+			p_sys->led_color = LED_BLUE;//r=1,b=0,g=1
 			p_sys->led_blink_duration= 0xFFFF;
             p_sys->led_blink_period = 25;
             p_sys->led_blink_cnt = 0;
 		}
 	else if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
 		{
-			p_sys->led_color.r = 0;//r=0,b=0,g=1
-			p_sys->led_color.b = 1;
-			p_sys->led_color.g = 0;
+            p_sys->led_color = LED_BLUE;//r=1,b=0,g=1
 			p_sys->led_blink_duration= 0xFFFF;
 			p_sys->led_blink_period = 25;
 			p_sys->led_blink_cnt = 0;
@@ -460,9 +479,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 	}
 	else {
-			p_sys->led_color.r = 0;//r=0,b=0,g=1
-			p_sys->led_color.b = 0;
-			p_sys->led_color.g = 1;
+			p_sys->led_color = LED_BLUE;//r=0,b=0,g=1
 			p_sys->led_blink_duration= 0xFFFF;
 			p_sys->led_blink_period = 0xFFFF;
 			p_sys->led_blink_cnt = 0;
@@ -477,7 +494,7 @@ void rt_hi_thread_entry(void *parameter)
     rt_err_t err;
     sys_msg_t msg, *p_msg = &msg;
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
-	static uint8_t ledss = 0xff;
+	//static uint8_t ledss = 0xff;
 
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: ---->\n", __FUNCTION__);
 
@@ -494,7 +511,7 @@ void rt_hi_thread_entry(void *parameter)
 		p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
 */
         /* update led status */    
-
+#if 0
             if (p_sys->led_blink_period == 0){/* always off */
                 led_off(p_sys->led_color);
             }
@@ -536,10 +553,7 @@ void rt_hi_thread_entry(void *parameter)
             }
             else{ /* blink periodly */
                 if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
-                    //led_blink(p_sys->led_color);
-                    if(ledss)led_on(p_sys->led_color);
-					else led_off(p_sys->led_color);
-					ledss = ~ledss;
+                    led_blink(p_sys->led_color);
                     p_sys->led_blink_cnt = 0;
                     if(p_sys->led_blink_duration != 0xFFFF){
                         p_sys->led_blink_duration--;
@@ -550,7 +564,7 @@ void rt_hi_thread_entry(void *parameter)
                 }
             
         }
-
+#endif
         rt_thread_delay(1);
 	}
 }

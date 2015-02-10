@@ -83,6 +83,9 @@ void load_default_param(cfg_param_t *param)
 	param->gsnr.AcceAhead_x= 0;
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
+
+    param->wnet.channel = 13;
+    param->wnet.txrate = 6;
 	
 
 }
@@ -143,7 +146,9 @@ void param_get(void)
 
 	//drv_fls_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
 		
-    rt_kprintf("-------------------parameters in ram------------------\n");	
+    rt_kprintf("-------------------parameters in ram------------------\n");
+
+    rt_kprintf("----------------------vam---------------------\n");
 	rt_kprintf("ID(0)=%d%d%d%d\n",p_cms_param->pid[0],p_cms_param->pid[1],p_cms_param->pid[2],p_cms_param->pid[3]);
     rt_kprintf("vam.bsm_hops(1)=%d\n", p_cms_param->vam.bsm_hops);
     rt_kprintf("vam.bsm_boardcast_mode(2)=%d\n", p_cms_param->vam.bsm_boardcast_mode);
@@ -156,6 +161,7 @@ void param_get(void)
     rt_kprintf("vam.evam_broadcast_type(8)=%d\n", p_cms_param->vam.evam_broadcast_type);
     rt_kprintf("vam.evam_broadcast_peroid(9)=%d (ms)\n\n", p_cms_param->vam.evam_broadcast_peroid);
 
+    rt_kprintf("----------------------vsa---------------------\n");
     rt_kprintf("vsa.danger_detect_speed_threshold(10)=%d (km/h)\n", p_cms_param->vsa.danger_detect_speed_threshold);
     rt_kprintf("vsa.danger_alert_period(11)=%d (ms)\n", p_cms_param->vsa.danger_alert_period);
 	
@@ -169,7 +175,7 @@ void param_get(void)
     rt_kprintf("vsa.ebd_acceleration_threshold(17)=%d (m/s2)\n", p_cms_param->vsa.ebd_acceleration_threshold);
     rt_kprintf("vsa.ebd_alert_hold_time(18)=%d (s)\n\n", p_cms_param->vsa.ebd_alert_hold_time);
 
-
+    rt_kprintf("----------------------gsnr---------------------\n");
 	rt_kprintf("gsnr.gsnr_cal_step(19)=%d\n",p_cms_param->gsnr.gsnr_cal_step);
 	rt_kprintf("gsnr.gsnr_cal_thr(20)=%d\n",p_cms_param->gsnr.gsnr_cal_thr);
 	rt_kprintf("gsnr.gsnr_ebd_thr(21)=%d\n",p_cms_param->gsnr.gsnr_ebd_thr);
@@ -180,6 +186,10 @@ void param_get(void)
 	rt_kprintf("gsnr.AcceAhead_x(26)=%d\n",p_cms_param->gsnr.AcceAhead_x);
 	rt_kprintf("gsnr.AcceAhead_y(27)=%d\n",p_cms_param->gsnr.AcceAhead_y);
 	rt_kprintf("gsnr.AcceAhead_z(28)=%d\n",p_cms_param->gsnr.AcceAhead_z);
+
+    rt_kprintf("----------------------wnet---------------------\n");
+	rt_kprintf("wnet.channel(29)=%d\n",p_cms_param->wnet.channel);
+	rt_kprintf("wnet.txrate(30)=%d\n",p_cms_param->wnet.txrate);
     rt_kprintf("...\n");
 
     rt_kprintf("----------------------end---------------------\n");
@@ -198,7 +208,7 @@ void print_bn(void)
 
  rt_kprintf("cfg_param_t  is %d bytes\n",sizeof(cfg_param_t));
  
- rt_kprintf("gsnr_param_t  is %d bytes\n",sizeof(gsnr_param_t));
+ rt_kprintf("gsnr_config_t  is %d bytes\n",sizeof(gsnr_config_t));
 
 
  rt_kprintf("param_init_words is %d bytes\n",sizeof(param_init_words));
@@ -247,13 +257,14 @@ int param_set(uint8_t param, int32_t value)
 	cfg_param = (cfg_param_t*)rt_malloc(sizeof(cfg_param_t));
 
 	drv_fls_read(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
-
-	if(param >28 )
+/*
+	if(param >31 )
 		{
 			rt_kprintf("invalid  parameter  number!!\n");
 			return -1;
 
 		}
+*/
 	if((param < 23)&&(value > 0xffff))
 		{
 				rt_kprintf("max value is 0xffff");
@@ -267,6 +278,21 @@ int param_set(uint8_t param, int32_t value)
 				rt_kprintf("max value is 0xff");
 				return -1;
 			}
+    if(param == 29){
+        if((value < 1)&&(value > 13)){
+            rt_kprintf("wrong channel!\n\n");
+            return -1;
+        }
+    }
+
+   if(param == 30){
+        if((value != 1)&&(value != 2)&&(value != 6)){
+            rt_kprintf("param of Txrate is just 1,2,6\n\n");
+            return -1;
+        }
+
+   }
+    
 			
 	switch(param){
 
@@ -378,9 +404,17 @@ int param_set(uint8_t param, int32_t value)
 
 			
 		case 29:
-			cfg_param->print_xxx = value;
+			cfg_param->wnet.channel = value;
+            break;
 
-		default:
+		case 30:
+			cfg_param->wnet.txrate = value;
+            break;
+        case 31:
+			cfg_param->print_xxx = value;
+            break;
+		default:          
+			rt_kprintf("invalid  parameter  number!!\n");
 			break;
 
 	}
@@ -421,7 +455,8 @@ void flash_read(void)
 
 	drv_fls_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
 		
-    rt_kprintf("-------------------parameters in  flash------------------\n");		
+    rt_kprintf("-------------------parameters in  flash------------------\n");	
+    rt_kprintf("----------------------vam---------------------\n");	
 	rt_kprintf("ID(0)=%d%d%d%d\n",param_temp->pid[0],param_temp->pid[1],param_temp->pid[2],param_temp->pid[3]);
     rt_kprintf("vam.bsm_hops(1)=%d\n", param_temp->vam.bsm_hops);
     rt_kprintf("vam.bsm_boardcast_mode(2)=%d\n", param_temp->vam.bsm_boardcast_mode);
@@ -433,7 +468,8 @@ void flash_read(void)
     rt_kprintf("vam.evam_hops(7)=%d\n", param_temp->vam.evam_hops);
     rt_kprintf("vam.evam_broadcast_type(8)=%d\n", param_temp->vam.evam_broadcast_type);
     rt_kprintf("vam.evam_broadcast_peroid(9)=%d (ms)\n\n", param_temp->vam.evam_broadcast_peroid);
-
+    
+    rt_kprintf("----------------------vsa---------------------\n");	
     rt_kprintf("vsa.danger_detect_speed_threshold(10)=%d (km/h)\n", param_temp->vsa.danger_detect_speed_threshold);
     rt_kprintf("vsa.danger_alert_period(11)=%d (ms)\n", param_temp->vsa.danger_alert_period);
 	
@@ -446,7 +482,8 @@ void flash_read(void)
     rt_kprintf("vsa.ebd_mode(16)=%d\n", param_temp->vsa.ebd_mode);
     rt_kprintf("vsa.ebd_acceleration_threshold(17)=%d (m/s2)\n", param_temp->vsa.ebd_acceleration_threshold);
     rt_kprintf("vsa.ebd_alert_hold_time(18)=%d (s)\n\n", param_temp->vsa.ebd_alert_hold_time);
-
+    
+    rt_kprintf("----------------------gsnr---------------------\n");	
 	rt_kprintf("gsnr.gsnr_cal_step(19)=%d\n",param_temp->gsnr.gsnr_cal_step);
 	rt_kprintf("gsnr.gsnr_cal_thr(20)=%d\n",param_temp->gsnr.gsnr_cal_thr);
 	rt_kprintf("gsnr.gsnr_ebd_thr(21)=%d\n",param_temp->gsnr.gsnr_ebd_thr);
@@ -457,6 +494,10 @@ void flash_read(void)
 	rt_kprintf("gsnr.AcceAhead_x(26)=%d\n",param_temp->gsnr.AcceAhead_x);
 	rt_kprintf("gsnr.AcceAhead_y(27)=%d\n",param_temp->gsnr.AcceAhead_y);
 	rt_kprintf("gsnr.AcceAhead_z(28)=%d\n",param_temp->gsnr.AcceAhead_z);
+    
+    rt_kprintf("----------------------wnet---------------------\n");	
+	rt_kprintf("wnet.channel(29)=%d\n",param_temp->wnet.channel);
+	rt_kprintf("wnet.txrate(30)=%d\n",param_temp->wnet.txrate);
 
 
     rt_kprintf("...\n");

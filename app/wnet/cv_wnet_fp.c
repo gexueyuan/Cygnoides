@@ -21,17 +21,6 @@
 #include "cv_wnet.h"
 
 
-/* For test only */
-int dsmp_send(wnet_envar_t *p_wnet, wnet_txinfo_t *txinfo, uint8_t *pdata, uint32_t length)
-{
-    return llc_send(p_wnet, txinfo, pdata, length);
-}
-
-int dsmp_recv(wnet_envar_t *p_wnet, wnet_rxinfo_t *rxinfo, uint8_t *pdata, uint32_t length)
-{
-    return vam_rcp_recv((rcp_rxinfo_t *)rxinfo, pdata, length);
-}
-
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -173,7 +162,9 @@ void fp_rx_handler(wnet_envar_t *p_wnet)
     osal_leave_critical();
     
     if (rxbuf){
-        llc_recv(p_wnet, &rxbuf->info, rxbuf->data_ptr, rxbuf->data_len);
+        if (llc_recv(p_wnet, &rxbuf->info, rxbuf->data_ptr, rxbuf->data_len) < 0) {
+            fp_release_rxbuf(p_wnet, rxbuf);
+        }
     }
 }
 
@@ -232,6 +223,11 @@ wnet_txbuf_t *wnet_get_txbuf(void)
 void wnet_send_complete(void)
 {
     fp_tx_complete(p_wnet_envar);
+}
+
+void wnet_release_txbuf(wnet_txbuf_t *txbuf)
+{
+    fp_release_txbuf(p_wnet_envar, txbuf);
 }
 
 void wnet_release_rxbuf(wnet_rxbuf_t *rxbuf)

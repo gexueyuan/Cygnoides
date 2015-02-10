@@ -11,6 +11,10 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "vsm"
+#include "cv_osal_dbg.h"
 
 #include "components.h"
 #include "cv_vam.h"
@@ -82,16 +86,31 @@ void vsm_pause_bsm_broadcast(vam_envar_t *p_vam)
         p_vam->flag |= VAM_FLAG_TX_BSM_PAUSE;
         period = p_vam->working_param.bsm_pause_hold_time;
         ticks = SECOND_TO_TICK(period);      
-        rt_timer_control(p_vam->timer_bsm_pause, RT_TIMER_CTRL_SET_TIME, &ticks);
-        rt_timer_start(p_vam->timer_bsm_pause);
+        osal_timer_change(p_vam->timer_bsm_pause, ticks);
+        osal_timer_start(p_vam->timer_bsm_pause);
     }
 }
 
 void timer_send_bsm_callback(void* parameter)
 {
     vam_envar_t *p_vam = (vam_envar_t *)parameter;
+
+    static uint8_t count = VAM_NO_ALERT_EVAM_TX_TIMES;
+    if (p_vam->flag&VAM_FLAG_TX_BSM_ALERT && p_vam->local.alert_mask == 0){
+        /* 发送VAM_NO_ALERT_EVAM_TX_TIMES次后停止发送EVAM消息数据 */
+        if(0 == count--){
+            p_vam->flag &= ~VAM_FLAG_TX_BSM_ALERT;
+            /* change bsm timer time */
+            vsm_update_bsm_bcast_timer(p_vam);
+        }        
+    }
+
     if ((p_vam->flag&VAM_FLAG_TX_BSM)&&(!(p_vam->flag&VAM_FLAG_TX_BSM_PAUSE))){
+        #ifdef RSU_TEST
+        vam_add_event_queue(p_vam, VAM_MSG_RCPTX, 0, RCP_MSG_ID_RSA, NULL);
+        #else
         vam_add_event_queue(p_vam, VAM_MSG_RCPTX, 0, RCP_MSG_ID_BSM, NULL);
+        #endif
     }
 }
 
@@ -99,16 +118,27 @@ void timer_send_bsm_callback(void* parameter)
 void vsm_update_bsm_bcast_timer(vam_envar_t *p_vam)
 {
     uint16_t period;
-    rt_tick_t timeout;
+    uint32_t timeout;
     if(p_vam->working_param.bsm_boardcast_mode == BSM_BC_MODE_AUTO)
     {
         period = _cal_peroid_from_speed(p_vam->local.speed, p_vam->working_param.bsm_boardcast_saftyfactor);
-        timeout = MS_TO_TICK(period);
-        if(p_vam->bsm_send_period_ticks != timeout)
+    }
+    else
+    {
+        if(p_vam->flag & VAM_FLAG_TX_BSM_ALERT)
         {
-            osal_timer_change(p_vam->timer_send_bsm, timeout);
-            p_vam->bsm_send_period_ticks = timeout;
+            period = p_vam->working_param.evam_broadcast_peroid;
         }
+        else
+        {
+            period = p_vam->working_param.bsm_boardcast_period;
+        }
+    }
+    timeout = MS_TO_TICK(period);
+    if(p_vam->bsm_send_period_ticks != timeout)
+    {
+        osal_timer_change(p_vam->timer_send_bsm, timeout);
+        p_vam->bsm_send_period_ticks = timeout;
     }
 }
 
@@ -127,7 +157,7 @@ void timer_gps_life_callback(void* parameter)
 
     if (p_vam->flag & VAM_FLAG_GPS_FIXED){
         p_vam->flag &= ~VAM_FLAG_GPS_FIXED;
-        rt_kprintf("gps is lost!\n");
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "gps is lost!\n");
         if (p_vam->evt_handler[VAM_EVT_GPS_STATUS]){
             (p_vam->evt_handler[VAM_EVT_GPS_STATUS])((void *)0);
         }
@@ -147,8 +177,8 @@ void vsm_start_evam_broadcast(vam_envar_t *p_vam)
     }
 
     ticks = MS_TO_TICK(period);
-    rt_timer_control(p_vam->timer_send_evam, RT_TIMER_CTRL_SET_TIME, &ticks);
-    rt_timer_start(p_vam->timer_send_evam);
+    osal_timer_change(p_vam->timer_send_evam, ticks);
+    osal_timer_start(p_vam->timer_send_evam);
 }
 
 void timer_send_evam_callback(void* parameter)
@@ -173,13 +203,13 @@ void timer_send_evam_callback(void* parameter)
             if(0 == count--)
             {
                 p_vam->flag &= ~VAM_FLAG_TX_EVAM;
-                rt_timer_stop(p_vam->timer_send_evam);
+                osal_timer_stop(p_vam->timer_send_evam);
 
                 /* don't wait timer_bsm_pause timeout. restart to send bsm */
                 if(p_vam->flag & VAM_FLAG_TX_BSM_PAUSE)
                 {
                     p_vam->flag &= ~VAM_FLAG_TX_BSM_PAUSE;
-                    rt_timer_stop(p_vam->timer_bsm_pause);
+                    osal_timer_stop(p_vam->timer_bsm_pause);
                 }
             }
         }
@@ -205,19 +235,19 @@ vam_sta_node_t *vam_find_sta(vam_envar_t *p_vam, uint8_t *temporary_id)
     /* not found, allocate new one */
     if (p_sta == NULL){
 
-        rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
+        osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
     	if (!list_empty(&p_vam->sta_free_list)) {
     		p_sta = list_first_entry(&p_vam->sta_free_list, vam_sta_node_t, list);
     		list_move(&p_sta->list, &p_vam->neighbour_list);
     	}
-        rt_sem_release(p_vam->sem_sta);
+        osal_sem_release(p_vam->sem_sta);
 
         if (p_sta){
-            rt_kprintf("one neighbour join\n");
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour join\n");
             memcpy(p_sta->s.pid, temporary_id, RCP_TEMP_ID_LEN);        
         }
         else{
-            rt_kprintf("%s: no free sta.\n", __FUNCTION__);
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: no free sta.\n", __FUNCTION__);
         }
     }
 
@@ -233,10 +263,9 @@ void vam_update_sta(vam_envar_t *p_vam)
     vam_stastatus_t sta;
     static uint8_t gotNeighbour = 0;
     uint8_t isEmpty = 1;
-//    rt_kprintf("%s--->\n", __FUNCTION__);
 
-    if (rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
-        rt_kprintf("%s: semaphor return failed\n");
+    if (osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "semaphor return failed\n");
         return;
     }
 
@@ -253,7 +282,7 @@ void vam_update_sta(vam_envar_t *p_vam)
             p_sta->alert_life--;
         
         if ((p_sta->alert_life == 0) && (p_sta->s.alert_mask) ){
-            rt_kprintf("one neighbour's alert is timeout to canceled.\n");  
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour's alert is timeout to canceled.\n");  
             p_sta->s.alert_mask = 0;
             memcpy(&sta, &p_sta->s, sizeof(vam_stastatus_t));
             /* one neighbours's alert msg timeout */
@@ -263,11 +292,11 @@ void vam_update_sta(vam_envar_t *p_vam)
         }
 
         if (p_sta->life == 0 && p_sta->alert_life == 0){
-            rt_kprintf("one neighbour is kick out\n");
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour is kick out\n");
             list_move_tail(&p_sta->list, &p_vam->sta_free_list);
         }
     }
-    rt_sem_release(p_vam->sem_sta);
+    osal_sem_release(p_vam->sem_sta);
 
     /* neighbour list turn to empty */
     if(gotNeighbour && isEmpty)
@@ -294,8 +323,8 @@ void vam_list_sta(void)
     vam_sta_node_t *p_sta = NULL;
     int i = 0;
 
-    if (rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
-        rt_kprintf("%s: semaphor return failed\n");
+    if (osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: semaphor return failed\n", __FUNCTION__);
         return;
     }
 
@@ -303,20 +332,16 @@ void vam_list_sta(void)
         i++;
 	}
 
-    rt_kprintf("free sta node:%d\n", i);
-    rt_kprintf("neighbor node:%d\n", VAM_NEIGHBOUR_MAXNUM - i);
+    osal_printf("free sta node:%d\n", i);
+    osal_printf("neighbor node:%d\n", VAM_NEIGHBOUR_MAXNUM - i);
 
 	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-        rt_kprintf("STA:[%02x-%02x-%02x-%02x], life:%d, alert_life:%d alert_mask:%d\n",\
+        osal_printf("STA:[%02x-%02x-%02x-%02x], life:%d, alert_life:%d alert_mask:%d\n",\
             p_sta->s.pid[0],p_sta->s.pid[1],p_sta->s.pid[2],p_sta->s.pid[3],\
             p_sta->life, p_sta->alert_life, p_sta->s.alert_mask);
 	}
-    rt_sem_release(p_vam->sem_sta);
+    osal_sem_release(p_vam->sem_sta);
 }
 FINSH_FUNCTION_EXPORT(vam_list_sta, list all neighbour sta);
-
-
-
-
 
 

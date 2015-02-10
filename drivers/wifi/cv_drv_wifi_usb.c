@@ -59,12 +59,11 @@ wifi_usb_adapter_t wifi_usb_adapter;
 
 static void _usb_bulkout_complete(wifi_usb_adapter_t *adapter)
 {    
-    //wifi_usb_bulkout_request_t *usb_tx_req = &adapter->usb_tx_req;
-    /*
-        Tell the NosWifi module.
-    */
-    //hedrv_UsbTxDone(0);
+    #ifdef WIFI_ATE_MODE
+    ate_tx_complete();
+    #else
     wnet_send_complete();
+    #endif
 }
 
 static void _usb_control_complete(wifi_usb_adapter_t *adapter)

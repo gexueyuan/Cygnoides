@@ -3,154 +3,226 @@
  All rights reserved.
  
  @file   : cv_drv_voc.c
- @brief  : this file include the voice output functions
- @author : wangyifeng
+ @brief  : adpcm player codes
+ @author : gexueyuan
  @history:
-           2014-6-30    wangyifeng    Created file
+           2015-1-30    gexueyuan    Created file
            ...
 ******************************************************************************/
+    
+#include <stdio.h>
+#include <stdlib.h>
+#include "string.h"
+#include "assert.h"
 #include "cv_osal.h"
-
-#include "components.h"
-#include "cv_vam.h"
 #include "cv_cms_def.h"
 
+#define BUFFERSIZE   4096
 
-/*****************************************************************************
- * declaration of variables and functions                                    *
-*****************************************************************************/
-#define DAC_DHR8R2_ADDRESS     0x4000741C
+short buffer_4k_1[BUFFERSIZE]; 
+short buffer_4k_2[BUFFERSIZE]; 
 
-static DAC_InitTypeDef  DAC_InitStructure;
+unsigned char fin_flag = 0;
+
+static ADPCMState adpcm_state;
 
 
-/*****************************************************************************
- * implementation of functions                                               *
-*****************************************************************************/
+static const int indexTable[ 16 ] = {
+	-1, -1, -1, -1, 2, 4, 6, 8,
+	-1, -1, -1, -1, 2, 4, 6, 8
+} ;
+/* define an array of index adjustments to the step index value */
 
-void DAC_Ch2_SoundConfig(uint8_t *p_data, uint32_t length)
+#define	MAXSTEPINDEX	88
+/* define the maximum value to access the top element of stepSizeTable below */
+
+static const int stepSizeTable[ MAXSTEPINDEX + 1 ] = {
+	    7,     8,     9,    10,    11,    12,    13,    14,    16,    17,
+	   19,    21,    23,    25,    28,    31,    34,    37,    41,    45,
+	   50,    55,    60,    66,    73,    80,    88,    97,   107,   118,
+	  130,   143,   157,   173,   190,   209,   230,   253,   279,   307,
+	  337,   371,   408,   449,   494,   544,   598,   658,   724,   796,
+	  876,   963,  1060,  1166,  1282,  1411,  1552,  1707,  1878,  2066,
+	 2272,  2499,  2749,  3024,  3327,  3660,  4026,  4428,  4871,  5358,
+	 5894,  6484,  7132,  7845,  8630,  9493, 10442, 11487, 12635, 13899,
+	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
+} ;
+
+
+int DecodeADPCMC( int adpcmSample, ADPCMStatePtr decodeStatePtr )
 {
-    DMA_InitTypeDef DMA_InitStructure;
-//    DAC_InitTypeDef  DAC_InitStructure;
+    int step ;
+    int delta ;
+    int predictionAdjustment ;
+    
+    if( ( adpcmSample < 0 ) || ( adpcmSample > 15 ) ) {
+        osal_printf("[DecodeADPCMC] Error in ADPCM sample, aborting.\n\n" ) ;
+        /* function name given since intended as internal error for programmer */
+        return 0 ;
+    }
+    
+    if( !decodeStatePtr ) {
+        osal_printf("[DecodeADPCMC] Error in ADPCMState, aborting.\n\n" ) ;
+        /* function name given since intended as internal error for programmer */
+        return 0 ;
+    }
+        
+    step = stepSizeTable[ decodeStatePtr->stepIndex ] ;
+    
+    delta = adpcmSample ;
 
-    /* DAC channel1 Configuration */
-    DAC_InitStructure.DAC_Trigger = DAC_Trigger_T6_TRGO;
-    DAC_InitStructure.DAC_WaveGeneration = DAC_WaveGeneration_None;
-    DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
-    DAC_Init(DAC_Channel_2, &DAC_InitStructure);
-
-    /* DMA1_Stream6 channel7 configuration **************************************/  
-    DMA_DeInit(DMA1_Stream6);
-    DMA_InitStructure.DMA_Channel = DMA_Channel_7;  
-    DMA_InitStructure.DMA_PeripheralBaseAddr = DAC_DHR8R2_ADDRESS;
-    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)p_data;
-    DMA_InitStructure.DMA_BufferSize = length;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;         
-    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;
-    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
-    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-    DMA_Init(DMA1_Stream6, &DMA_InitStructure);    
-
-    /* Enable DMA1_Stream6 */
-    DMA_Cmd(DMA1_Stream6, ENABLE);
-
-    /* Enable DAC Channel1 */
-    DAC_Cmd(DAC_Channel_2, ENABLE);
-
-    /* Enable DMA for DAC Channel1 */
-    DAC_DMACmd(DAC_Channel_2, ENABLE);
-}
-
-void DMA1_Stream6_IRQHandler(void)
-{
-    /* enter interrupt */
-    rt_interrupt_enter();
-    if(DMA_GetITStatus(DMA1_Stream6, DMA_IT_TCIF6) != RESET){
-    /* clear interrupt */
-        DMA_ClearITPendingBit(DMA1_Stream6, DMA_IT_TCIF6);
-
-        DAC_DeInit(); 
-        GPIO_SetBits(GPIOA, GPIO_Pin_6); /* Disable the amplifier */
+    decodeStatePtr->stepIndex += indexTable[ delta ] ;
+    /* range check the stepIndex */
+    if( decodeStatePtr->stepIndex < 0 ) {
+        decodeStatePtr->stepIndex = 0 ;
+    }
+    else if( decodeStatePtr->stepIndex > MAXSTEPINDEX ) {
+        decodeStatePtr->stepIndex = MAXSTEPINDEX ;
     }
 
-    /* leave interrupt */
-    rt_interrupt_leave();
+    /* remove sign from delta - pull to 3-bit */
+    if( delta > 7 ) {
+        delta -= 8 ;
+    }
+    
+    predictionAdjustment = ( 2*delta + 1 )* step/8 ;
+    if( adpcmSample > 7 ) {
+        decodeStatePtr->prediction -= predictionAdjustment ;
+    }
+    else {
+        decodeStatePtr->prediction += predictionAdjustment ;
+    }
+    
+    /* range check the prediction so that fits in number of bits */
+    if( decodeStatePtr->prediction > ( 1 << ( MAXBITS - 1 ) ) - 1 ) {
+        decodeStatePtr->prediction = ( 1 << ( MAXBITS - 1 ) ) - 1 ;
+    }
+    else if( decodeStatePtr->prediction < -( 1 << ( MAXBITS - 1 ) ) ) {
+        decodeStatePtr->prediction = -( 1 << ( MAXBITS - 1 ) ) ;
+    }
+
+    return decodeStatePtr->prediction ;
 }
 
-
-void TIM6_Config(uint32_t Hz)
+int adpcm_de(char *code, short *pcm, int count)
 {
-    TIM_TimeBaseInitTypeDef    TIM_TimeBaseStructure;
-    /* TIM6CLK = HCLK / 4 = SystemCoreClock /4 */
-    uint32_t TIM6CLK = SystemCoreClock/2;
+    int a,b;
+    short p;
 
-    /* TIM6 Disable counter */
-    TIM_Cmd(TIM6, DISABLE);
-  
-    /* TIM6 Periph clock enable */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
+    RT_ASSERT((code != NULL)&&(pcm!= NULL)&&(count >0));
 
-    /* Time base configuration */
-    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = TIM6CLK/Hz;
-    TIM_TimeBaseStructure.TIM_Prescaler = 0;
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up; 
-    TIM_TimeBaseInit(TIM6, &TIM_TimeBaseStructure);
-
-    /* TIM6 TRGO selection */
-    TIM_SelectOutputTrigger(TIM6, TIM_TRGOSource_Update);
-
-    /* TIM6 enable counter */
-    TIM_Cmd(TIM6, ENABLE);
+    while(count--){
+        a = *code ++;
+        b = (a>>4)&0x0f;
+        p = DecodeADPCMC(b,&adpcm_state);
+        *pcm++ = p;
+        *pcm++ = p; // expand to stero
+        b = (a)&0x0f;
+        p = DecodeADPCMC(b,&adpcm_state); 
+        *pcm++ = p;
+        *pcm++ = p;
+    }
+    return 0;
 }
-
-
-
-void voc_init(void)
+adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
 {
-    /* Preconfiguration before using DAC----------------------------------------*/
-    GPIO_InitTypeDef GPIO_InitStructure;
+    short *buffer_tmp;
+    
+    adpcm_t audio_pcm;
 
-    /* DMA1 clock and GPIOA clock enable (to be used with DAC) */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 | RCC_AHB1Periph_GPIOA, ENABLE);
+    if(channel)
+        buffer_tmp = buffer_4k_2;
+    else        
+        buffer_tmp = buffer_4k_1;
+    
+    adpcm_de(src_c,buffer_tmp,sourceFileLen);
 
-    /* DAC Periph clock enable */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
+    audio_pcm.Addr = (uint32_t)buffer_tmp;
+    audio_pcm.Size = 8*sourceFileLen;
 
-    /* DAC channel 1(DAC_OUT1 = PA.4) configuration */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    /* DAC channel 1(DAC_OUT1 = PA.5) configuration */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    /* LM4871 enable pin configuration */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    return audio_pcm;
 }
 
-void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length)
+void adpcm_play(char* pBuffer, uint32_t Size)
 {
-    TIM6_Config(sample_rate);
-    DAC_DeInit(); 
-    GPIO_ResetBits(GPIOA, GPIO_Pin_6); /* Enable the amplifier */
+    adpcm_t audio_pcm;
 
-    DAC_Ch2_SoundConfig(p_data, length);
+    static unsigned char channel = 0x00;
+
+    uint16_t count_play = 0;
+
+    rt_kprintf("total size of voc is %d\n\n",Size);
+    while(Size>0){
+    
+    count_play++;
+    
+    if(Size > BUFFERSIZE/4){
+        
+        audio_pcm = adpcm_de_process(pBuffer,BUFFERSIZE/4,channel);
+        Size -= BUFFERSIZE/4;
+        pBuffer += BUFFERSIZE/4;
+    }
+    else{
+        audio_pcm = adpcm_de_process(pBuffer,Size,channel);
+        channel = 0;
+        Size = 0;
+        pBuffer += Size;
+    }
+
+    
+   while(fin_flag){
+       };
+   
+   Pt8211_AUDIO_Play((uint16_t *)(audio_pcm.Addr), audio_pcm.Size);
+   
+    rt_kprintf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,audio_pcm.Size,channel,audio_pcm.Addr);
+   
+    channel = ~channel;
+
+
+    }
+
+
 }
+
+
+void rt_adpcm_thread_entry(void *parameter)
+{
+    vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
+
+    adpcm_t *audio_pcm;
+
+    while(1){
+        
+        if(rt_mb_recv(p_vsa->mb_sound,(rt_uint32_t*)&audio_pcm,RT_WAITING_FOREVER) == OSAL_STATUS_SUCCESS){
+            adpcm_play((char*)audio_pcm->Addr,audio_pcm->Size);
+        }
+        
+    }
+
+
+
+}
+
+
+void adpcm_init(void)
+{
+    osal_task_t  *adpcm_thread;
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    
+
+    memset(buffer_4k_1,0,BUFFERSIZE);
+    memset(buffer_4k_2,0,BUFFERSIZE);
+
+    adpcm_thread = osal_task_create("t-adpcm",
+                           rt_adpcm_thread_entry, p_vsa,
+                           RT_VSA_THREAD_STACK_SIZE, RT_ADPCM_THREAD_PRIORITY);
+
+    osal_assert(adpcm_thread != NULL);
+
+    rt_kprintf("adpcm inited!!\n\n");
+
+}
+
 

@@ -37,28 +37,19 @@ void led_init(void)
 }
 
 
-void led_on(led_color_t led)
+void led_on(Led_TypeDef led)
 {
-    if (led.r)
-       STM_EVAL_LEDOn((Led_TypeDef)LED_RED);
-	else
-	   STM_EVAL_LEDOff((Led_TypeDef)LED_RED);
-    if (led.g)
-       STM_EVAL_LEDOn((Led_TypeDef)LED_GREEN);
-	else
-	   STM_EVAL_LEDOff((Led_TypeDef)LED_GREEN);
-    if (led.b)
-       STM_EVAL_LEDOn((Led_TypeDef)LED_BLUE);
-	else
-	   STM_EVAL_LEDOff((Led_TypeDef)LED_BLUE);
+    if (led < LEDn){
+        STM_EVAL_LEDOn((Led_TypeDef)led);
+    }
+
 }
 
-void led_off(led_color_t led)
+void led_off(Led_TypeDef led)
 {
-       STM_EVAL_LEDOff((Led_TypeDef)LED_RED);
-       STM_EVAL_LEDOff((Led_TypeDef)LED_GREEN);
-       STM_EVAL_LEDOff((Led_TypeDef)LED_BLUE);
-
+    if (led < LEDn){
+        STM_EVAL_LEDOff((Led_TypeDef)led);
+    }
 }
 
 void led_blink(Led_TypeDef led)

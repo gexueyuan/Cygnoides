@@ -480,6 +480,16 @@
               <FileType>1</FileType>
               <FilePath>..\app\wnet\cv_wnet_llc.c</FilePath>
             </File>
+            <File>
+              <FileName>cv_vam_mda.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\vam\cv_vam_mda.c</FilePath>
+            </File>
+            <File>
+              <FileName>cv_wnet_dsmp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\wnet\cv_wnet_dsmp.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -585,6 +595,11 @@
               <FileType>1</FileType>
               <FilePath>..\drivers\wifi\chips\ralink\chips\rt3070.c</FilePath>
             </File>
+            <File>
+              <FileName>rt_ate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\wifi\chips\ralink\common\rt_ate.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -634,6 +649,16 @@
               <FileName>usb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\usb.c</FilePath>
+            </File>
+            <File>
+              <FileName>ili9341.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\ili9341.c</FilePath>
+            </File>
+            <File>
+              <FileName>pt8211.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\pt8211.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1428,6 +1453,16 @@
               <FileType>1</FileType>
               <FilePath>..\app\wnet\cv_wnet_llc.c</FilePath>
             </File>
+            <File>
+              <FileName>cv_vam_mda.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\vam\cv_vam_mda.c</FilePath>
+            </File>
+            <File>
+              <FileName>cv_wnet_dsmp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\wnet\cv_wnet_dsmp.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1533,6 +1568,11 @@
               <FileType>1</FileType>
               <FilePath>..\drivers\wifi\chips\ralink\chips\rt3070.c</FilePath>
             </File>
+            <File>
+              <FileName>rt_ate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\wifi\chips\ralink\common\rt_ate.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1582,6 +1622,16 @@
               <FileName>usb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\usb.c</FilePath>
+            </File>
+            <File>
+              <FileName>ili9341.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\ili9341.c</FilePath>
+            </File>
+            <File>
+              <FileName>pt8211.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\pt8211.c</FilePath>
             </File>
           </Files>
         </Group>

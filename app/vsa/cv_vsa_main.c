@@ -31,6 +31,8 @@
 #define VSA_EBD_SEND_PERIOD      SECOND_TO_TICK(5)
 #define VSA_POS_PERIOD           MS_TO_TICK(10)
 #define DIRECTION_DIVIDE         22.5f
+#define PI 3.1415926
+
 
 /*****************************************************************************
  * implementation of functions                                               *

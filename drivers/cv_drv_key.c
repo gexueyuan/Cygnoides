@@ -21,22 +21,21 @@ static void GPIO_Configuration(void)
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /* init gpio configuration */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA,ENABLE);
-                           
 
+    RCC_AHB1PeriphClockCmd(KEY0_GPIO_CLK | KEY1_GPIO_CLK | KEY2_GPIO_CLK,ENABLE);
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
-	#if LCD_VERSION!=1	//魔笛f4 使用上拉
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;	
-	#endif
-#ifdef HARDWARE_MODULE_V1	
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_11 | GPIO_Pin_12;
-#elif defined(HARDWARE_MODULE_V2)  
-	GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_1;
-#endif
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+    
+    GPIO_InitStructure.GPIO_Pin   = KEY0_PIN;
+    GPIO_Init(KEY0_GPIO_PORT, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_Pin   = KEY1_PIN;
+    GPIO_Init(KEY1_GPIO_PORT, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_Pin   = KEY2_PIN;
+    GPIO_Init(KEY2_GPIO_PORT, &GPIO_InitStructure);
 
 }
 
@@ -71,13 +70,14 @@ static void key_thread_entry(void *parameter)
 		
 		key->key_current = key_up_GETVALUE();
 		key->key_current |= key_down_GETVALUE()<<1;	
+        key->key_current |= key_third_GETVALUE()<<2;
 		
 	  #if LCD_VERSION==1
 
 
 	  #else 
 		key->key_current=~(key->key_current);
-		key->key_current&=0x00000003;
+		key->key_current&=0x00000007;
 	
 	  #endif
 
@@ -161,11 +161,29 @@ static void key_thread_entry(void *parameter)
 	if (key->key_get)
 	{	
 		if (((key->key_get)==C_UP_KEY) && ((key->key_flag) & C_FLAG_SHORT))
-			key_value = C_UP_KEY;
+            {
+                key_value = C_UP_KEY;
+                rt_kprintf("key0 press!\n ");
+                led_blink(LED_RED);
+
+            }      
+        
 	
 		if (((key->key_get)==C_DOWN_KEY) && ((key->key_flag) & C_FLAG_SHORT))
-			key_value = C_DOWN_KEY;
-		
+            {      
+                key_value = C_DOWN_KEY;
+                rt_kprintf("key1 press!\n");
+                led_blink(LED_GREEN);
+
+            }
+
+		if (((key->key_get)==C_LEFT_KEY) && ((key->key_flag) & C_FLAG_SHORT))
+            {      
+                key_value = C_LEFT_KEY;
+                rt_kprintf("key2 press!\n");
+                led_blink(LED_BLUE);
+
+            }
 		if(key_value)	
 			sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,key_value,NULL);
 

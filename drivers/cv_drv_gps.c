@@ -38,11 +38,10 @@ static void ubx_pkt_checknum_calc(uint8_t *buf, int len, uint8_t *cknumA, uint8_
 
 static void ubx_cfg_msg_std_nmea(ubx_cfg_msg_nmea_id_t nmea_id, uint8_t enable)
 {
+ 	rt_device_t dev; 
     int len = 0;
     uint8_t buf[20];
-    
-	rt_device_t dev; 
-  
+ 
     gps_ubx_pkt_hdr_t pkt;
     gps_ubx_cfg_msg_t cfg;
     memset(&cfg, 0x0, sizeof(cfg));
@@ -116,9 +115,10 @@ static void gps_set_host_baudrate(int baud)
 
 void gps_cfg_rate(uint8_t freq)
 {
+	rt_device_t dev; 
     uint8_t cfg_pkt[] = {0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xF4, 0x01, 
                          0x01, 0x00, 0x01, 0x00, 0x0B, 0x77};
-	rt_device_t dev; 
+
     switch (freq)
     {
         case 1:
@@ -160,6 +160,7 @@ static void gps_read_data(rt_device_t dev)
     static uint8_t cfg_flag = 0;
 	while(1){
 		if(rt_device_read(dev, 0, &tmp, 1) == 1){
+
 			if (tmp == '$') {
                 memset(__GPSBuff.PpBuf[__GPSBuff.Pipe].Buf, 0x0, GPS_BUFF_SIZE);
 				__GPSBuff.PpBuf[__GPSBuff.Pipe].Len = 1;
@@ -172,28 +173,31 @@ static void gps_read_data(rt_device_t dev)
 				__GPSBuff.PpBuf[__GPSBuff.Pipe].Len %= GPS_BUFF_SIZE;
 				__GPSBuff.PpBuf[__GPSBuff.Pipe].Flag = 0;
 
-
                 if((0 == cfg_flag) && (0 == memcmp(__GPSBuff.PpBuf[__GPSBuff.Pipe].Buf, "$GPTXT", 6)))
                 {
                     /* got ublox GPTXT msg. config needed nmea */
                     gps_cfg_msg();
-                    rt_thread_delay(1);	
+                    osal_delay(1);	
                     /* conifg ublox gps rate 5Hz */
 					gps_cfg_rate(5);
-					rt_thread_delay(1);
+					osal_delay(1);
                     /* config gps baud to 115200 */
                     gps_cfg_prt();
-                    rt_thread_delay(1);
+                    osal_delay(1);
                     gps_set_host_baudrate(BAUD_RATE_115200);
-					rt_thread_delay(1);
+					osal_delay(1);
                     cfg_flag = 1;
                 }                   
+
                 {
-                    sys_msg_t msg;
-                    msg.id = VAM_MSG_GPSDATA;
-                    msg.len = __GPSBuff.PpBuf[__GPSBuff.Pipe].Len;
-                    msg.argv = &__GPSBuff.PpBuf[__GPSBuff.Pipe].Buf;
-                    vam_add_event_queue_2(&p_cms_envar->vam, &msg);
+                    sys_msg_t *p_msg;
+                    p_msg = osal_malloc(sizeof(sys_msg_t));
+                    if (p_msg) {
+                        p_msg->id = VAM_MSG_GPSDATA;
+                        p_msg->len = __GPSBuff.PpBuf[__GPSBuff.Pipe].Len;
+                        p_msg->argv = &__GPSBuff.PpBuf[__GPSBuff.Pipe].Buf;
+                        vam_add_event_queue_2(&p_cms_envar->vam, p_msg);
+                    }
                 }
 
 				__GPSBuff.Pipe++;
@@ -231,10 +235,10 @@ void rt_gps_thread_entry (void *parameter)
     
 	dev = rt_device_find(RT_GPS_DEVICE_NAME);
 	rt_device_open(dev, RT_DEVICE_OFLAG_RDWR);
-
+	
 	while(1){
 		gps_read_data(dev);
-		rt_thread_delay(1);
+		osal_delay(1);
 	}
 }
 
@@ -247,24 +251,22 @@ void rt_gps_thread_entry (void *parameter)
 //******************************************************************************/
 void gps_init(void)
 {
-    rt_thread_t tid;
+    osal_task_t *tid;
 
 	memset(&__GPSBuff, 0, sizeof(__GPSBuff));
 	gps_recv_cb = NULL;
 
 
-	tid = rt_thread_create("t-gps",
+	tid = osal_task_create("t-gps",
                            rt_gps_thread_entry, RT_NULL,
-                           RT_GPS_THREAD_STACK_SIZE, RT_GPS_THREAD_PRIORITY, 20);
-    RT_ASSERT(tid != RT_NULL)
-    rt_thread_startup(tid);
+                           RT_GPS_THREAD_STACK_SIZE, RT_GPS_THREAD_PRIORITY);
+    osal_assert(tid != RT_NULL)
 }
 
 void gps_deinit(void)
 {
-	gps_recv_cb = NULL;	
-
 	memset(&__GPSBuff, 0, sizeof(__GPSBuff));
+	gps_recv_cb = NULL;	
 }
 
 /* shell cmd for debug */

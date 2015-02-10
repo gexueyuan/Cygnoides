@@ -379,6 +379,18 @@ void I2S_Init(SPI_TypeDef* SPIx, I2S_InitTypeDef* I2S_InitStruct)
     i2sclk = I2S_EXTERNAL_CLOCK_VAL;
 
   #else /* There is no define for External I2S clock source */
+
+  /* Check if PLLI2S is enabled or Not */
+  if((RCC->CR & RCC_CR_PLLI2SON) != RCC_CR_PLLI2SON)
+  {
+       /* Enable PLLI2S */
+    RCC->CR |= ((uint32_t)RCC_CR_PLLI2SON);
+  
+     /* Wait till PLLI2S is ready */
+    while((RCC->CR & RCC_CR_PLLI2SRDY) == 0){}
+  }
+
+
     /* Set PLLI2S as I2S clock source */
     if ((RCC->CFGR & RCC_CFGR_I2SSRC) != 0)
     {
@@ -397,7 +409,16 @@ void I2S_Init(SPI_TypeDef* SPIx, I2S_InitTypeDef* I2S_InitStruct)
     pllm = (uint32_t)(RCC->PLLCFGR & RCC_PLLCFGR_PLLM);      
     
     /* Get the I2S source clock value */
-    i2sclk = (uint32_t)(((HSE_VALUE / pllm) * plln) / pllr);
+    if((RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC) == RCC_PLLCFGR_PLLSRC_HSE)
+    {
+      /* Get the I2S source clock value */
+      i2sclk = (uint32_t)(((HSE_VALUE / pllm) * plln) / pllr);
+    }
+    else
+    {
+      /* Get the I2S source clock value */
+      i2sclk = (uint32_t)(((HSI_VALUE / pllm) * plln) / pllr);
+    }
   #endif /* I2S_EXTERNAL_CLOCK_VAL */
     
     /* Compute the Real divider depending on the MCLK output state, with a floating point */

@@ -24,6 +24,16 @@ enum VSA_APP_ID{
     VSM_ID_END
 };
 
+
+typedef struct _adpcm{
+
+    uint32_t Addr;
+    uint32_t Size;
+    uint8_t  channel;
+    uint8_t  cmd;
+    
+}adpcm_t;
+
 /* target classification locations */
 
 enum VSA_TARGET_LOCATION{
@@ -116,6 +126,8 @@ typedef struct _vsa_envar{
 
     vam_stastatus_t local;
     vam_stastatus_t remote;
+
+    adpcm_t adpcm_data;
 
 	/*List head*/	
     list_head_t crd_list;

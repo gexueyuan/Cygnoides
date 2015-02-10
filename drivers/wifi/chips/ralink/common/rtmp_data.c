@@ -33,6 +33,23 @@ static UCHAR BeaconFixedElement[] =
 #define MAC_HEADER_LENGTH (24)
 
 
+#ifndef NDEBUG
+UCHAR *DbgRxFilterAddrTable[] = {
+    /* 
+     * Developer name could be defined in the project of Keil uvision
+     */
+    #if defined(WANGYIFENG)
+    "\x00\x11\x22\x2f\x00\x1d",
+    "\x00\x11\x22\x35\x00\x34",
+    #elif defined(WANGLEI)
+    // add...
+    #elif defined(GEXUEYUAN)
+    
+    #endif
+    NULL
+};
+#endif
+
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -47,6 +64,11 @@ VOID STARxDoneInterruptHandle(
     PHEADER_802_11 pHeader;
     PUCHAR pRxPacket;
     ULONG ThisFrameLen;
+
+    #ifdef WIFI_ATE_MODE
+    ate_rx_frame();
+    return;
+    #endif
 
     /* The RXDMA field is 4 bytes, now just use the first 2 bytes. The Length including the (RXWI + MSDU + Padding)*/
     ThisFrameLen = *pData + (*(pData+1)<<8);
@@ -96,6 +118,24 @@ VOID STARxDoneInterruptHandle(
         return;
     }
 
+    #ifndef NDEBUG
+    {
+        INT i, allow = FALSE;
+        for (i=0;;i++) {
+            if (DbgRxFilterAddrTable[i] == NULL) {
+                break;
+            }
+            if (memcmp(pHeader->Addr2, DbgRxFilterAddrTable[i], MAC_ADDR_LEN) == 0) {
+                allow = 1;
+                break;
+            }
+        }
+        if (!allow) {
+            return;
+        }
+    }
+    #endif
+
     pRxPacket = (PUCHAR)(pData + RXWI_SIZE + sizeof(HEADER_802_11));
 
     {/* Parse the the element of V2V */
@@ -124,6 +164,7 @@ VOID STARxDoneInterruptHandle(
                memcpy(pPayload, pRxPacket, 8);
 
                wnet_recv(&rxinfo, pPayload, (UINT32)ElementLen+8);
+               osal_printf(":"); /* Indicate RX is in process, for debug only */
                break;
             }
             pPayload += ElementLen;
@@ -266,6 +307,12 @@ int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
     PHEADER_802_11    pHeader_802_11;
     PUCHAR pPayload;
 
+    #ifdef WIFI_ATE_MODE
+    if (txinfo) {
+        return 0;
+    }
+    #endif
+
     /* fill the vendor specific element */
     pPayload = pdata - MAC_BODY_RESERVE_LENGTH + WNET_LLC_HEADER_LEN;
     /* move the LLC header */
@@ -293,5 +340,4 @@ int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
 
     return 0;                         
 }
-
 

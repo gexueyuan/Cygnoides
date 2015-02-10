@@ -10,6 +10,10 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "gsnr"
+#include "cv_osal_dbg.h"
 
 #include "components.h"
 #include "cv_vam.h"
@@ -26,6 +30,8 @@
 #ifdef GSENSOR_BMA250E
 #include "bma250e.h"
 #endif
+
+#define G (9.80665)
 
 static gsnr_log_level_t gsnr_log_lvl = GSNR_NOTICE;
 
@@ -66,7 +72,8 @@ static void printAcc(gsnr_log_level_t level, char *des, float x, float y, float 
         sprintf(buf[1], "%.6f", y); 
         sprintf(buf[2], "%.6f", z); 
 
-        rt_kprintf("%s(%s, %s, %s)\r\n", des, buf[0], buf[1], buf[2]);
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s(%s, %s, %s)\r\n",\
+                           des, buf[0], buf[1], buf[2]);
     }
 }
 
@@ -84,10 +91,10 @@ void gsnr_write(uint8_t reg, uint8_t data)
 void gsnr_int_config(FunctionalState state)
 {
 #ifdef GSENSOR_BMA250E
-    /* Connect EXTI Line to int1 int2 Pin */
-    EXTI_InitTypeDef EXTI_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
 
+    /* Connect EXTI Line to int1 int2 Pin */
+    EXTI_InitTypeDef EXTI_InitStructure;
 
     SYSCFG_EXTILineConfig(BMA250E_SPI_INT1_EXTI_PORT_SOURCE, BMA250E_SPI_INT1_EXTI_PIN_SOURCE);
     SYSCFG_EXTILineConfig(BMA250E_SPI_INT2_EXTI_PORT_SOURCE, BMA250E_SPI_INT2_EXTI_PIN_SOURCE);
@@ -229,7 +236,8 @@ void GsensorReadAcc(float* pfData)
     for(i=0; i<3; i++)
     {
         temp = ((uint16_t)buffer[2*i+1] << 8) | buffer[2*i];   
-        pfData[i]= pnRawData[i] * 9.80665 * 2 / 32768; //m/s*s 
+        /* 量程2G, 单位转换成m/s2 */
+        pfData[i]= pnRawData[i] * G * 2 / 32768;
         
     }
 #endif
@@ -245,12 +253,12 @@ void GsensorReadAcc(float* pfData)
         temp = (((uint16_t)buffer[2*i+1] << 2) & 1020) | ((buffer[2*i]>>6) & 3);
     	if((temp>>9) == 1)
     	{
-            /* 0.038344 = 3.91/1000 * 9.80665  */
-    		pfData[i] = (0.0 - (511-(temp&511)))*0.038344;  //m/s2
+            /* 0.038344 = 3.91/1000 * 9.80665. 单位由3.91mg -> m/s2  */
+    		pfData[i] = (0.0 - (0x1FF-(temp&0x1FF)))*0.038344;
     	}
     	else
     	{
-    		 pfData[i] = (temp&511)*0.038344;
+    		 pfData[i] = (temp&0x1FF)*0.038344;
     	}
     }
 #endif
@@ -625,7 +633,7 @@ void GsensorDataSave(uint8_t stepflag, GSENSOR_INFO acceV, GSENSOR_INFO acceAhea
 	gsnr_param_set(stepflag, temp_x, temp_y, temp_z, temp1_x, temp1_y, temp1_z);
 }
 
-uint8_t GsensorDataRead(gsnr_param_t *p_gsnr)
+uint8_t GsensorDataRead(gsnr_config_t *p_gsnr)
 {
 	uint8_t flag = 0;
    
@@ -657,7 +665,7 @@ uint8_t GsensorDataRead(gsnr_param_t *p_gsnr)
 	return flag;
 }
 
-static void rt_gsnr_thread_entry(void *parameter)
+static void gsnr_thread_entry(void *parameter)
 {
 	float   pfData[3]={0};
     GsensorReadAcc(pfData);
@@ -684,35 +692,35 @@ static void rt_gsnr_thread_entry(void *parameter)
 		{
 			AcceHandle(g_info);
 		}
-        rt_thread_delay(GSNR_POLL_TIME_INTERVAL);
+        osal_delay(GSNR_POLL_TIME_INTERVAL);
     } 
 }
 
 void gsnr_init()
 {
-    rt_thread_t gsnr_thread;
-        /* load gsnr param from flash */
-	gsnr_param_t *p_gsnr_param = NULL;		
+#ifndef RSU_TEST
+    osal_task_t *gsnr_thread;
+    /* load gsnr param from flash */
+	gsnr_config_t *p_gsnr_param = NULL;		
     p_gsnr_param = &p_cms_param->gsnr;
+
     if(!drv_init)
     {
         gsnr_drv_init();
         drv_init = 1;
     }
-
-
-
+    
     STATIC_ACC_THR = p_gsnr_param->gsnr_cal_thr/10.0f;
     SHARP_SLOWDOWN_THRESOLD = p_gsnr_param->gsnr_ebd_thr/10.0f;
     SHARP_SLOWDOWN_CNT = p_gsnr_param->gsnr_ebd_cnt;
 
     drivint_step = GsensorDataRead(p_gsnr_param);
         
-    gsnr_thread = rt_thread_create("t-gsnr",
-                                    rt_gsnr_thread_entry, RT_NULL,
-                                    RT_MEMS_THREAD_STACK_SIZE, RT_MEMS_THREAD_PRIORITY, 20);
-    if (gsnr_thread != RT_NULL) 
-        rt_thread_startup(gsnr_thread);
+    gsnr_thread = osal_task_create("t-gsnr",
+                                    gsnr_thread_entry, RT_NULL,
+                                    RT_MEMS_THREAD_STACK_SIZE, RT_MEMS_THREAD_PRIORITY);
+    osal_assert(gsnr_thread != RT_NULL) 
+#endif
 }
 
 

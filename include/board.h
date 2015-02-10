@@ -21,8 +21,10 @@
 
 //#define HARDWARE_DVB_F401Disco  // STM32F401Disco development board
 //#define HARDWARE_MODULE_V1     
-#define HARDWARE_MODULE_V2
+//#define HARDWARE_MODULE_V2
+//#define HARDWARE_MODULE_WIFI_V1
 
+#define USE_I2S3
 
 /* board configuration */
 // <o> SDCard Driver <1=>SDIO sdcard <0=>SPI MMC card
@@ -42,11 +44,7 @@
 // </e>
 
 // <o> Internal SRAM memory size[Kbytes] <8-64>
-#ifdef HARDWARE_DVB_F401Disco
-#define STM32_SRAM_SIZE         64
-#elif defined(HARDWARE_MODULE_V1)||defined(HARDWARE_MODULE_V2)
 #define STM32_SRAM_SIZE         128
-#endif
 
 #define STM32_SRAM_END          (0x20000000 + STM32_SRAM_SIZE * 1024)
 

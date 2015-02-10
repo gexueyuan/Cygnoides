@@ -13,7 +13,7 @@
 
 #define OSAL_MODULE_DEBUG
 #define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
-#define MODULE_NAME "vam"
+#define MODULE_NAME "vam_util"
 #include "cv_osal_dbg.h"
 OSAL_DEBUG_ENTRY_DEFINE(vam)
 
@@ -31,6 +31,7 @@ OSAL_DEBUG_ENTRY_DEFINE(vam)
 *****************************************************************************/
 
 #define EARTH_RADIUS  6371.004
+#define PI 3.1415926
 #define RAD(d) ((d)*PI/180.0)
 
 
@@ -210,7 +211,7 @@ double vsm_get_relative_pos_immediate(vam_stastatus_t *p_src, uint8_t *payload)
 	
 		p_bsm = (rcp_msg_basic_safty_t *)payload;
 
-		p_dest.timestamp = p_bsm->header.dsecond;
+		p_dest.timestamp = p_bsm->dsecond;
 
 		p_dest.pos.lon = decode_longtitude(p_bsm->position.lon);
 		p_dest.pos.lat = decode_latitude(p_bsm->position.lat);
@@ -391,5 +392,59 @@ int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest)
 		return -1;
 	else return 1;
 	
+}
+
+
+/* calculate the real time current value */
+int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
+{
+    double deltaT = 0.0;
+    double v, s, dR;
+    double dir, lon1, lat1, lon2, lat2; /* Radians */
+  	uint32_t t = osal_get_systemtime();
+    
+	  if(!last || !current)
+    {
+        return -1;
+    }
+
+    deltaT = ((t>=last->time) ? (t-last->time) : \
+             (t+RT_UINT32_MAX - last->time)) / 1000.0;
+
+    memcpy(current, last, sizeof(vam_stastatus_t));
+    if(deltaT == 0)
+    {
+        return 0;
+    }
+    
+    /* deltaT != 0, the calculate the "current" value */
+    lon1 = RAD((double)last->pos.lon);
+    lat1 = RAD((double)last->pos.lat);
+    dir = RAD((double)last->dir);
+    
+    /* uniform rectilinear motion */ 
+    v = last->speed / 3.6f;
+    s = v*deltaT; 
+    
+	/* lat2 = asin( sin lat1 * cos dR + cos lat1 * sin dR * cos ¦È )
+    lon2 = lon1 + atan2( sin ¦È * sin dR * cos lat1, cos dR- sin lat1 * sin lat2 )
+    where lat is latitude, lon is longitude, ¦Èis the bearing (clockwise from north), 
+    dR is the angular distance d/R; d being the distance travelled, R the earth¡¯s radius */
+    dR = s / EARTH_RADIUS / 1000.0;
+    lat2 = asin(sin(lat1)*cos(dR) + cos(lat1)*sin(dR)*cos(dir));
+    lon2 = lon1 + atan2(sin(dir)*sin(dR)*cos(lat1), cos(dR)-sin(lat1)*sin(lat2));
+
+    current->time = t;
+    current->dir = dir * 180.0 / PI;
+    current->speed = v*3.6;
+    current->pos.lon = lon2 * 180.0 / PI;
+    current->pos.lat = lat2 * 180.0 / PI;
+#if 0
+    char buf[100];
+    sprintf(buf, "(lon=%f,lat=%f),h=%f,d=%f,s=%f,v=%f", current->pos.lon, current->pos.lat, current->dir, 
+                                      vsm_get_relative_pos(last, current, 0), s, v);
+    rt_kprintf("c%d%s\r\n", t, buf);
+#endif
+    return 0;
 }
 

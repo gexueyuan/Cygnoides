@@ -16,17 +16,17 @@
 #include "nmea.h"
 #include "cv_rcp.h"
 
+#define VAM_ABS(x)                    (x < 0) ? (-x) : x
+
 /*****************************************************************************
  * definition of micro                                                       *
 *****************************************************************************/
-
-#define PI 3.1415926
-
 #define RCP_TEMP_ID_LEN 4
 #define RCP_MACADR_LEN 8
 
-#define RCP_MSG_ID_BSM   0x02
-#define RCP_MSG_ID_EVAM  0x05
+#define RCP_MSG_ID_BSM   DSRCmsgID_basicSafetyMessage
+#define RCP_MSG_ID_EVAM  DSRCmsgID_emergencyVehicleAlert
+#define RCP_MSG_ID_RSA   DSRCmsgID_roadSideAlert
 
 
 #define BSM_BC_MODE_DISABLE 0
@@ -35,11 +35,14 @@
 
 #define VAM_FLAG_RX           (0x0001)
 #define VAM_FLAG_TX_BSM       (0x0002)
-#define VAM_FLAG_TX_BSM_PAUSE (0x0004)
-#define VAM_FLAG_GPS_FIXED    (0x0008)
+#define VAM_FLAG_TX_BSM_ALERT (0x0004)
+#define VAM_FLAG_TX_BSM_PAUSE (0x0008)
 #define VAM_FLAG_TX_EVAM      (0x0010)
-#define VAM_FLAG_XXX          (0x0020)
+#define VAM_FLAG_GPS_FIXED    (0x0020)
+#define VAM_FLAG_XXX          (0x0040)
 
+/* for test roadside alert */
+#define VAM_FLAG_TX_RSA       (0x0100)
 
 #define VAM_NEIGHBOUR_MAXNUM   (4)  //
 #define VAM_NEIGHBOUR_MAXLIFE  (15)  //unit: second
@@ -49,9 +52,39 @@
 #define VAM_REMOTE_ALERT_MAXLIFE  (5)  //unit: second
 #define VAM_NO_ALERT_EVAM_TX_TIMES (5) //取消所有警告的evam消息发送次数
 
-#define VAM_ALERT_MASK_VBD (0x1)
-#define VAM_ALERT_MASK_EBD (0x2)
 /* END:   Added by wanglei, 2014/8/1 */
+
+
+/* vehicle alert, need to conver to Eventflag when sended by bsm msg */
+typedef enum _VAM_ALERT_MASK {
+    VAM_ALERT_MASK_VBD = 0x01,   /* vehicle break down */
+    VAM_ALERT_MASK_EBD = 0x02,   /* vehicle emergency brake down */
+    VAM_ALERT_MASK_VOT = 0x04,   /* vehicle overturned */
+} E_VAM_ALERT_MASK;
+
+/* roadside alert and eva alert type. need to convert to ITIScode when sended by rsa */
+/* 弯道/交叉口会车危险;
+   特殊道路提示（急弯/隧道/桥梁/十字路口/...）;
+   电子交通标识提示（信号灯/限速/...） */
+
+#define  VAM_RSA_TYPE_2_ITISCODE \
+        xx(0, RSA_TYPE_CROSS_WITH_CARE,     0x1C07) \
+        xx(1, RSA_TYPE_CURVE,               0x1F5A) \
+        xx(2, RSA_TYPE_TUNNEL,              0x2029) \
+        xx(3, RSA_TYPE_BRIDGE,              0x2025) \
+        xx(4, RSA_TYPE_INTERSECTION,        0x1F60) \
+        xx(5, RSA_TYPE_SIGNAL_LIGHT,        0x1D07) \
+        xx(6, RSA_TYPE_SPEED_RESTRICTION,   0x0A04) \
+        xx(7, RSA_TYPE_EMERGENCY_VEHICLE,   0x0704) \
+        xx(8, RSA_TYPE_MAX,                 0x0000) 
+
+typedef enum _VAM_RSA_TYPE
+{
+ #undef  xx
+ #define xx(SEQ, TYPE, ITISCODE) TYPE,
+    VAM_RSA_TYPE_2_ITISCODE
+} E_VAM_RSA_TYPE;
+
 
 enum VAM_EVT{
     VAM_EVT_LOCAL_UPDATE = 0,
@@ -59,6 +92,9 @@ enum VAM_EVT{
     VAM_EVT_PEER_ALARM,
     VAM_EVT_GPS_STATUS,
     VAM_EVT_GSNR_EBD_DETECT, 
+
+    VAM_EVT_RSA_UPDATE, 
+    VAM_EVT_EVA_UPDATE, 
     VAM_EVT_MAX
 };
 
@@ -74,7 +110,7 @@ typedef struct _vam_position{
 }vam_position_t;
 
 typedef float vam_dir_t ;
-typedef float vam_speed_t ;
+typedef float  vam_speed_t ;
 
 typedef struct _vam_acce{
     float lon;
@@ -92,6 +128,7 @@ typedef struct _vam_stastatus{
     float  speed;
     vam_acce_t  acce;
     uint16_t alert_mask;  //bit0-VBD, bit1-EBD;  1-active, 0-cancel; 同evam中alert_mask
+    uint32_t time;  /* This location point corresponding time */
 }vam_stastatus_t;
 
 typedef struct _vam_sta_node{
@@ -113,9 +150,7 @@ typedef struct _vam_config{
         Basic Safty Message TX function:    
     */
     uint8_t bsm_hops; //BSM消息最大跳数；
-
-    uint8_t bsm_boardcast_mode;  /* 0 - disable, 1 - auto, 2 - fixed period */
-    
+    uint8_t bsm_boardcast_mode;  /* 0 - disable, 1 - auto, 2 - fixed period */ 
     uint8_t bsm_boardcast_saftyfactor;  /* 1~10 */
     uint8_t bsm_pause_mode;  /* 0 - disable, 1-tx evam enable, 2-rx evam pause bsm*/
     uint8_t bsm_pause_hold_time;  /* unit:s */
@@ -132,6 +167,7 @@ typedef struct _vam_config{
 
 }vam_config_t;
 
+#if 0
 typedef struct _rcp_rxinfo {
 	uint8_t src[RCP_MACADR_LEN]; //源地址
 	uint8_t hops;  //实际传输转发跳数
@@ -150,6 +186,7 @@ typedef struct _rcp_txinfo {
 	uint8_t datarate; // 发送速率
 	uint8_t txpower; // 发射功率
 }rcp_txinfo_t;
+#endif
 
 
 
@@ -164,14 +201,11 @@ typedef struct _vam_envar{
     vam_config_t working_param;
 
     int flag;
-
     uint16_t bsm_send_period_ticks;
 
-    rcp_msg_basic_safty_t bsm;
-    uint8_t tx_msg_cnt;
-
-    rcp_msg_emergency_vehicle_alert_t evam;
+    uint8_t tx_bsm_msg_cnt;
     uint8_t tx_evam_msg_cnt;
+    uint8_t tx_rsa_msg_cnt;
 
     vam_stastatus_t local;
     vam_sta_node_t remote[VAM_NEIGHBOUR_MAXNUM];
@@ -182,18 +216,28 @@ typedef struct _vam_envar{
     vam_evt_handler evt_handler[VAM_EVT_MAX];
 
     /* os related */
-    rt_thread_t task_vam;
-    rt_mq_t queue_vam;
+    osal_task_t *task_vam;
+    osal_queue_t *queue_vam;
 
     osal_timer_t *timer_send_bsm;
-    rt_timer_t timer_send_evam;
-    rt_timer_t timer_bsm_pause;
-    rt_timer_t timer_gps_life;
-    rt_timer_t timer_neighbour_life;
+    osal_timer_t *timer_send_evam;
+    osal_timer_t *timer_bsm_pause;
+    osal_timer_t *timer_gps_life;
+    osal_timer_t *timer_neighbour_life;
 
-    rt_sem_t sem_sta;
+    osal_timer_t *timer_send_rsa;
+
+    osal_sem_t *sem_sta;
 
 }vam_envar_t;
+
+
+typedef struct _vam_rsa_evt_info {
+    uint16_t event;
+	uint8_t	priority;
+    heading_slice_t head;
+    vam_position_t pos;
+} vam_rsa_evt_info_t;
 
 
 /*****************************************************************************
@@ -207,22 +251,16 @@ void vsm_stop_bsm_broadcast(vam_envar_t *p_vam);
 void vsm_update_bsm_bcast_timer(vam_envar_t *p_vam);
 void vsm_pause_bsm_broadcast(vam_envar_t *p_vam);
 
-rt_err_t vam_add_event_queue(vam_envar_t *p_vam, 
+int vam_add_event_queue(vam_envar_t *p_vam, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
                              uint32_t msg_argc,
                              void    *msg_argv);
-rt_err_t vam_add_event_queue_2(vam_envar_t *p_vam, void *p_msg);
-
-int32_t rcp_send_bsm(vam_envar_t *p_vam);
+int vam_add_event_queue_2(vam_envar_t *p_vam, void *p_msg);
 
 vam_sta_node_t *vam_find_sta(vam_envar_t *p_vam, uint8_t *temporary_id);
 void vam_update_sta(vam_envar_t *p_vam);
 
-int rcp_parse_msg(vam_envar_t *p_vam,
-                  rcp_rxinfo_t *rxinfo, 
-                  uint8_t *databuf, 
-                  uint32_t datalen);
 
 void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len);
 void lip_update_local(t_nmea_rmc *p_rmc, float *p_accu);
@@ -230,23 +268,36 @@ void lip_update_local_acc(float x, float y, float z);
 
 double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest);
 double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,uint8_t vsa_print_en);
-double vsm_get_relative_dir(const vam_stastatus_t *p_src, const vam_stastatus_t *p_dest);
+double vsm_get_relative_dir(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
 int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest);
-double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
+void vsm_start_evam_broadcast(vam_envar_t *p_vam);
+int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current);
+
 
 int32_t vam_start(void);
+int32_t vam_stop(void);
 int32_t vam_set_event_handler(uint32_t evt, vam_evt_handler callback);
 int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en);
-int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastatus_t *remote);
+int32_t vam_get_peer_relative_dir(uint8_t *pid);
 int32_t vam_get_peer_alert_status(uint16_t *alert_mask);
-int32_t vam_active_alert(uint32_t alerttype);
-int32_t vam_cancel_alert(uint32_t alerttype);
-
-int32_t rcp_send_evam(vam_envar_t *p_vam);
-int vam_rcp_recv(rcp_rxinfo_t *rxinfo, uint8_t *databuf, uint32_t datalen);
-void vsm_start_evam_broadcast(vam_envar_t *p_vam);
+int32_t vam_active_alert(uint16_t alert);
+int32_t vam_cancel_alert(uint16_t alert);
 void vam_gsnr_ebd_detected(uint8_t status);
 
+int32_t vam_get_local_status(vam_stastatus_t *local);
+int32_t vam_get_local_current_status(vam_stastatus_t *local);
+
+int32_t vam_get_peer_status(uint8_t *pid, vam_stastatus_t *local);
+int32_t vam_get_peer_current_status(uint8_t *pid, vam_stastatus_t *local);
+
+int vam_rcp_recv(wnet_rxinfo_t *rxinfo, uint8_t *databuf, uint32_t datalen);
+int rcp_parse_msg(vam_envar_t *p_vam,
+                  wnet_rxinfo_t *rxinfo, 
+                  uint8_t *databuf, 
+                  uint32_t datalen);
+int32_t rcp_send_bsm(vam_envar_t *p_vam);
+int32_t rcp_send_evam(vam_envar_t *p_vam);
+int32_t rcp_send_rsa(vam_envar_t *p_vam);
 
 #endif /* __CV_VAM_H__ */
 

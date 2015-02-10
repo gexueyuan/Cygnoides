@@ -3,6 +3,29 @@
 
 #include <board.h>
 
+
+#ifdef USE_I2S3
+#define KEY0_PIN                GPIO_Pin_9  
+#define KEY0_GPIO_PORT          GPIOB      
+#define KEY0_GPIO_CLK           RCC_AHB1Periph_GPIOB
+#else
+#define KEY0_PIN                GPIO_Pin_10  
+#define KEY0_GPIO_PORT          GPIOC      
+#define KEY0_GPIO_CLK           RCC_AHB1Periph_GPIOC
+#endif
+
+#define KEY1_PIN                GPIO_Pin_9  
+#define KEY1_GPIO_PORT          GPIOC      
+#define KEY1_GPIO_CLK           RCC_AHB1Periph_GPIOC
+
+#define KEY2_PIN                GPIO_Pin_2  
+#define KEY2_GPIO_PORT          GPIOC      
+#define KEY2_GPIO_CLK           RCC_AHB1Periph_GPIOC
+
+
+
+
+
 //常规按键处理使用
 #define DEBOUNCE_SHORT_TIME 	3   // 轻触按键消抖时间5（单位：20毫秒）
 #define DEBOUNCE_LONG_TIME  	5  // 长按键时间DEBOUNCE_COUT_FIRST+DEBOUNCE_COUT_INTERVAL*DEBOUNCE_LONG_TIME（单位：10毫秒）
@@ -44,18 +67,15 @@ KEY_STOP  PF10
 KEY_MENU  PF11
 KEY_ENTER PA0  (WKUP)
 */
-#ifdef HARDWARE_MODULE_V1
-#define key_up_GETVALUE()     GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11)
-#define key_down_GETVALUE()   GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_12)
-#elif defined(HARDWARE_MODULE_V2)
-#define key_up_GETVALUE()     GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0)
-#define key_down_GETVALUE()   GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_1)
-#endif
+
+#define key_up_GETVALUE()     GPIO_ReadInputDataBit(KEY0_GPIO_PORT, KEY0_PIN)
+#define key_down_GETVALUE()   GPIO_ReadInputDataBit(KEY1_GPIO_PORT, KEY1_PIN)
+#define key_third_GETVALUE()  GPIO_ReadInputDataBit(KEY2_GPIO_PORT, KEY2_PIN)
 
 static struct rtgui_key *key;
 
-extern int32_t vam_active_alert(uint32_t alerttype);
-extern int32_t vam_cancel_alert(uint32_t alerttype);
+extern int32_t vam_active_alert(uint16_t alert);
+extern int32_t vam_cancel_alert(uint16_t alert);
 
 /* 使用面向对象的方式，将按键所用到的所有元素进行打包 */
 struct rtgui_key

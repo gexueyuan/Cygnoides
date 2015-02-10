@@ -9,20 +9,11 @@ uint32_t L3GD20_TIMEOUT_UserCallback(void)
   return 0;
 }
 
-GPIO_TypeDef* GPIO_PORT[LEDn] = {LED4_GPIO_PORT, LED3_GPIO_PORT, LED5_GPIO_PORT,
-#ifdef HARDWARE_DVB_F401Disco
-                                 LED6_GPIO_PORT
-#endif
+GPIO_TypeDef*  GPIO_PORT[LEDn] = {LED0_GPIO_PORT, LED1_GPIO_PORT, LED2_GPIO_PORT,
+                               };
+const uint16_t GPIO_PIN[LEDn] = {LED0_PIN, LED1_PIN, LED2_PIN,
                                  };
-const uint16_t GPIO_PIN[LEDn] = {LED4_PIN, LED3_PIN, LED5_PIN,
-#ifdef HARDWARE_DVB_F401Disco
-                                 LED6_PIN
-#endif
-                                 };
-const uint32_t GPIO_CLK[LEDn] = {LED4_GPIO_CLK, LED3_GPIO_CLK, LED5_GPIO_CLK,
-#ifdef HARDWARE_DVB_F401Disco
-                                 LED6_GPIO_CLK
-#endif
+const uint32_t GPIO_CLK[LEDn] = {LED0_GPIO_CLK, LED1_GPIO_CLK, LED2_GPIO_CLK,
                                  };
 
 

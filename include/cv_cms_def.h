@@ -16,6 +16,11 @@
 #include "cv_vam.h"
 #include "cv_vsa.h"
 #include "gsensor.h"
+#include "cv_mda.h"
+#include "led.h"
+#include "ili9341.h"
+#include "pt8211.h"
+#include "adpcmc.h"
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -29,12 +34,15 @@
 #define RT_USBEMU_THREAD_PRIORITY	13
 #define RT_USBH_THREAD_PRIORITY		12 //26
 #define RT_SYS_THREAD_PRIORITY		15
-#define RT_VAM_THREAD_PRIORITY		23
-#define RT_VSA_THREAD_PRIORITY		22
+#define RT_VAM_THREAD_PRIORITY		22
+#define RT_VSA_THREAD_PRIORITY		23
+#define RT_MDA_THREAD_PRIORITY		19
 
 #define RT_GPS_THREAD_PRIORITY		21
 #define RT_MEMS_THREAD_PRIORITY		22
 #define RT_HI_THREAD_PRIORITY		25
+#define RT_ADPCM_THREAD_PRIORITY	26
+
 
 #define RT_WNETTX_THREAD_PRIORITY   20
 #define RT_WNETRX_THREAD_PRIORITY   20
@@ -59,6 +67,7 @@
 #define SYS_QUEUE_SIZE 16
 #define VAM_QUEUE_SIZE 16
 #define VSA_QUEUE_SIZE 16
+#define SOUND_MB_SIZE  4 
 
 
 enum SYSTEM_MSG_TYPE{
@@ -151,11 +160,11 @@ typedef struct _cfg_param{
 
     /******************** VSA *********************/
     vsa_config_t vsa;
+    
+	  /**************************************************/
+    gsnr_config_t gsnr;
 
-	/**************************************************/
-	gsnr_param_t gsnr;
-
-	/*********************WNET*************************/
+	  /*********************WNET*************************/
     wnet_config_t wnet;
 	
     /******************** DBG *********************/
@@ -164,13 +173,6 @@ typedef struct _cfg_param{
                  
 }cfg_param_t;
 
-
-typedef struct _led_color{
-
-uint8_t r;
-uint8_t g;
-uint8_t b;
-}led_color_t;
 /** 
     structure of system manager module's environment variable 
 */
@@ -183,7 +185,7 @@ typedef struct _sys_envar{
     uint32_t hi_timer_cnt;
 
     uint32_t led_priority;
-    led_color_t led_color;
+    Led_TypeDef led_color;
     uint16_t led_blink_duration;
     uint16_t led_blink_period;
     uint16_t led_blink_cnt;
@@ -212,12 +214,13 @@ typedef struct _cms_global{
     wnet_envar_t wnet;
 
     sys_envar_t sys;
+    mda_envar_t mda;
 }cms_global_t;
 
 
 static __inline uint16_t cv_ntohs(uint16_t s16)
 {
-	uint16_t ret;
+	uint16_t ret = 0;
 	uint8_t *s, *d;
 
 	#ifdef BIG_ENDIAN	
@@ -235,7 +238,7 @@ static __inline uint16_t cv_ntohs(uint16_t s16)
 
 static __inline uint32_t cv_ntohl(uint32_t l32)
 {
-	uint32_t ret;
+	uint32_t ret = 0;
 	uint8_t *s, *d;
 
 	#ifdef BIG_ENDIAN	

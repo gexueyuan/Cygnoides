@@ -197,6 +197,7 @@ typedef struct _wnet_envar {
  *
  */
 wnet_txbuf_t *wnet_get_txbuf(void);
+void wnet_release_txbuf(wnet_txbuf_t *txbuf);
 void wnet_release_rxbuf(wnet_rxbuf_t *rxbuf);
 int wnet_recv(wnet_rxinfo_t *rxinfo, uint8_t *pdata, uint32_t length);
 int wnet_send(wnet_txinfo_t *txinfo, uint8_t *pdata, uint32_t length);

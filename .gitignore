@@ -75,10 +75,9 @@ $RECYCLE.BIN/
 *.uvopt
 *.dep
 *.sct
-./prj_keil/*
-*.uvproj
 *.GXY
 *.Gexueyuan
 *.lnp
-
-
+prj_si/*
+*.ini
+*.wangyifeng
