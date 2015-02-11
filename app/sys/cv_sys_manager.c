@@ -148,7 +148,7 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){
                 
-			    vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
+			   // vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
                 p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
                 p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
 

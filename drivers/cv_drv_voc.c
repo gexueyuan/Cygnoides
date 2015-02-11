@@ -16,7 +16,8 @@
 #include "assert.h"
 #include "cv_osal.h"
 #include "cv_cms_def.h"
-
+#pragma O3
+#pragma Otime
 #define BUFFERSIZE   4096
 
 short buffer_4k_1[BUFFERSIZE]; 
@@ -130,13 +131,19 @@ adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
     
     adpcm_t audio_pcm;
 
+    uint32_t tick_adpcm_bg,tick_adpcm_fh;
+    
+
     if(channel)
         buffer_tmp = buffer_4k_2;
     else        
         buffer_tmp = buffer_4k_1;
-    
+    tick_adpcm_bg = osal_get_systemtime();
     adpcm_de(src_c,buffer_tmp,sourceFileLen);
+    tick_adpcm_fh = osal_get_systemtime();
 
+
+    rt_kprintf("time of decode is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
     audio_pcm.Addr = (uint32_t)buffer_tmp;
     audio_pcm.Size = 8*sourceFileLen;
 
@@ -176,7 +183,7 @@ void adpcm_play(char* pBuffer, uint32_t Size)
    
    Pt8211_AUDIO_Play((uint16_t *)(audio_pcm.Addr), audio_pcm.Size);
    
-    rt_kprintf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,audio_pcm.Size,channel,audio_pcm.Addr);
+   rt_kprintf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,audio_pcm.Size,channel,audio_pcm.Addr);
    
     channel = ~channel;
 

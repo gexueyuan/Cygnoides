@@ -595,7 +595,7 @@ static void Audio_MAL_Play(uint32_t Addr, uint32_t Size)
   DMA_Cmd(AUDIO_MAL_DMA_STREAM, ENABLE);
   #endif
   fin_flag = 1;
-    rt_kprintf("DMA play!! \n");
+   // rt_kprintf("DMA play!! \n");
 #if 0
   I2S_Cmd(I2S,ENABLE);
 
@@ -702,7 +702,7 @@ void Audio_MAL_IRQHandler(void)
   uint32_t Size = AudioRemSize;
 #endif /* AUDIO_MAL_MODE_NORMAL */
 
-rt_kprintf("come in IRQ\n");
+//rt_kprintf("come in IRQ\n");
 #ifdef AUDIO_MAL_DMA_IT_TC_EN
   /* Transfer complete interrupt */
   if (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC) != RESET)
@@ -747,7 +747,7 @@ rt_kprintf("come in IRQ\n");
 
       fin_flag = 0;
       
-      rt_kprintf("clear flag\n");
+//      rt_kprintf("clear flag\n");
     }
     
  #elif defined(AUDIO_MAL_MODE_CIRCULAR)
@@ -793,7 +793,7 @@ rt_kprintf("come in IRQ\n");
 /* leave interrupt */
 rt_interrupt_leave();
 
-rt_kprintf("come out IRQ\n");
+//rt_kprintf("come out IRQ\n");
 
 }
 

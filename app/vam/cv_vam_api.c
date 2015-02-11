@@ -186,7 +186,7 @@ int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en)
 }
 
 
-
+#if 0
 int32_t vam_get_peer_relative_dir(uint8_t *pid)
 {
     vam_envar_t *p_vam = p_vam_envar;
@@ -215,7 +215,24 @@ int32_t vam_get_peer_relative_dir(uint8_t *pid)
 
     return r;
 }
+#endif
+#if 1
+int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastatus_t *remote)
+{
+    int32_t delta, r;
 
+    delta = (int32_t)vsm_get_relative_dir(local,remote);
+
+    if ((delta <= 10)||(local->speed < 1.0f)||(remote->speed < 1.0f)){
+        r = 1;
+    }
+    else{
+        r = -1;
+    }
+
+    return r;
+}
+#endif
 
 int32_t vam_get_peer_relative_speed(uint8_t *pid)
 {

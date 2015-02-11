@@ -144,6 +144,7 @@ void  timer_preprocess_pos_callback( void *neighbour_info )
     vsa_position_node_t *p_pnt = NULL;
     double temp_dis;
     int8_t i = 0;
+    static uint8_t send_flag = 1;
 
     if(!list_empty(&p_vam->neighbour_list)){
         
@@ -186,13 +187,15 @@ void  timer_preprocess_pos_callback( void *neighbour_info )
 
         if (p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
                 (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);
+                //send_flag = 1;
             }
         }
     else {
-           if(p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
-               (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(NULL);
-            }
-            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "no neighour exist!");
+          // if(send_flag){
+            //   (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(NULL);
+            //   send_flag = 0;
+           // }
+           // OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "no neighour exist!");
     }
 }
 
@@ -971,7 +974,11 @@ void vsa_init()
 
     p_vsa->timer_position_prepro = osal_timer_create("tm-pos",\
         timer_preprocess_pos_callback,NULL,VSA_POS_PERIOD,RT_TIMER_FLAG_PERIODIC);
+   // osal_timer_start(p_vsa->timer_position_prepro);
     osal_assert(p_vsa->timer_position_prepro != NULL);
+
+    p_vsa->mb_sound = rt_mb_create("mb-sound",SOUND_MB_SIZE,RT_IPC_FLAG_FIFO);
+    RT_ASSERT(p_vsa->mb_sound != RT_NULL);
 
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
                              

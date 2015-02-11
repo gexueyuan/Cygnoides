@@ -45,7 +45,7 @@ extern int rt_key_init(void);
 extern void mda_init(void);
 extern void Pt8211_AUDIO_Init(uint32_t AudioFreq);
 extern void adpcm_init(void);
-
+extern void cpu_usage_init(void);
 cms_global_t cms_envar, *p_cms_envar;
 
 
@@ -76,6 +76,7 @@ void rt_init_thread_entry(void *parameter)
     gsnr_init();
     Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
     adpcm_init();
+    cpu_usage_init();
     //EVAL_AUDIO_Init(4,100, I2S_AudioFreq_16k);
     //quit...
 }

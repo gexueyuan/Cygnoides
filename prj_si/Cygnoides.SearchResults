@@ -1,12 +1,10 @@
----- timer_send_bsm Matches (11 in 3 files) ----
-Cv_vam.h (include):    rt_timer_t timer_send_bsm;
-Cv_vam_main.c (app\vam):    p_vam->timer_send_bsm = rt_timer_create("tm-sb",timer_send_bsm_callback,p_vam,\
-Cv_vam_main.c (app\vam):    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
-Cv_vam_main.c (app\vam):    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
-Cv_vam_main.c (app\vam):    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
-Cv_vam_main.c (app\vam):    RT_ASSERT(p_vam->timer_send_bsm != RT_NULL);
-Cv_vam_vsm.c (app\vam)://rt_timer_t timer_send_bsm;
-Cv_vam_vsm.c (app\vam):    rt_timer_control(p_vam->timer_send_bsm, RT_TIMER_CTRL_SET_TIME, &p_vam->bsm_send_period_ticks);
-Cv_vam_vsm.c (app\vam):    rt_timer_start(p_vam->timer_send_bsm);
-Cv_vam_vsm.c (app\vam):    rt_timer_stop(p_vam->timer_send_bsm);
-Cv_vam_vsm.c (app\vam):            rt_timer_control(p_vam->timer_send_bsm, RT_TIMER_CTRL_SET_TIME, &timeout);
+---- rt_hw_console_output Matches (9 in 2 files) ----
+Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str) __attribute__((weak));
+Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str)
+Kservice.c (os\rtthread\src):__weak void rt_hw_console_output(const char *str)
+Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str)
+Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str)
+Kservice.c (os\rtthread\src):RTM_EXPORT(rt_hw_console_output);
+Kservice.c (os\rtthread\src):        rt_hw_console_output(rt_log_buf);
+Kservice.c (os\rtthread\src):    rt_hw_console_output(rt_log_buf);
+Rthw.h (os\rtthread\include):void rt_hw_console_output(const char *str);
