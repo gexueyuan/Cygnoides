@@ -53,7 +53,7 @@ extern void led_blink(Led_TypeDef led);
 extern int param_set(uint8_t param, int32_t value);
 extern uint32_t Pt8211_AUDIO_Play(uint16_t * pBuffer,uint32_t Size);
 extern const unsigned short AUDIO_SAMPLE[];
-
+extern void cpu_usage_get(rt_uint8_t *major, rt_uint8_t *minor);
 
 
 void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length)
@@ -148,11 +148,11 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){
                 
-			   // vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
-                p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
-                p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
+			    vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
+                //p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
+               // p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
 
-               rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
+              // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
                 
              //Pt8211_AUDIO_Play((uint16_t*)(AUDIO_SAMPLE), bibi_front_16k_8bitsLen);
@@ -293,6 +293,17 @@ void timer_out_vsa_process(void* parameter)
 	rt_timer_control(p_cms_envar->sys.timer_voc,RT_TIMER_CTRL_SET_TIME,(void*)&timevalue);
 }
 
+#if 0
+void timer_out_cpuusage(void* parameter)
+{
+	uint8_t cpuusage_maj,cpuusage_min;
+	
+	cpu_usage_get(&cpuusage_maj,&cpuusage_min);
+
+	rt_kprintf("cpu usage = %d%\n",cpuusage_maj);
+	
+}
+#endif
 void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
     if (p_msg->id == SYS_MSG_HI_OUT_UPDATE){
@@ -602,6 +613,13 @@ void sys_init(void)
         1,RT_TIMER_FLAG_PERIODIC); 					
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
+#if 0
+    p_sys->timer_cpuusage= rt_timer_create("tm-cpuusage",timer_out_cpuusage,NULL,\
+    SECOND_TO_TICK(3),RT_TIMER_FLAG_PERIODIC|RT_TIMER_FLAG_SOFT_TIMER); 					
+    RT_ASSERT(p_sys->timer_cpuusage != RT_NULL);
+
+    rt_timer_start(p_sys->timer_cpuusage);
+#endif
 #if 0
     p_sys->timer_crd= rt_timer_create("tm-crd",timer_out_crd_process,p_vsa,\
         HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_ONE_SHOT); 					

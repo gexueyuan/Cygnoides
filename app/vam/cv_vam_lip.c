@@ -19,6 +19,7 @@ void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len)
 
 rt_bool_t lip_rmc_valid_check(t_nmea_rmc *p_rmc, rt_tick_t t)
 {
+#if 0 //TBD. 定位后才需要检查合法性
     vam_envar_t *p_vam = &p_cms_envar->vam;
     vam_position_t temp;
     float s1, v1, v2;
@@ -48,7 +49,7 @@ rt_bool_t lip_rmc_valid_check(t_nmea_rmc *p_rmc, rt_tick_t t)
         return RT_FALSE;
     }
 
-   
+ #endif  
     return RT_TRUE;
 }
 

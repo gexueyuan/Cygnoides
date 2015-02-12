@@ -184,12 +184,22 @@ void vam_init(void)
 {
     int i;
     vam_envar_t *p_vam = &p_cms_envar->vam;
+    uint8_t zero_pid[RCP_TEMP_ID_LEN] = {0};
 
     p_vam_envar = p_vam;
     
     memset(p_vam, 0, sizeof(vam_envar_t));
     memcpy(&p_vam->working_param, &p_cms_param->vam, sizeof(vam_config_t));
-    memcpy(p_vam->local.pid, p_cms_param->pid, RCP_TEMP_ID_LEN);
+    if (0 == memcmp(p_cms_param->pid, zero_pid, RCP_TEMP_ID_LEN)){
+        for (i=0; i<RCP_TEMP_ID_LEN; i++){
+            p_vam->local.pid[i] = des(RCP_TEMP_ID_LEN-1-i);
+        }
+    }
+    else {
+        memcpy(p_vam->local.pid, p_cms_param->pid, RCP_TEMP_ID_LEN);
+    }
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "PID: %02x %02x %02x %02x\r\n", \
+        p_vam->local.pid[0], p_vam->local.pid[1], p_vam->local.pid[2], p_vam->local.pid[3]);
 
     INIT_LIST_HEAD(&p_vam->neighbour_list);
     INIT_LIST_HEAD(&p_vam->sta_free_list);

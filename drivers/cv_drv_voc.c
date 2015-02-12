@@ -9,15 +9,19 @@
            2015-1-30    gexueyuan    Created file
            ...
 ******************************************************************************/
+#include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "voc"
+#include "cv_osal_dbg.h"
+
     
 #include <stdio.h>
 #include <stdlib.h>
 #include "string.h"
 #include "assert.h"
-#include "cv_osal.h"
 #include "cv_cms_def.h"
-#pragma O3
-#pragma Otime
+
 #define BUFFERSIZE   4096
 
 short buffer_4k_1[BUFFERSIZE]; 
@@ -231,5 +235,3 @@ void adpcm_init(void)
     rt_kprintf("adpcm inited!!\n\n");
 
 }
-
-

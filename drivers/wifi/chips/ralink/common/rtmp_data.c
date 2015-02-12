@@ -42,7 +42,8 @@ UCHAR *DbgRxFilterAddrTable[] = {
     "\x00\x11\x22\x2f\x00\x1d",
     "\x00\x11\x22\x35\x00\x34",
     #elif defined(WANGLEI)
-    // add...
+    "\x00\x11\x22\x24\x00\x1e",
+    "\x00\x11\x22\x2d\x00\x1e",
     #elif defined(GEXUEYUAN)
     
     #endif
@@ -60,15 +61,11 @@ VOID STARxDoneInterruptHandle(
     IN PUCHAR        pData,
     IN ULONG         RxBufferLength)
 {
-    PRXWI_STRUC pRxWI;
+    PRXWI_STRUC    pRxWI;
+    PRXINFO_STRUC  pRxD;
     PHEADER_802_11 pHeader;
     PUCHAR pRxPacket;
     ULONG ThisFrameLen;
-
-    #ifdef WIFI_ATE_MODE
-    ate_rx_frame();
-    return;
-    #endif
 
     /* The RXDMA field is 4 bytes, now just use the first 2 bytes. The Length including the (RXWI + MSDU + Padding)*/
     ThisFrameLen = *pData + (*(pData+1)<<8);
@@ -93,15 +90,19 @@ VOID STARxDoneInterruptHandle(
     pRxWI = (PRXWI_STRUC)pData;
 
     if (pRxWI->MPDUtotalByteCount > ThisFrameLen) {
-        DBGPRINT(RT_DEBUG_ERROR, "%s():pRxWIMPDUtotalByteCount(%d) large than RxDMALen(%ld)\n", 
-                                    __FUNCTION__, pRxWI->MPDUtotalByteCount, ThisFrameLen);
+        DBGPRINT(RT_DEBUG_TRACE, "pRxWIMPDUtotalByteCount(%d) large than RxDMALen(%ld)\n", 
+                                  pRxWI->MPDUtotalByteCount, ThisFrameLen);
         return;
     }
 
-    /* get rx data buffer */
-    pRxWI = (PRXWI_STRUC) pData;
     if (pRxWI->MPDUtotalByteCount < sizeof(HEADER_802_11)) {
         DBGPRINT(RT_DEBUG_TRACE, "FrameLen(0x%lx) is less than mac802.11 header\n");
+        return;
+    }
+
+    pRxD = (PRXINFO_STRUC)(pData + ThisFrameLen);
+    if (pRxD->Crc) {
+        DBGPRINT(RT_DEBUG_TRACE, "Crc error\n");
         return;
     }
 
@@ -164,7 +165,6 @@ VOID STARxDoneInterruptHandle(
                memcpy(pPayload, pRxPacket, 8);
 
                wnet_recv(&rxinfo, pPayload, (UINT32)ElementLen+8);
-               osal_printf(":"); /* Indicate RX is in process, for debug only */
                break;
             }
             pPayload += ElementLen;
@@ -178,11 +178,23 @@ VOID    RTUSBBulkReceive(
     UCHAR *pData, 
     INT Length)
 {
+    #ifdef WIFI_ATE_MODE
+    ate_rx_frame((PRTMP_ADAPTER)pAd, pData, Length);
+    #else
     STARxDoneInterruptHandle((PRTMP_ADAPTER)pAd, pData, Length);
+    usb_bulkin(((PRTMP_ADAPTER)pAd)->pUsb_Dev);
+    #endif
 }
 
-
-
+VOID    RTUSBBulkSendDone(
+    IN    PVOID    pAd)
+{
+    #ifdef WIFI_ATE_MODE
+    ate_tx_complete();
+    #else
+    wnet_send_complete();
+    #endif
+}
 
 /*
     Must be run in Interrupt context
@@ -335,8 +347,6 @@ int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
 
     MlmeHardTransmitMgmt(pAd, 0, (PUCHAR)pHeader_802_11, \
                          length-WNET_LLC_HEADER_LEN+MAC_BODY_RESERVE_LENGTH+MAC_HEADER_LENGTH);
-
-    osal_printf("."); /* Indicate TX is in process, for debug only */
 
     return 0;                         
 }

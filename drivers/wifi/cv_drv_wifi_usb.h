@@ -117,7 +117,7 @@ extern wifi_usb_adapter_t wifi_usb_adapter;
 int usb_control_msg(void *hostspecific, unsigned int pipe, u8 request, u8 requesttype, u16 value,
     u16 index, void *data, u16 size, int timeout);
 int usb_bulkout (void *HostSpecific, void *pData, unsigned int Length);
-int usb_bulkin(wifi_usb_adapter_t *adapter);
+int usb_bulkin(void *HostSpecific);
 
 
 #endif /* __USB_NOSWIFI_H_100756__ */

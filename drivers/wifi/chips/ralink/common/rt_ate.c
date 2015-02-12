@@ -14,11 +14,15 @@
 #include "components.h"
 #include "cv_wnet.h"
 
-#ifdef WIFI_ATE_MODE
-
 extern RTMP_ADAPTER rtmp_adapter;
 extern CHAR system_eeprom_data[];
 extern rt_mq_t queue_usbm;
+
+extern int drv_wifi_mac_header_len(void);
+extern int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length);
+extern VOID RTMPReadChannelPwr(IN PRTMP_ADAPTER pAd);
+
+#ifdef WIFI_ATE_MODE
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -32,7 +36,6 @@ __align(4) UCHAR ate_tx_data[128];
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
-VOID ate_rx_stop(VOID);
 
 VOID ate_tx_frame(VOID)
 {
@@ -51,29 +54,85 @@ VOID ate_tx_complete(VOID)
     }
 }
 
-VOID ate_rx_frame(VOID)
+VOID ate_rx_stop(VOID)
 {
     if (ate_rx_enable){
-        ate_rx_count++;
-
-        if (ate_rx_count < 10){ /* for indicate RX's error  */
-           rt_kprintf(":");
-        }
+        UINT correct_ratio;
+        ate_rx_enable = FALSE;
         
-        if (ate_rx_count >= ate_rx_total_count){
-           rt_kprintf("Rx test is interrupt because the TX frame is too much.\n");
-           rt_kprintf("Please set the right @TotalCount.\n");
-           ate_rx_stop();
-        }
+        correct_ratio = ate_rx_count*100/ate_rx_total_count;
+
+        rt_kprintf("Actual rx:count=%d, correct=%d%%.\n\n", \
+            ate_rx_count, correct_ratio);
     }
 }
 
-VOID _ate_rx_start(UCHAR Channel, UINT TotalCount)
+VOID ate_rx_frame(PRTMP_ADAPTER pAd, PUCHAR pData, ULONG RxBufferLength)
+{
+    PRXINFO_STRUC  pRxD;
+    ULONG ThisFrameLen;
+    BOOLEAN Stoped = 0;
+
+    if (!ate_rx_enable){
+        return;
+    }
+
+    ThisFrameLen = *pData + (*(pData+1)<<8);
+    if ((ThisFrameLen == 0)||((ThisFrameLen&0x3) != 0)) {        
+         goto exit;
+    }   
+
+    if ((ThisFrameLen + 8)> RxBufferLength) {
+         goto exit;
+    }
+
+    pRxD = (PRXINFO_STRUC)(pData + RT2870_RXDMALEN_FIELD_SIZE + ThisFrameLen);
+
+    if (pRxD->Crc) {
+        //rt_kprintf("Crc Error\n");
+        goto exit;
+    }
+
+    if (++ate_rx_count >= ate_rx_total_count) {
+       rt_kprintf("Rx test is interrupt because the TX frame is too much.\n");
+       rt_kprintf("Please set the right @TotalCount.\n");
+       ate_rx_stop();
+       Stoped = 1;
+    }
+
+exit:
+    if (!Stoped) {
+        usb_bulkin(pAd->pUsb_Dev);
+    }
+}
+
+VOID ate_tx(UCHAR Channel, UCHAR Rate, UCHAR Power)
+{   
+    PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)&rtmp_adapter;
+    if(!ate_tx_enable){
+        rt_kprintf("Channel=%d, Rate=%d, Power=%d.\n", \
+            Channel, Rate, Power);
+
+        pAd->CommonCfg.TxRate = Rate;
+        memset(&system_eeprom_data[EEPROM_G_TX_PWR_OFFSET], Power, 56);
+        
+        RTMPReadChannelPwr(pAd);
+    	AsicSwitchChannel(pAd, Channel, TRUE);
+
+        ate_tx_enable = TRUE;
+        ate_tx_frame();
+    }
+}
+FINSH_FUNCTION_EXPORT(ate_tx, @Channel:@Rate:@Power);
+
+VOID ate_rx(UCHAR Channel, UINT TotalCount, UCHAR LNAGain)
 {
     PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)&rtmp_adapter;
     if(!ate_rx_enable){
-        rt_kprintf("Channel=%d, TotalCount=%d.\n", \
-            Channel, TotalCount);
+        rt_kprintf("Channel=%d, TotalCount=%d, LNAGain=%d.\n", \
+            Channel, TotalCount, LNAGain);
+
+        pAd->BLNAGain = LNAGain;
 
         if ((Channel>=1)&&(Channel<=14)){
             pAd->CommonCfg.Channel = Channel;
@@ -83,85 +142,38 @@ VOID _ate_rx_start(UCHAR Channel, UINT TotalCount)
         ate_rx_total_count = TotalCount;
         ate_rx_count = 0;
         ate_rx_enable = TRUE;
+
+        usb_bulkin(pAd->pUsb_Dev);
     }
+
 }
+FINSH_FUNCTION_EXPORT(ate_rx, @Channel:@TotalCount:@LNAGain);
 
-VOID ate_tx_start(UCHAR Channel, UCHAR Rate, UCHAR Power)
-{   
-    PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)&rtmp_adapter;
-    if(!ate_tx_enable){
-        rt_kprintf("Channel=%d, Rate=%d, Power=%d.\n", \
-            Channel, Rate, Power);
-
-        pAd->CommonCfg.TxRate = Rate;
-        memset(&system_eeprom_data[EEPROM_G_TX_PWR_OFFSET], Power, 28);
-        
-        RTMPReadChannelPwr(pAd);
-    	AsicSwitchChannel(pAd, Channel, TRUE);
-
-        ate_tx_enable = TRUE;
-        ate_tx_frame();
-    }
-}
-FINSH_FUNCTION_EXPORT(ate_tx_start, @Channel:Rate:Power);
-
-
-VOID ate_tx_stop(VOID)
+VOID ate_stop(VOID)
 {
     if (ate_tx_enable){
         ate_tx_enable = FALSE;
     }
-}
-FINSH_FUNCTION_EXPORT(ate_tx_stop, @none);
 
-
-//VOID ate_rx_start(UCHAR Channel, UINT TotalCount)
-VOID ate_rx_start(UCHAR Channel, UINT TotalCount)
-{
-#if 0
-    rt_err_t err = RT_ENOMEM;
-    sys_msg_t msg;
-//    UCHAR Channel=6;
-//    UINT TotalCount = 10000;
-    
-
-    if ((Channel<1)||(Channel>14)){
-        rt_kprintf("Channel=%d is invalid, [1~14] is allowed.\n", Channel);
-        return;
-    }
-
-    if (TotalCount > 65535){
-        rt_kprintf("TotalCount=%d is invalid, [1~65535] is allowed.\n", TotalCount);
-        return;
-    }
-
-    msg.id = ATE_MSG_RX_START;
-    msg.argc = (Channel<<16) + (TotalCount&0xFFFF);
-    err = rt_mq_send(queue_usbm, &msg, sizeof(sys_msg_t));
-    if (err != RT_EOK){
-        rt_kprintf("%s: failed=[%d], msg=%04x\n", __FUNCTION__, err, msg.id);
-    }
-#else
-    _ate_rx_start(Channel, TotalCount);
-#endif
-}
-FINSH_FUNCTION_EXPORT(ate_rx_start, @Channel:TotalCount);
-
-
-VOID ate_rx_stop(VOID)
-{
-    UINT correct_ratio;
-    
     if (ate_rx_enable){
-        ate_rx_enable = FALSE;
-        
-        correct_ratio = ate_rx_count*100/ate_rx_total_count;
-
-        rt_kprintf("Actual rx:count=%d, correct=%d%%.\n\n", \
-            ate_rx_count, correct_ratio);
+        ate_rx_stop();
     }
 }
-FINSH_FUNCTION_EXPORT(ate_rx_stop, @none);
+FINSH_FUNCTION_EXPORT(ate_stop, Stop tx/rx test);
+
+#if 0
+UCHAR ate_macaddr[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+VOID ate_setaddr(UCHAR addr0, UCHAR addr1, UCHAR addr2, UCHAR addr3, UCHAR addr4, UCHAR addr5)
+{
+    ate_macaddr[0] = addr5;
+    ate_macaddr[1] = addr4;
+    ate_macaddr[2] = addr3;
+    ate_macaddr[3] = addr2;
+    ate_macaddr[4] = addr1;
+    ate_macaddr[5] = addr0;
+}
+FINSH_FUNCTION_EXPORT(ate_setaddr, Set mac address for ATE);
+#endif
 
 #endif
 

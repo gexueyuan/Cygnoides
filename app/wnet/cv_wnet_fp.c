@@ -21,6 +21,39 @@
 #include "cv_wnet.h"
 
 
+int wnet_dbg_trx_all = 0;
+int wnet_dbg_rx_actual = 0;
+int wnet_dbg_rx_fresh = 0;
+int wnet_dbg_cacul_peroid = 10;  /* unit: second */
+int wnet_dbg_cacul_cnt = 0;
+extern double rcp_dbg_distance;
+
+void test_comm(void)
+{
+    int rx_ratio;
+
+    if (wnet_dbg_rx_fresh > 0) {
+        if(wnet_dbg_rx_fresh > 1){
+            osal_printf("\b");
+        }
+        do {
+            osal_printf(".");
+        } while ((--wnet_dbg_rx_fresh > 0));
+        wnet_dbg_rx_fresh = 0;
+    }
+    else {
+        osal_printf(" ");
+    }
+
+    if (++wnet_dbg_cacul_cnt >= wnet_dbg_cacul_peroid*10) {
+        rx_ratio = wnet_dbg_rx_actual*100/wnet_dbg_cacul_cnt;
+        osal_printf("\n[RX] Max=%d Act=%d Ratio=%d%% dis=%d\n", wnet_dbg_cacul_cnt,\
+                    wnet_dbg_rx_actual, rx_ratio, (int)rcp_dbg_distance);
+
+        wnet_dbg_cacul_cnt = 0;
+        wnet_dbg_rx_actual = 0;
+    }
+}
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -250,11 +283,15 @@ int wnet_send(wnet_txinfo_t *txinfo, uint8_t *pdata, uint32_t length)
         break;
     }
 
+    test_comm();
     return r;
 }
 
 int wnet_recv(wnet_rxinfo_t *rxinfo, uint8_t *pdata, uint32_t length)
 {
+    wnet_dbg_rx_fresh++;
+    wnet_dbg_rx_actual++;
+    //osal_printf(" "); /* Indicate RX is in process, for debug only */
     return fp_recv(p_wnet_envar, rxinfo, pdata, length);
 }
 

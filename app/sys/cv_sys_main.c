@@ -60,7 +60,7 @@ void rt_init_thread_entry(void *parameter)
 {
     global_init();
     param_init();
-
+    cpu_usage_init();
     gps_init();
   	nmea_init();
     //voc_init();
@@ -76,7 +76,6 @@ void rt_init_thread_entry(void *parameter)
     gsnr_init();
     Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
     adpcm_init();
-    cpu_usage_init();
     //EVAL_AUDIO_Init(4,100, I2S_AudioFreq_16k);
     //quit...
 }

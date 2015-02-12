@@ -200,7 +200,7 @@ typedef struct _sys_envar{
 
     rt_timer_t timer_hi;
     rt_timer_t timer_voc;
-	//rt_timer_t timer_gps;
+	rt_timer_t timer_cpuusage;
     
 }sys_envar_t;
 

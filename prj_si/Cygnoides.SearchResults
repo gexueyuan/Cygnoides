@@ -1,10 +1,9 @@
----- rt_hw_console_output Matches (9 in 2 files) ----
-Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str) __attribute__((weak));
-Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str)
-Kservice.c (os\rtthread\src):__weak void rt_hw_console_output(const char *str)
-Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str)
-Kservice.c (os\rtthread\src):void rt_hw_console_output(const char *str)
-Kservice.c (os\rtthread\src):RTM_EXPORT(rt_hw_console_output);
-Kservice.c (os\rtthread\src):        rt_hw_console_output(rt_log_buf);
-Kservice.c (os\rtthread\src):    rt_hw_console_output(rt_log_buf);
-Rthw.h (os\rtthread\include):void rt_hw_console_output(const char *str);
+---- getDistanceVer2 Matches (8 in 2 files) ----
+Cv_vam_util.c (app\vam):double getDistanceVer2(double lat1, double lng1, double lat2, double lng2)
+Cv_vam_util.c (app\vam):    d *= getDistanceVer2(p_src->lat, p_src->lon, p_dest->lat, p_dest->lon);
+Cv_vam_util.c (app\vam):    distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
+Cv_vam_util.c (app\vam):    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
+Cv_vam_util.c (app\vam):    distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
+Cv_vam_util.c (app\vam):    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
+Cv_vsa_main.c (app\vsa):    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
+Cv_vsa_main.c (app\vsa):            temp_dis = getDistanceVer2((double)p_vam->local.pos.lat,(double)p_vam->local.pos.lon,

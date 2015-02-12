@@ -490,6 +490,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\wnet\cv_wnet_dsmp.c</FilePath>
             </File>
+            <File>
+              <FileName>cv_cpuusage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\vsa\cv_cpuusage.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1462,6 +1467,11 @@
               <FileName>cv_wnet_dsmp.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\wnet\cv_wnet_dsmp.c</FilePath>
+            </File>
+            <File>
+              <FileName>cv_cpuusage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\vsa\cv_cpuusage.c</FilePath>
             </File>
           </Files>
         </Group>

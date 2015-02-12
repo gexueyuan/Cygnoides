@@ -11,7 +11,7 @@
 ******************************************************************************/
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
 #define MODULE_NAME "mda"
 #include "cv_osal_dbg.h"
 
@@ -247,7 +247,7 @@ static void timer_rx_history_callback(void* parameter)
     p_mda->flag_history_timeout = TRUE;
 }
 
-static void thread_entry_mda(void *parameter)
+static void mda_thread_entry(void *parameter)
 {
     int err;
     mda_envar_t *p_mda = (mda_envar_t *)parameter;
@@ -280,7 +280,7 @@ void mda_init(void)
 
     /* os object for mda */
 	p_mda->task_mda = osal_task_create("t-mda",
-                           thread_entry_mda, p_mda,
+                           mda_thread_entry, p_mda,
                            RT_THREAD_STACK_SIZE, RT_MDA_THREAD_PRIORITY);
     osal_assert(p_mda->task_mda != RT_NULL)
 
@@ -325,8 +325,8 @@ int mda_handle(mda_envar_t *p_mda,
     wnet_txbuf_t *txbuf;
     vam_stastatus_t *p_local = &(p_vam_envar->local);
 
-    if (src_sta->left_hops < 1 && !memcmp(src_sta->temorary_id, p_local->pid, MDA_TEMP_ID_LEN) ) {
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "No need to forward\n");
+    if ((src_sta->left_hops < 1) || (0 == memcmp(src_sta->temorary_id, p_local->pid, MDA_TEMP_ID_LEN) )) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "No need to forward\n");
         return -1;
     }
 

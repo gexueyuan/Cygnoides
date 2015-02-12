@@ -32,6 +32,8 @@ itis_codes_t itiscode[RSA_TYPE_MAX+1] =
     VAM_RSA_TYPE_2_ITISCODE
 };
 
+double rcp_dbg_distance = 0;
+
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -203,13 +205,15 @@ int rcp_mda_process(uint8_t msg_hops,
 {
     mda_msg_info_t src;
     mda_envar_t * p_mda;
+    int ret;
 
     p_mda = &p_cms_envar->mda;
     src.left_hops = msg_hops - 1;
     src.msg_count = msg_count;
     memcpy(src.temorary_id, p_temp_id, RCP_TEMP_ID_LEN);
     
-    return mda_handle(p_mda, &src, NULL, data, datalen);
+    ret = mda_handle(p_mda, &src, NULL, data, datalen);
+    return ret;
 }
 
 /* END:   Added by wanglei, 2015/1/4 */
@@ -226,7 +230,7 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
 {
     vam_sta_node_t *p_sta;
     rcp_msg_basic_safty_t *p_bsm;
-    uint16_t alert_mask;
+    uint16_t alert_mask;  
 
     if (datalen < (sizeof(rcp_msg_basic_safty_t) - sizeof(vehicle_safety_ext_t))){
         return -1;
@@ -263,6 +267,8 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
         p_sta->s.acce.yaw = decode_acce_yaw(p_bsm->motion.acce.yaw);
 
         //dump_pos(&p_sta->s);
+        /* for test  */
+        rcp_dbg_distance = vsm_get_distance(&p_vam->local.pos, &p_sta->s.pos); 
 
         if (p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
             (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);

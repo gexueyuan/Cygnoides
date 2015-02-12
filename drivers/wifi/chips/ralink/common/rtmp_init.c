@@ -1669,6 +1669,14 @@ VOID    UserCfgInit(
     pAd->CommonCfg.Channel = p_cfg->channel;
     pAd->CommonCfg.TxRate = p_cfg->txrate;
 
+    #ifdef WIFI_ATE_MODE
+    pAd->CommonCfg.MacAddr[0] = 0x00;
+    pAd->CommonCfg.MacAddr[1] = 0x00;
+    pAd->CommonCfg.MacAddr[2] = 0x00;
+    pAd->CommonCfg.MacAddr[3] = 0x00;
+    pAd->CommonCfg.MacAddr[4] = 0x00;
+    pAd->CommonCfg.MacAddr[5] = 0x00;
+    #else
     /* Mac address is bind to the CPU's unique ID */
     pAd->CommonCfg.MacAddr[0] = 0x00;
     pAd->CommonCfg.MacAddr[1] = 0x11;
@@ -1676,6 +1684,7 @@ VOID    UserCfgInit(
     pAd->CommonCfg.MacAddr[3] = des(2);
     pAd->CommonCfg.MacAddr[4] = des(1);
     pAd->CommonCfg.MacAddr[5] = des(0);
+    #endif
 }
 /*
     ========================================================================
@@ -2193,18 +2202,17 @@ void rt28xx_init(PRTMP_ADAPTER pAd)
 
     DBGPRINT(RT_DEBUG_INFO, "rt28xx Initialized success\n");
 
-    #ifdef WIFI_TEST_MODE
+    #ifdef WIFI_ATE_MODE
     DBGPRINT(RT_DEBUG_INFO, "!NOTICE!!ATE MODE IS RUNNING!\n");
-    #endif
-
+    #else
     #ifndef NDEBUG
     {
         extern UCHAR *DbgRxFilterAddrTable[];
 
         if (DbgRxFilterAddrTable[0]) {
             int i;
-            DBGPRINT(RT_DEBUG_INFO, "!NOTICE!!RX FILTER IS RUNNING!\n");
-            DBGPRINT(RT_DEBUG_INFO, "Below addresses are allowed\n");
+            DBGPRINT(RT_DEBUG_INFO, "!NOTICE!!RX FILTER IS RUNNING FOR DEBUG!\n");
+            DBGPRINT(RT_DEBUG_INFO, "Only below addresses are allowed\n");
             for (i=0;;i++) {
                 uint8_t *mac;
                 if (DbgRxFilterAddrTable[i] == NULL) {
@@ -2217,6 +2225,9 @@ void rt28xx_init(PRTMP_ADAPTER pAd)
             }
         }
     }
+    #endif
+    DBGPRINT(RT_DEBUG_INFO, "Start to receive from usb...\n");
+    usb_bulkin(pAd->pUsb_Dev);
     #endif
 
     return;

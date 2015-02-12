@@ -29,7 +29,8 @@
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-extern void    RTUSBBulkReceive(void *pAd, unsigned char *pData, int Length);
+extern void RTUSBBulkReceive(void *pAd, unsigned char *pData, int Length);
+extern void RTUSBBulkSendDone(void *pAd);
 
 extern USBH_Usr_cb_TypeDef USBH_USR_Cb;
 void rt2870_probe(void *pUsb_Dev, void *ppAd);
@@ -59,11 +60,7 @@ wifi_usb_adapter_t wifi_usb_adapter;
 
 static void _usb_bulkout_complete(wifi_usb_adapter_t *adapter)
 {    
-    #ifdef WIFI_ATE_MODE
-    ate_tx_complete();
-    #else
-    wnet_send_complete();
-    #endif
+    RTUSBBulkSendDone(adapter->pAdapter);
 }
 
 static void _usb_control_complete(wifi_usb_adapter_t *adapter)
@@ -85,11 +82,6 @@ static void _usb_bulkin_complete(wifi_usb_adapter_t *adapter)
     wifi_usb_bulkin_request_t *usb_rx_req = &adapter->usb_rx_req;
 
     RTUSBBulkReceive(adapter->pAdapter, usb_rx_req->buffer, usb_rx_req->len);
-
-    /*
-        Re-submit to keep data receive.
-    */
-    usb_bulkin(adapter);
 }
 
 static void _dev_remove(USB_OTG_CORE_HANDLE *pdev, void *phost)
@@ -613,11 +605,6 @@ static void _dev_probe_entry(void *parameter)
         Initialize the Wifi module,
     */
     rt2870_probe(adapter, &adapter->pAdapter);
-
-    /*
-        Begin to receive.
-    */
-    usb_bulkin(adapter);
 }
 
 static USBH_Status _dev_probe ( USB_OTG_CORE_HANDLE *pdev, void * phost)
@@ -737,8 +724,9 @@ int usb_bulkout (void *HostSpecific, void *pData, unsigned int Length)
     return 0;
 }
 
-int usb_bulkin(wifi_usb_adapter_t *adapter)
+int usb_bulkin(void *HostSpecific)
 {
+    wifi_usb_adapter_t *adapter = (wifi_usb_adapter_t *)HostSpecific;
     wifi_usb_bulkin_request_t *usb_rx_req = &adapter->usb_rx_req;
 
     usb_rx_req->len = 0;

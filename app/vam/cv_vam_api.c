@@ -114,6 +114,30 @@ int32_t vam_get_peerlist(vam_stastatus_t **local, uint32_t maxitem, uint32_t *ac
     return 0;
 }
 
+/* maxitem must larger than the number of pid array */
+int32_t vam_get_all_peer_pid(uint8_t **pid, uint32_t maxitem, uint32_t *actual)
+{
+    vam_envar_t *p_vam = p_vam_envar;
+    vam_sta_node_t *p_sta = NULL;
+    int count = 0;
+
+    if(!pid || !actual){
+        return -1;
+    }
+
+    
+    osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
+	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+        memcpy(pid[count++], p_sta->s.pid, RCP_TEMP_ID_LEN);           
+        if (count >= maxitem){
+           break; 
+        }
+	}    
+    osal_sem_release(p_vam->sem_sta);
+
+    *actual = count;
+    return 0;
+}
 
 int32_t vam_get_peer_status(uint8_t *pid, vam_stastatus_t *local)
 {

@@ -24,6 +24,10 @@
 const debug_entry_t debug_entry_table_start = {NULL, NULL};
 OSAL_DEBUG_ENTRY_DECLARE(sysc)
 OSAL_DEBUG_ENTRY_DECLARE(vam)
+OSAL_DEBUG_ENTRY_DECLARE(vsa)
+OSAL_DEBUG_ENTRY_DECLARE(voc)
+
+
 // add your module here...
 
 const debug_entry_t debug_entry_table_end = {NULL, NULL};
