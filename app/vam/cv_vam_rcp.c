@@ -143,18 +143,27 @@ __COMPILE_INLINE__ float decode_acce_yaw(uint8_t x)
 __COMPILE_INLINE__ uint16_t encode_vehicle_alert(uint16_t x)
 {
     uint16_t r = 0;
-    if(x & VAM_ALERT_MASK_VBD){
+    if (x & VAM_ALERT_MASK_VBD){
         r |= EventHazardLights;        
     }
-    else if(x & VAM_ALERT_MASK_EBD){
+    else {
+        r &= ~EventHazardLights;
+    }
+
+    if (x & VAM_ALERT_MASK_EBD){
         r |= EventHardBraking;        
     }
-    else if(x & VAM_ALERT_MASK_VOT){
+    else {
+        r &= ~EventHardBraking;
+    }
+    
+    if (x & VAM_ALERT_MASK_VOT){
         r |= EventDisabledVehicle;
     }
-    else{
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "invalid vam_alter mask: 0x%02x\r\n", x);
+    else {
+        r &= ~EventDisabledVehicle;
     }
+
     return cv_ntohs(r);
 }
 
@@ -165,14 +174,13 @@ __COMPILE_INLINE__ uint16_t decode_vehicle_alert(uint16_t x)
     if (x & EventHazardLights) {
         r |= VAM_ALERT_MASK_VBD;        
     }
-    else if (x & EventHardBraking){
+   
+    if (x & EventHardBraking){
         r |= VAM_ALERT_MASK_EBD;        
     }
-    else if (x & EventDisabledVehicle){
+
+    if (x & EventDisabledVehicle){
         r |= VAM_ALERT_MASK_VOT;        
-    }
-    else{
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "invalid vehicle Eventflag: 0x%04x\r\n", x);
     }
     return r;
 }

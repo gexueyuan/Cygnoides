@@ -141,7 +141,7 @@ typedef struct _vsa_envar{
     osal_task_t  *task_vsa;
     osal_queue_t *queue_vsa;
 
-    rt_mailbox_t mb_sound;
+    osal_queue_t *queue_voc;
 
     osal_timer_t *timer_ebd_send;
 

@@ -200,16 +200,20 @@ void adpcm_play(char* pBuffer, uint32_t Size)
 
 void rt_adpcm_thread_entry(void *parameter)
 {
-    vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
-
+    osal_status_t err;
     adpcm_t *audio_pcm;
-
+    sys_msg_t* p_msg = NULL;
+    vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
     while(1){
-        
-        if(rt_mb_recv(p_vsa->mb_sound,(rt_uint32_t*)&audio_pcm,RT_WAITING_FOREVER) == OSAL_STATUS_SUCCESS){
+        err = osal_queue_recv(p_vsa->queue_voc,&p_msg,RT_WAITING_FOREVER);
+        if( err == OSAL_STATUS_SUCCESS){
             adpcm_play((char*)audio_pcm->Addr,audio_pcm->Size);
+            osal_free(p_msg);
         }
-        
+        else{
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);         
+            osal_free(p_msg);
+        }
     }
 
 
@@ -232,6 +236,47 @@ void adpcm_init(void)
 
     osal_assert(adpcm_thread != NULL);
 
-    rt_kprintf("adpcm inited!!\n\n");
+
+}
+
+void rt_play_thread_entry(void *parameter)
+{
+    while(1){
+
+        
+
+
+    }
+
+
+}
+void voc_play_init(void)
+{
+
+
+    osal_task_t  *play_thread;
+    
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
+    
+    play_thread = osal_task_create("t-adpcm",
+                           rt_play_thread_entry, p_vsa,
+                           RT_VSA_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
+
+    osal_assert(play_thread != NULL);
+
+
+}
+void voc_init(void)
+{
+
+    adpcm_init();
+
+    voc_play_init();
+
+
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
+
 
 }

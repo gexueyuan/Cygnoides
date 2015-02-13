@@ -360,6 +360,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 					{
 			   			p_sys->led_priority |= 1<<HI_OUT_VBD_ALERT;
 						//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
+						OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"vbd alert!!\n\n");
 					}	
                 break;				
 
@@ -387,7 +388,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				if(p_cms_envar->vsa.alert_pend == 0)
 					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_VBD_ALERT);
-
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"vbd alert  cancel!!\n\n");
 				break;
 
 			case HI_OUT_EBD_CANCEL:

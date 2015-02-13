@@ -139,7 +139,7 @@ void  timer_preprocess_pos_callback( void *parameter )
 {
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     
-    vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
+    //vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
 
 }
 
@@ -505,25 +505,22 @@ void timer_ebd_send_callback(void* parameter)
 static int ebd_judge(vsa_position_node_t *p_node)
 {
 
- //   int32_t dis_actual, dis_alert;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-    /* put the beginning only in order to output debug infomations */
-//    dis_actual = p_node->vsa_position.linear_distance;
-//    dis_alert = p_node->vsa_position.safe_distance;
+
 
     if (p_node->vsa_position.local_speed <= p_vsa->working_param.danger_detect_speed_threshold){
         
-        return 0;
+    //    return 0;
     }
 
     if (p_node->vsa_position.remote_speed <= p_vsa->working_param.danger_detect_speed_threshold){
         
-        return 0;
+     //   return 0;
     } 
 
     if (p_node->vsa_position.flag_dir < 0){
 
-        return 0;
+     //   return 0;
     }
 #if 0
     int32_t dis_actual;
@@ -558,17 +555,17 @@ static int vbd_judge(vsa_position_node_t *p_node)
 
     if (p_node->vsa_position.local_speed <= p_vsa->working_param.danger_detect_speed_threshold){
         
-        return 0;
+        //return 0;
     }
 
     if (p_node->vsa_position.remote_speed <= p_vsa->working_param.danger_detect_speed_threshold){
         
-        return 0;
+       // return 0;
     } 
 
     if (p_node->vsa_position.flag_dir < 0){
 
-        return 0;
+      //  return 0;
     }
 
 
@@ -838,11 +835,13 @@ void rt_vsa_thread_entry(void *parameter)
             if (err == 1){
                 vsa_default_proc(p_vsa, p_msg);
             }
+            osal_free(p_msg);
+            
        }
         else{
-            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);          
+            osal_free(p_msg);
         }      
-        osal_free(p_msg);
 	}
 }
 
@@ -920,8 +919,8 @@ void vsa_init()
     osal_timer_start(p_vsa->timer_position_prepro);
     osal_assert(p_vsa->timer_position_prepro != NULL);
 
-    p_vsa->mb_sound = rt_mb_create("mb-sound",SOUND_MB_SIZE,RT_IPC_FLAG_FIFO);
-    RT_ASSERT(p_vsa->mb_sound != RT_NULL);
+    p_vsa->queue_voc = osal_queue_create("q-voc",  VOC_QUEUE_SIZE);
+    osal_assert(p_vsa->queue_voc != NULL);
 
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
                              

@@ -9,15 +9,13 @@
            2014-6-24    wangyifeng    Created file
            ...
 ******************************************************************************/
+#include <math.h>
 #include "cv_osal.h"
 
 #define OSAL_MODULE_DEBUG
 #define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
 #define MODULE_NAME "vam_util"
 #include "cv_osal_dbg.h"
-OSAL_DEBUG_ENTRY_DEFINE(vam)
-
-#include <math.h>
 
 #include "components.h"
 #include "cv_vam.h"
@@ -403,7 +401,7 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
     double dir, lon1, lat1, lon2, lat2; /* Radians */
   	uint32_t t = osal_get_systemtime();
     
-	  if(!last || !current)
+	if(!last || !current)
     {
         return -1;
     }
@@ -412,7 +410,7 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
              (t+RT_UINT32_MAX - last->time)) / 1000.0;
 
     memcpy(current, last, sizeof(vam_stastatus_t));
-    if(deltaT == 0)
+    if(deltaT == 0 || (last->speed < 5))
     {
         return 0;
     }
