@@ -30,9 +30,9 @@ short buffer_voc[BUFFER_COUNT][BUFFER_SIZE];
 
 static uint8_t cursor = 0;
 adpcm_t play_pcm_data; 
+osal_sem_t   *sem_adpcm;
+osal_sem_t   *sem_play;
 
-
-unsigned char fin_flag = 0;
 
 static ADPCMState adpcm_state;
 
@@ -158,14 +158,13 @@ adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
 void adpcm_play(char* pBuffer, uint32_t Size)
 {
     adpcm_t audio_pcm;
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 
     uint16_t count_play = 0;
 
     osal_printf("total size of voc is %d\n\n",Size);
     while(Size > 0){ 
         
-        osal_sem_take(p_vsa->sem_adpcm,OSAL_WAITING_FOREVER);
+        osal_sem_take(sem_adpcm,OSAL_WAITING_FOREVER);
         
         count_play++;
         
@@ -183,7 +182,7 @@ void adpcm_play(char* pBuffer, uint32_t Size)
 
        osal_printf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,Size,cursor%BUFFER_COUNT,audio_pcm.addr);
        cursor++;       
-       osal_sem_release(p_vsa->sem_play);
+       osal_sem_release(sem_play);
    }
 }
 
@@ -226,19 +225,17 @@ void adpcm_init(void)
 }
 void release_semadpcm(void)
 {
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 
-    osal_sem_release(p_vsa->sem_adpcm);
+    osal_sem_release(sem_adpcm);
 }
 
 void rt_play_thread_entry(void *parameter)
 {
 	adpcm_t *p_audio_pcm;
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     p_audio_pcm = &play_pcm_data;
     
     while(1){
-        osal_sem_take(p_vsa->sem_play,OSAL_WAITING_FOREVER);
+        osal_sem_take(sem_play,OSAL_WAITING_FOREVER);
         Pt8211_AUDIO_Play((uint16_t *)(p_audio_pcm->addr), p_audio_pcm->size);
 
     }
@@ -251,12 +248,10 @@ void voc_play_init(void)
 
     osal_task_t  *play_thread;
     
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-
     Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
     
     play_thread = osal_task_create("t-play",
-                           rt_play_thread_entry, p_vsa,
+                           rt_play_thread_entry, NULL,
                            RT_VSA_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
 
     osal_assert(play_thread != NULL);
@@ -266,17 +261,15 @@ void voc_play_init(void)
 void voc_init(void)
 {
     
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-
     adpcm_init();
 
     voc_play_init();
 
-	p_vsa->sem_adpcm = osal_sem_create("sem-adpcm",BUFFER_COUNT);
-	osal_assert(p_vsa->sem_adpcm != NULL);
+	sem_adpcm = osal_sem_create("sem-adpcm",BUFFER_COUNT);
+	osal_assert(sem_adpcm != NULL);
 
-	p_vsa->sem_play = osal_sem_create("sem-play",0);
-	osal_assert(p_vsa->sem_play != NULL);
+	sem_play = osal_sem_create("sem-play",0);
+	osal_assert(sem_play != NULL);
 
 	
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         

@@ -152,10 +152,6 @@ typedef struct _vsa_envar{
     osal_timer_t *timer_ebd_send;
 
     osal_timer_t *timer_position_prepro;
-
-    
-    osal_sem_t   *sem_adpcm;
-    osal_sem_t   *sem_play;
                  
 }vsa_envar_t;
 
