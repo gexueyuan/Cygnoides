@@ -45,8 +45,7 @@ UCHAR *DbgRxFilterAddrTable[] = {
     "\x00\x11\x22\x24\x00\x1e",
     "\x00\x11\x22\x2d\x00\x1e",
     #elif defined(GEXUEYUAN)
-    "\x00\x11\x22\x35\x00\x34",
-    "\x00\x11\x22\x3d\x00\x37",
+    
     #endif
     NULL
 };
@@ -325,6 +324,10 @@ int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
         return 0;
     }
     #endif
+
+    if (!pAd->init_complete) {
+        return -1;
+    }
 
     /* fill the vendor specific element */
     pPayload = pdata - MAC_BODY_RESERVE_LENGTH + WNET_LLC_HEADER_LEN;

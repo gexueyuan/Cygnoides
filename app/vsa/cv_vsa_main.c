@@ -137,7 +137,7 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
 *****************************************************************************/
 void  timer_preprocess_pos_callback( void *parameter )
 {
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    //vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     
     //vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
 

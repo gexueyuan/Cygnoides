@@ -502,6 +502,9 @@ typedef struct _RTMP_CHIP_OP_ RTMP_CHIP_OP;
 struct _RTMP_ADAPTER{
 
     void *pUsb_Dev;
+
+    UINT32 init_complete;
+    
     rt_sem_t UsbVendorReq_semaphore;
     rt_sem_t UsbVendorReq_semaphore2;
 

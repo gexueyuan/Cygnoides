@@ -49,8 +49,9 @@ static char *osal_debug_level_str[] = {
 #define OSAL_MODULE_DBGPRT(module, level, fmt, ...)	\
 do { \
     if ((level > OSAL_DEBUG_OFF)&&(level <= osal_module_debug_level)) {\
-        osal_printf("(%d.%03d)[%s]%s: "fmt, (osal_get_systemtime()/1000), \
-        (osal_get_systemtime()%1000), osal_debug_level_str[level], \
+        osal_log("(%d.%03d)[%s]%s: "fmt, (osal_get_systemtime()>>10), \
+        ((osal_get_systemtime()&0x3FF)>999 ? 999:(osal_get_systemtime()&0x3FF)), \
+        osal_debug_level_str[level], \
                     module, ##__VA_ARGS__);\
     } \
 } while (0)
@@ -83,6 +84,7 @@ typedef struct _debug_entry{
 
 void osal_dbg_dump_data(uint8_t *p, uint32_t len);
 int osal_dbg_set_level(char *module, int level);
+void osal_log(const char *fmt, ...);
 
 #endif /* __CV_OSAL_DBG_H__ */
 

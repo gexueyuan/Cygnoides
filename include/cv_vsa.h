@@ -27,8 +27,8 @@ enum VSA_APP_ID{
 
 typedef struct _adpcm{
 
-    uint32_t Addr;
-    uint32_t Size;
+    uint32_t addr;
+    uint32_t size;
     uint8_t  channel;
     uint8_t  cmd;
     
@@ -152,6 +152,10 @@ typedef struct _vsa_envar{
     osal_timer_t *timer_ebd_send;
 
     osal_timer_t *timer_position_prepro;
+
+    
+    osal_sem_t   *sem_adpcm;
+    osal_sem_t   *sem_play;
                  
 }vsa_envar_t;
 

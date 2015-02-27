@@ -605,6 +605,11 @@ static void _dev_probe_entry(void *parameter)
         Initialize the Wifi module,
     */
     rt2870_probe(adapter, &adapter->pAdapter);
+
+    /*
+        Inform to the system
+    */
+    sys_add_event_queue(&p_cms_envar->sys, SYS_MSG_INITED, 0, 0, 0);
 }
 
 static USBH_Status _dev_probe ( USB_OTG_CORE_HANDLE *pdev, void * phost)

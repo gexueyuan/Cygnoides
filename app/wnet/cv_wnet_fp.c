@@ -125,7 +125,11 @@ void fp_tx_handler(wnet_envar_t *p_wnet)
     osal_leave_critical();
     
     if (send_next){
-        drv_wifi_send(&txbuf->info, txbuf->data_ptr, txbuf->data_len);
+        if (drv_wifi_send(&txbuf->info, txbuf->data_ptr, txbuf->data_len) < 0) {
+            /* At this time, the phy layer may be not ready, we should release 
+               the txbuf manually */
+            fp_tx_complete(p_wnet);
+        }
     }
 }
 

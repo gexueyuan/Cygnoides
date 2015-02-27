@@ -47,6 +47,8 @@ typedef int osal_status_t;
 #define OSAL_WAITING_FOREVER         RT_WAITING_FOREVER  /**< Block forever until get resource. */
 #define OSAL_WAITING_NO              RT_WAITING_NO       /**< Non-block. */
 
+#define OSAL_TASK_PRIOPRITY_HIGHEST 10 /* Reserved some for os */
+#define OSAL_TASK_PRIOPRITY_LOWEST  30 /* Reserved one for idle task */
 
 /**
  * [Task]

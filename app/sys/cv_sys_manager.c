@@ -61,7 +61,6 @@ void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length)
 
 }
 
-extern void adpcm_play(char* pBuffer, uint32_t Size);
 
 //extern void Delay(volatile uint32_t nCount);
 /*****************************************************************************
@@ -178,13 +177,13 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			if(p_msg->argc == C_UP_KEY){
                 
 			    vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
-                p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
-                p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
+                p_vsa->adpcm_data.addr = (uint32_t)AUDIO_SAMPLE;
+                p_vsa->adpcm_data.size = bibi_front_16k_8bitsLen;
                 p_vsa->adpcm_data.channel = 0;
                 p_vsa->adpcm_data.cmd = VOC_PLAY;
               // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
-                voc_add_event_queue(p_vsa->queue_voc,p_vsa->adpcm_data.Addr,p_vsa->adpcm_data.Size,0,VOC_PLAY);
+                voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
              //Pt8211_AUDIO_Play((uint16_t*)(AUDIO_SAMPLE), bibi_front_16k_8bitsLen);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
@@ -278,8 +277,6 @@ void sysc_thread_entry(void *parameter)
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
 
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: ---->\n", __FUNCTION__);
-
-    sys_add_event_queue(p_sys, SYS_MSG_INITED, 0, 0, 0);
 
 	while(1){
         err = osal_queue_recv(p_sys->queue_sys_mng, &p_msg, OSAL_WAITING_FOREVER);

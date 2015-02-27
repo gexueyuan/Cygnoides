@@ -35,6 +35,24 @@ const debug_entry_t debug_entry_table_end = {NULL, NULL};
  *  [block end]
  */
 
+
+#define OSAL_DBG_LOG_TASK_PRIOPRITY (OSAL_TASK_PRIOPRITY_LOWEST)
+
+/** 
+ * Configure of output buffer
+ */
+#define OSAL_DBG_LOG_WIDTH  128
+#define OSAL_DBG_LOG_LINES  64
+char osal_dbg_log_buffer[OSAL_DBG_LOG_LINES][OSAL_DBG_LOG_WIDTH] __attribute__((at(CCMDATARAM_BASE)));
+
+
+
+/** 
+ * Configure of output device
+ */
+#define LOG_DEVICE_UART
+#undef  LOG_DEVICE_SDCARD
+
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -76,6 +94,100 @@ void osal_dbg_dump_data(uint8_t *p, uint32_t len)
         }
         osal_printf("\n======================== end ==========================\n");
     }
+}
+
+void osal_log(const char *fmt, ...)
+{
+    static uint32_t line = 0;
+    char *outbuf;
+    va_list arg_ptr;
+
+    outbuf = osal_dbg_log_buffer[line];
+    if (*outbuf > 0) {
+        //Notice, the buffer is full.
+        osal_printf("!!!Log buffer is full!!!\n");
+        return;
+    }
+
+    va_start(arg_ptr, fmt);
+    *outbuf = vsnprintf(outbuf+1, OSAL_DBG_LOG_WIDTH-3, fmt, arg_ptr);
+
+    /* To avoid memory error, string will be truncated when it is too long. */
+    if (*outbuf > OSAL_DBG_LOG_WIDTH-4) { /* String is so long that it has been truncated. */
+        *(outbuf+OSAL_DBG_LOG_WIDTH-4) = '!';
+        *(outbuf+OSAL_DBG_LOG_WIDTH-3) = '#';
+        *(outbuf+OSAL_DBG_LOG_WIDTH-2) = '\n';
+        *(outbuf+OSAL_DBG_LOG_WIDTH-1) = 0;
+        *outbuf = OSAL_DBG_LOG_WIDTH - 1;
+    }
+    va_end(arg_ptr);
+
+    if (++line >= OSAL_DBG_LOG_LINES) {
+        line = 0;
+    }
+}
+
+#ifdef LOG_DEVICE_UART
+static void output_to_uart(char *data, uint32_t length)
+{
+    #if (defined(OS_RT_THREAD) && defined(RT_USING_DEVICE))
+    rt_device_t console = rt_console_get_device();
+    if (console) {
+        rt_uint16_t old_flag = console->flag;
+        console->flag |= RT_DEVICE_FLAG_STREAM;
+        rt_device_write(console, 0, data, length);
+        console->flag = old_flag;
+    }
+    #else
+    while(length--) {
+        putchar(*data++);
+    }
+    #endif
+}
+#endif
+
+#ifdef LOG_DEVICE_SDCARD
+static void output_to_sdcard(char *data, uint32_t length)
+{
+}
+#endif
+
+void osal_dbg_thread_entry(void *parameter)
+{
+    static uint32_t line = 0;
+    char *outbuf = osal_dbg_log_buffer[0];
+
+	while(1){
+	    outbuf = osal_dbg_log_buffer[line];
+	    if (*outbuf) {
+            #ifdef LOG_DEVICE_UART
+            output_to_uart(outbuf+1, (uint32_t)*outbuf);
+            #endif
+            
+            #ifdef LOG_DEVICE_SDCARD
+            output_to_sdcard(outbuf+1, (uint32_t)*outbuf);
+            #endif
+
+            *outbuf = 0; /* clear the contant */
+            
+            if (++line >= OSAL_DBG_LOG_LINES) {
+                line = 0;
+            }
+	    }
+	    else {
+            osal_delay(1);
+	    }
+	}
+}
+
+void osal_dbg_init(void)
+{
+    osal_task_t *task;
+
+    memset(osal_dbg_log_buffer, 0, OSAL_DBG_LOG_LINES*OSAL_DBG_LOG_WIDTH);
+
+    task = osal_task_create("tdbg", osal_dbg_thread_entry, NULL, 1024, OSAL_DBG_LOG_TASK_PRIOPRITY);
+    osal_assert(task != NULL);
 }
 
 #ifdef OS_RT_THREAD

@@ -2228,6 +2228,8 @@ void rt28xx_init(PRTMP_ADAPTER pAd)
     #endif
     DBGPRINT(RT_DEBUG_INFO, "Start to receive from usb...\n");
     usb_bulkin(pAd->pUsb_Dev);
+
+    pAd->init_complete = TRUE;
     #endif
 
     return;
@@ -2239,6 +2241,8 @@ err1:
 void rt2870_probe(void *pUsb_Dev, void *ppAd)
 {
     PRTMP_ADAPTER pAd = &rtmp_adapter;
+
+    memset(pAd, 0, sizeof(RTMP_ADAPTER));
 
     pAd->pUsb_Dev = pUsb_Dev;
 

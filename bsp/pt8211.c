@@ -42,7 +42,7 @@ REC_T g_tRec;
 
 short mdata;
 
-extern  unsigned char fin_flag;
+extern void release_semadpcm(void);
 //g_tRec.ucVolume = 39;
 
 /*
@@ -594,7 +594,6 @@ static void Audio_MAL_Play(uint32_t Addr, uint32_t Size)
   /* Enable the I2S DMA Stream*/
   DMA_Cmd(AUDIO_MAL_DMA_STREAM, ENABLE);
   #endif
-  fin_flag = 1;
    // rt_kprintf("DMA play!! \n");
 #if 0
   I2S_Cmd(I2S,ENABLE);
@@ -745,7 +744,7 @@ void Audio_MAL_IRQHandler(void)
 	  
 	  DMA_ClearITPendingBit(AUDIO_MAL_DMA_STREAM, DMA_IT_TCIF4);
 
-	  osal_sem_release(sem_adpcm);
+	  release_semadpcm();
 	//      rt_kprintf("clear flag\n");
 	}
 

@@ -30,6 +30,7 @@
 #define FIRMWARE_IDEN "dbg" 
 #endif
 
+extern void osal_dbg_init(void);
 extern void rt_platform_init(void);
 extern void param_init(void);
 extern void gps_init(void);
@@ -57,6 +58,8 @@ void global_init(void)
 
 void rt_init_thread_entry(void *parameter)
 {
+    osal_dbg_init();
+
     global_init();
     param_init();
     cpu_usage_init();
