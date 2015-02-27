@@ -22,10 +22,15 @@
 #include "assert.h"
 #include "cv_cms_def.h"
 
-#define BUFFERSIZE   4096
 
-short buffer_4k_1[BUFFERSIZE]; 
-short buffer_4k_2[BUFFERSIZE]; 
+#define BUFFER_COUNT  2
+#define BUFFER_SIZE   4096
+
+short buffer_voc[BUFFER_COUNT][BUFFER_SIZE]; 
+
+osal_sem_t *sem_adpcm,*sem_play;
+static uint8_t cursor = 0;
+
 
 unsigned char fin_flag = 0;
 
@@ -131,24 +136,19 @@ int adpcm_de(char *code, short *pcm, int count)
 }
 adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
 {
-    short *buffer_tmp;
     
     adpcm_t audio_pcm;
 
     uint32_t tick_adpcm_bg,tick_adpcm_fh;
     
 
-    if(channel)
-        buffer_tmp = buffer_4k_2;
-    else        
-        buffer_tmp = buffer_4k_1;
     tick_adpcm_bg = osal_get_systemtime();
-    adpcm_de(src_c,buffer_tmp,sourceFileLen);
+    adpcm_de(src_c,buffer_voc[channel],sourceFileLen);
     tick_adpcm_fh = osal_get_systemtime();
 
 
     rt_kprintf("time of decode is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
-    audio_pcm.Addr = (uint32_t)buffer_tmp;
+    audio_pcm.Addr = (uint32_t)buffer_voc[channel];
     audio_pcm.Size = 8*sourceFileLen;
 
 
@@ -159,7 +159,6 @@ void adpcm_play(char* pBuffer, uint32_t Size)
 {
     adpcm_t audio_pcm;
 
-    static unsigned char channel = 0x00;
 
     uint16_t count_play = 0;
 
@@ -168,29 +167,21 @@ void adpcm_play(char* pBuffer, uint32_t Size)
     
     count_play++;
     
-    if(Size > BUFFERSIZE/4){
+    if(Size > BUFFER_SIZE/4){
         
-        audio_pcm = adpcm_de_process(pBuffer,BUFFERSIZE/4,channel);
-        Size -= BUFFERSIZE/4;
-        pBuffer += BUFFERSIZE/4;
+        audio_pcm = adpcm_de_process(pBuffer,BUFFER_SIZE/4,cursor%BUFFER_COUNT);
+        Size -= BUFFER_SIZE/4;
+        pBuffer += BUFFER_SIZE/4;
     }
     else{
-        audio_pcm = adpcm_de_process(pBuffer,Size,channel);
-        channel = 0;
+        audio_pcm = adpcm_de_process(pBuffer,Size,cursor%BUFFER_COUNT);
         Size = 0;
         pBuffer += Size;
     }
 
-    
-   while(fin_flag){
-       };
    
-   Pt8211_AUDIO_Play((uint16_t *)(audio_pcm.Addr), audio_pcm.Size);
-   
-   rt_kprintf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,audio_pcm.Size,channel,audio_pcm.Addr);
-   
-    channel = ~channel;
-
+   rt_kprintf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,audio_pcm.Size,cursor%BUFFER_COUNT,audio_pcm.Addr);
+   cursor++; 
 
     }
 
@@ -207,7 +198,9 @@ void rt_adpcm_thread_entry(void *parameter)
     while(1){
         err = osal_queue_recv(p_vsa->queue_voc,&p_msg,RT_WAITING_FOREVER);
         if( err == OSAL_STATUS_SUCCESS){
+            osal_sem_take(sem_adpcm,OSAL_WAITING_FOREVER);
             adpcm_play((char*)audio_pcm->Addr,audio_pcm->Size);
+            osal_sem_release(sem_play);
             osal_free(p_msg);
         }
         else{
@@ -227,9 +220,6 @@ void adpcm_init(void)
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     
 
-    memset(buffer_4k_1,0,BUFFERSIZE);
-    memset(buffer_4k_2,0,BUFFERSIZE);
-
     adpcm_thread = osal_task_create("t-adpcm",
                            rt_adpcm_thread_entry, p_vsa,
                            RT_VSA_THREAD_STACK_SIZE, RT_ADPCM_THREAD_PRIORITY);
@@ -241,10 +231,11 @@ void adpcm_init(void)
 
 void rt_play_thread_entry(void *parameter)
 {
+	adpcm_t audio_pcm;
+
     while(1){
-
-        
-
+        osal_sem_take(sem_play,OSAL_WAITING_FOREVER);
+        Pt8211_AUDIO_Play((uint16_t *)(audio_pcm.Addr), audio_pcm.Size);
 
     }
 
@@ -260,7 +251,7 @@ void voc_play_init(void)
 
     Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
     
-    play_thread = osal_task_create("t-adpcm",
+    play_thread = osal_task_create("t-play",
                            rt_play_thread_entry, p_vsa,
                            RT_VSA_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
 
@@ -270,12 +261,17 @@ void voc_play_init(void)
 }
 void voc_init(void)
 {
-
     adpcm_init();
 
     voc_play_init();
 
+	sem_adpcm = osal_sem_create("sem-adpcm",BUFFER_COUNT);
+	osal_assert(sem_adpcm != NULL);
 
+	sem_play = osal_sem_create("sem-play",0);
+	osal_assert(sem_play != NULL);
+
+	
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
 
 
