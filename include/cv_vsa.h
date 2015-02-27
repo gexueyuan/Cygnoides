@@ -34,6 +34,12 @@ typedef struct _adpcm{
     
 }adpcm_t;
 
+enum VOC_CMD{
+    VOC_PLAY = 0,
+    VOC_PAUSE,
+    VOC_STOP
+};
+
 /* target classification locations */
 
 enum VSA_TARGET_LOCATION{

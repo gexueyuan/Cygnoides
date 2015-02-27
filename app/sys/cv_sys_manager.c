@@ -103,6 +103,35 @@ int sys_add_event_queue(sys_envar_t *p_sys,
     return err;
 }
 
+
+osal_status_t voc_add_event_queue(vsa_envar_t *p_vsa, 
+                             uint32_t msg_addr, 
+                             uint32_t msg_size, 
+                             uint8_t  msg_channel,
+                             uint8_t  msg_cmd)
+{
+    int err = OSAL_STATUS_NOMEM;
+    adpcm_t *p_msg;
+
+    p_msg = osal_malloc(sizeof(adpcm_t));
+    if (p_msg){
+        p_msg->addr = msg_addr;
+        p_msg->size = msg_size;
+        p_msg->channel = msg_channel;
+        p_msg->cmd = msg_cmd;
+        err = osal_queue_send(p_vsa->queue_voc,p_msg);
+    }
+
+    if (err != OSAL_STATUS_SUCCESS){
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                                   __FUNCTION__, err, msg_cmd);
+        osal_free(p_msg);
+    }
+
+    return err;
+}
+
+
 rt_err_t hi_add_event_queue(sys_envar_t *p_sys, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
@@ -149,12 +178,13 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			if(p_msg->argc == C_UP_KEY){
                 
 			    vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
-                //p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
-               // p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
-
+                p_vsa->adpcm_data.Addr = (uint32_t)AUDIO_SAMPLE;
+                p_vsa->adpcm_data.Size = bibi_front_16k_8bitsLen;
+                p_vsa->adpcm_data.channel = 0;
+                p_vsa->adpcm_data.cmd = VOC_PLAY;
               // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
-                
+                voc_add_event_queue(p_vsa->queue_voc,p_vsa->adpcm_data.Addr,p_vsa->adpcm_data.Size,0,VOC_PLAY);
              //Pt8211_AUDIO_Play((uint16_t*)(AUDIO_SAMPLE), bibi_front_16k_8bitsLen);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
