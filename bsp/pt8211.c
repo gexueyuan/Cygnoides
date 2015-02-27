@@ -694,106 +694,105 @@ static void Audio_MAL_Stop(void)
   */
 void Audio_MAL_IRQHandler(void)
 {
-    /* enter interrupt */
-    rt_interrupt_enter();
+	/* enter interrupt */
+	rt_interrupt_enter();
 
 #ifndef AUDIO_MAL_MODE_NORMAL
-  uint16_t *pAddr = (uint16_t *)CurrentPos;
-  uint32_t Size = AudioRemSize;
+	uint16_t *pAddr = (uint16_t *)CurrentPos;
+	uint32_t Size = AudioRemSize;
 #endif /* AUDIO_MAL_MODE_NORMAL */
 
-//rt_kprintf("come in IRQ\n");
+	//rt_kprintf("come in IRQ\n");
 #ifdef AUDIO_MAL_DMA_IT_TC_EN
-  /* Transfer complete interrupt */
-  if (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC) != RESET)
-  {     
- #ifdef AUDIO_MAL_MODE_NORMAL
-    /* Check if the end of file has been reached */
-    if (AudioRemSize > 0)
-    {      
-      /* Wait the DMA Stream to be effectively disabled */
-      while (DMA_GetCmdStatus(AUDIO_MAL_DMA_STREAM) != DISABLE)
-      {}
-      
-      /* Clear the Interrupt flag */
-      DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC);  
-      
-      /* Re-Configure the buffer address and size */
-      DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) CurrentPos;
-      DMA_InitStructure.DMA_BufferSize = (uint32_t) (DMA_MAX(AudioRemSize));
-      
-      /* Configure the DMA Stream with the new parameters */
-      DMA_Init(AUDIO_MAL_DMA_STREAM, &DMA_InitStructure);
-      
-      /* Enable the I2S DMA Stream*/
-      DMA_Cmd(AUDIO_MAL_DMA_STREAM, ENABLE);    
-      
-      /* Update the current pointer position */
-      CurrentPos += DMA_MAX(AudioRemSize);        
-      
-      /* Update the remaining number of data to be played */
-      AudioRemSize -= DMA_MAX(AudioRemSize);    
-    }
-    else
-    {
-      /* Disable the I2S DMA Stream*/
-      DMA_Cmd(AUDIO_MAL_DMA_STREAM, DISABLE);   
-      
-      /* Clear the Interrupt flag */
-      DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC);  
+	/* Transfer complete interrupt */
+	if (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC) != RESET)
+	{     
+#ifdef AUDIO_MAL_MODE_NORMAL
+	/* Check if the end of file has been reached */
+	if (AudioRemSize > 0)
+	{      
+	  /* Wait the DMA Stream to be effectively disabled */
+	  while (DMA_GetCmdStatus(AUDIO_MAL_DMA_STREAM) != DISABLE)
+	  {}
+	  
+	  /* Clear the Interrupt flag */
+	  DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC);  
+	  
+	  /* Re-Configure the buffer address and size */
+	  DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) CurrentPos;
+	  DMA_InitStructure.DMA_BufferSize = (uint32_t) (DMA_MAX(AudioRemSize));
+	  
+	  /* Configure the DMA Stream with the new parameters */
+	  DMA_Init(AUDIO_MAL_DMA_STREAM, &DMA_InitStructure);
+	  
+	  /* Enable the I2S DMA Stream*/
+	  DMA_Cmd(AUDIO_MAL_DMA_STREAM, ENABLE);    
+	  
+	  /* Update the current pointer position */
+	  CurrentPos += DMA_MAX(AudioRemSize);        
+	  
+	  /* Update the remaining number of data to be played */
+	  AudioRemSize -= DMA_MAX(AudioRemSize);    
+	}
+	else
+	{
+	  /* Disable the I2S DMA Stream*/
+	  DMA_Cmd(AUDIO_MAL_DMA_STREAM, DISABLE);   
+	  
+	  /* Clear the Interrupt flag */
+	  DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC);  
 
-      
-      DMA_ClearITPendingBit(AUDIO_MAL_DMA_STREAM, DMA_IT_TCIF4);
+	  
+	  DMA_ClearITPendingBit(AUDIO_MAL_DMA_STREAM, DMA_IT_TCIF4);
 
-      fin_flag = 0;
-      
-//      rt_kprintf("clear flag\n");
-    }
-    
- #elif defined(AUDIO_MAL_MODE_CIRCULAR)
-    /* Manage the remaining file size and new address offset: This function 
-       should be coded by user (its prototype is already declared in stm32_eval_audio_codec.h) */  
-    EVAL_AUDIO_TransferComplete_CallBack(pAddr, Size);    
-    
-    /* Clear the Interrupt flag */
-    DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC);
- #endif /* AUDIO_MAL_MODE_NORMAL */  
-  }
+	  osal_sem_release(sem_adpcm);
+	//      rt_kprintf("clear flag\n");
+	}
+
+#elif defined(AUDIO_MAL_MODE_CIRCULAR)
+	/* Manage the remaining file size and new address offset: This function 
+	   should be coded by user (its prototype is already declared in stm32_eval_audio_codec.h) */  
+	EVAL_AUDIO_TransferComplete_CallBack(pAddr, Size);    
+
+	/* Clear the Interrupt flag */
+	DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TC);
+#endif /* AUDIO_MAL_MODE_NORMAL */  
+	}
 #endif /* AUDIO_MAL_DMA_IT_TC_EN */
 
 #ifdef AUDIO_MAL_DMA_IT_HT_EN  
-  /* Half Transfer complete interrupt */
-  if (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_HT) != RESET)
-  {
-    /* Manage the remaining file size and new address offset: This function 
-       should be coded by user (its prototype is already declared in stm32_eval_audio_codec.h) */  
-    EVAL_AUDIO_HalfTransfer_CallBack((uint32_t)pAddr, Size);    
-   
-    /* Clear the Interrupt flag */
-    DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_HT);    
-  }
-#endif /* AUDIO_MAL_DMA_IT_HT_EN */
-  
-#ifdef AUDIO_MAL_DMA_IT_TE_EN  
-  /* FIFO Error interrupt */
-  if ((DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TE) != RESET) || \
-     (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_FE) != RESET) || \
-     (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_DME) != RESET))
-    
-  {
-    /* Manage the error generated on DMA FIFO: This function 
-       should be coded by user (its prototype is already declared in stm32_eval_audio_codec.h) */  
-    EVAL_AUDIO_Error_CallBack((uint32_t*)&pAddr);    
-    
-    /* Clear the Interrupt flag */
-    DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TE | AUDIO_MAL_DMA_FLAG_FE | \
-                                        AUDIO_MAL_DMA_FLAG_DME);
-  }  
-#endif /* AUDIO_MAL_DMA_IT_TE_EN */
-/* leave interrupt */
-rt_interrupt_leave();
+	/* Half Transfer complete interrupt */
+	if (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_HT) != RESET)
+	{
+	/* Manage the remaining file size and new address offset: This function 
+	   should be coded by user (its prototype is already declared in stm32_eval_audio_codec.h) */  
+	EVAL_AUDIO_HalfTransfer_CallBack((uint32_t)pAddr, Size);    
 
-//rt_kprintf("come out IRQ\n");
+	/* Clear the Interrupt flag */
+	DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_HT);    
+	}
+#endif /* AUDIO_MAL_DMA_IT_HT_EN */
+
+#ifdef AUDIO_MAL_DMA_IT_TE_EN  
+	/* FIFO Error interrupt */
+	if ((DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TE) != RESET) || \
+	 (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_FE) != RESET) || \
+	 (DMA_GetFlagStatus(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_DME) != RESET))
+
+	{
+	/* Manage the error generated on DMA FIFO: This function 
+	   should be coded by user (its prototype is already declared in stm32_eval_audio_codec.h) */  
+	EVAL_AUDIO_Error_CallBack((uint32_t*)&pAddr);    
+
+	/* Clear the Interrupt flag */
+	DMA_ClearFlag(AUDIO_MAL_DMA_STREAM, AUDIO_MAL_DMA_FLAG_TE | AUDIO_MAL_DMA_FLAG_FE | \
+	                                    AUDIO_MAL_DMA_FLAG_DME);
+	}  
+#endif /* AUDIO_MAL_DMA_IT_TE_EN */
+	/* leave interrupt */
+	rt_interrupt_leave();
+
+	//rt_kprintf("come out IRQ\n");
 
 }
 
