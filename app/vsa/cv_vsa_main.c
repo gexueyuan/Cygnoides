@@ -33,6 +33,7 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 #define DIRECTION_DIVIDE         22.5f
 #define PI 3.1415926
 
+
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 /*****************************************************************************
  * implementation of functions                                               *
@@ -137,9 +138,9 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
 *****************************************************************************/
 void  timer_preprocess_pos_callback( void *parameter )
 {
-    //vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     
-    //vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
+    vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
 
 }
 
@@ -887,7 +888,6 @@ void vsa_init()
 
     memset(p_vsa, 0, sizeof(vsa_envar_t));
     memcpy(&p_vsa->working_param, &p_cms_param->vsa, sizeof(vsa_config_t));
-
 	
 	INIT_LIST_HEAD(&p_vsa->crd_list);	
 	INIT_LIST_HEAD(&p_vsa->position_list);	

@@ -276,8 +276,6 @@ void sysc_thread_entry(void *parameter)
     sys_msg_t *p_msg;
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
 
-    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: ---->\n", __FUNCTION__);
-
 	while(1){
         err = osal_queue_recv(p_sys->queue_sys_mng, &p_msg, OSAL_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
@@ -534,8 +532,6 @@ void rt_hi_thread_entry(void *parameter)
     sys_msg_t msg, *p_msg = &msg;
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
 	//static uint8_t ledss = 0xff;
-
-    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "%s: ---->\n", __FUNCTION__);
 
     rt_timer_start(p_sys->timer_hi);
 

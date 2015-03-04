@@ -16,11 +16,9 @@
 #include "cv_vam.h"
 #include "cv_vsa.h"
 #include "cv_cms_def.h"
+#include "cv_sys_param.h"
 
 
-#define PARAM_FLAG_ADDR     ((uint32_t)0x80E0000)
-
-#define PARAM_ADDR    		((uint32_t)0x80E0010)
 
 
 extern 	int drv_fls_erase(uint32_t	sector);
