@@ -149,7 +149,7 @@ void  timer_preprocess_pos_callback( void *parameter )
 
 void  preprocess_pos(void)
 {
-    
+    vam_stastatus_t local_status;
     vam_envar_t *p_vam = p_vam_envar;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     vam_sta_node_t *p_sta = NULL;
@@ -157,10 +157,24 @@ void  preprocess_pos(void)
     double temp_dis;
     int8_t i = 0;
     static uint8_t send_flag = 1;
+    uint8_t peer_pid[VAM_NEIGHBOUR_MAXNUM][RCP_TEMP_ID_LEN];
+    uint32_t peer_count;
+
+    vam_get_all_peer_pid(peer_pid,VAM_NEIGHBOUR_MAXNUM,&peer_count);
+
+    if(peer_count != 0){
+        vam_get_local_current_status(&local_status);
+        for(i = 0;i < peer_count;i++)        
+        vam_get_peer_current_status(peer_pid[i],&local_status);
+
+
+
+
+    }
 
     if(!list_empty(&p_vam->neighbour_list)){
         
-        vam_get_local_status(&p_vam->local);
+        vam_get_local_current_status(&local_status);
 
         rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
 
@@ -175,24 +189,24 @@ void  preprocess_pos(void)
       
             memcpy(p_pnt->vsa_position.pid,p_sta->s.pid,RCP_TEMP_ID_LEN);
       
-            temp_dis = getDistanceVer2((double)p_vam->local.pos.lat,(double)p_vam->local.pos.lon,
+            temp_dis = getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
                         (double)p_sta->s.pos.lat,(double)p_sta->s.pos.lon);
           
-            p_pnt->vsa_position.vsa_location = vsa_position_classify(&p_vam->local,&p_sta->s,temp_dis);
+            p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&p_sta->s,temp_dis);
       
-            p_pnt->vsa_position.relative_speed = p_vam->local.speed - p_sta->s.speed;
+            p_pnt->vsa_position.relative_speed = local_status.speed - p_sta->s.speed;
             
-            p_pnt->vsa_position.lat_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
+            p_pnt->vsa_position.lat_offset = fabs(local_status.pos.lat - p_sta->s.pos.lat);
       
-            p_pnt->vsa_position.lon_offset = fabs(p_vam->local.pos.lat - p_sta->s.pos.lat);
+            p_pnt->vsa_position.lon_offset = fabs(local_status.pos.lat - p_sta->s.pos.lat);
       
             p_pnt->vsa_position.linear_distance = (uint32_t)temp_dis;
 
-            p_pnt->vsa_position.safe_distance = (int32_t)((p_vam->local.speed*2.0f - p_sta->s.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
+            p_pnt->vsa_position.safe_distance = (int32_t)((local_status.speed*2.0f - p_sta->s.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
                 
             p_pnt->vsa_position.dir = p_sta->s.dir;
       
-            p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&p_vam->local,&p_sta->s);
+            p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&p_sta->s);
       
             list_add(&p_pnt->list,&p_vsa->position_list);
             OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\

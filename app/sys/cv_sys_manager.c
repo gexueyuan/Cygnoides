@@ -61,6 +61,29 @@ void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length)
 
 }
 
+/* Flash error code */
+typedef enum {
+    FLASH_NO_ERR,
+    FLASH_ERASE_ERR,
+    FLASH_WRITE_ERR,
+    FLASH_ENV_NAME_ERR,
+    FLASH_ENV_NAME_EXIST,
+    FLASH_ENV_FULL,
+} FlashErrCode;
+
+uint8_t flash_set_env(const char *key, const char *value) {
+    FlashErrCode result = FLASH_NO_ERR;
+    uint32_t readbuffer;
+
+    /* if value is null, delete it */
+    if (*value == NULL) {
+        readbuffer = *value;
+        osal_printf("not crap!!!\n\n  value = %lu",readbuffer);
+    }
+    return result;
+}
+
+FINSH_FUNCTION_EXPORT(flash_set_env, debug: );
 
 //extern void Delay(volatile uint32_t nCount);
 /*****************************************************************************
@@ -158,6 +181,9 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
 	uint32_t type = 0;
 	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    char c_value = NULL;
+    char *value = &c_value;
 	
     switch(p_msg->id){
         case SYS_MSG_INITED:
@@ -183,8 +209,8 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 p_vsa->adpcm_data.cmd = VOC_PLAY;
               // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
-                voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
-             //Pt8211_AUDIO_Play((uint16_t*)(AUDIO_SAMPLE), bibi_front_16k_8bitsLen);
+               // voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
+               flash_set_env("abc",value);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
