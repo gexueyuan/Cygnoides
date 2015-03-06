@@ -115,7 +115,7 @@ int32_t vam_get_peerlist(vam_stastatus_t **local, uint32_t maxitem, uint32_t *ac
 }
 
 /* maxitem must larger than the number of pid array */
-int32_t vam_get_all_peer_pid(uint8_t **pid, uint32_t maxitem, uint32_t *actual)
+int32_t vam_get_all_peer_pid(uint8_t pid[][RCP_TEMP_ID_LEN], uint32_t maxitem, uint32_t *actual)
 {
     vam_envar_t *p_vam = p_vam_envar;
     vam_sta_node_t *p_sta = NULL;

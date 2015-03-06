@@ -80,6 +80,8 @@ typedef struct _vsa_info{
 
     uint8_t jump_count;
 
+    uint8_t vsa_id;
+
 }vsa_info_t;
 
 

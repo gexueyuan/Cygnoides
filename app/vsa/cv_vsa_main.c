@@ -147,12 +147,11 @@ void  timer_preprocess_pos_callback( void *parameter )
 
 
 
-void  preprocess_pos(void)
+uint32_t  preprocess_pos(void)
 {
-    vam_stastatus_t local_status;
-    vam_envar_t *p_vam = p_vam_envar;
+    vam_stastatus_t local_status;  
+    vam_stastatus_t remote_status;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-    vam_sta_node_t *p_sta = NULL;
     vsa_position_node_t *p_pnt = NULL;
     double temp_dis;
     int8_t i = 0;
@@ -164,70 +163,59 @@ void  preprocess_pos(void)
 
     if(peer_count != 0){
         vam_get_local_current_status(&local_status);
-        for(i = 0;i < peer_count;i++)        
-        vam_get_peer_current_status(peer_pid[i],&local_status);
+        for(i = 0;i < peer_count;i++){
+            vam_get_peer_current_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/       
+            p_pnt = &p_vsa->position_node[i];
 
 
+        memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
 
+        temp_dis = getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
+                    (double)remote_status.pos.lat,(double)remote_status.pos.lon);
 
-    }
+        p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,temp_dis);
 
-    if(!list_empty(&p_vam->neighbour_list)){
-        
-        vam_get_local_current_status(&local_status);
+        p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;
 
-        rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
+        p_pnt->vsa_position.lat_offset = fabs(local_status.pos.lat - remote_status.pos.lat);
 
-        list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+        p_pnt->vsa_position.lon_offset = fabs(local_status.pos.lat - remote_status.pos.lat);
 
-            if(i > (VAM_NEIGHBOUR_MAXNUM - 1)){
-                rt_sem_release(p_vam->sem_sta); 
-                return;
-            }
-            else
-                p_pnt = &p_vsa->position_node[i++];
-      
-            memcpy(p_pnt->vsa_position.pid,p_sta->s.pid,RCP_TEMP_ID_LEN);
-      
-            temp_dis = getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
-                        (double)p_sta->s.pos.lat,(double)p_sta->s.pos.lon);
-          
-            p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&p_sta->s,temp_dis);
-      
-            p_pnt->vsa_position.relative_speed = local_status.speed - p_sta->s.speed;
+        p_pnt->vsa_position.linear_distance = (uint32_t)temp_dis;
+
+        p_pnt->vsa_position.safe_distance = (int32_t)((local_status.speed*2.0f - remote_status.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
             
-            p_pnt->vsa_position.lat_offset = fabs(local_status.pos.lat - p_sta->s.pos.lat);
-      
-            p_pnt->vsa_position.lon_offset = fabs(local_status.pos.lat - p_sta->s.pos.lat);
-      
-            p_pnt->vsa_position.linear_distance = (uint32_t)temp_dis;
+        p_pnt->vsa_position.dir = remote_status.dir;
 
-            p_pnt->vsa_position.safe_distance = (int32_t)((local_status.speed*2.0f - p_sta->s.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
-                
-            p_pnt->vsa_position.dir = p_sta->s.dir;
-      
-            p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&p_sta->s);
-      
-            list_add(&p_pnt->list,&p_vsa->position_list);
-            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                    "pid(%d%d%d%d) come in \n\n",p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1],\
-                    p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3]);
+        p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&remote_status);
+
+        //list_add(&p_pnt->list,&p_vsa->position_list);
+        /*
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
+                "pid(%02X %02X %02X %02X)  in the list \n\n",p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1],\
+                p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3]);
+           */
         }
-        rt_sem_release(p_vam->sem_sta); 
+    }
+    else
+        return 0; 
+    
+#if 0
 
-        if (p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
-                //(p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);
-                send_flag = 1;
-            }
+    if (p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
+            //(p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);
+            send_flag = 1;
         }
     else {
-           if(send_flag){
-               //(p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(NULL);
-               send_flag = 0;
-               OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "no neighour exist!");
-            }
-            
+       if(send_flag){
+           //(p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(NULL);
+           send_flag = 0;
+           OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "no neighour exist!");
+        }
+        
     }
+    #endif
+    return peer_count;
 }
 
 /*****************************************************************************
@@ -387,7 +375,6 @@ static int ccw_judge(vsa_position_node_t *p_node)
 static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 {
     
-    vam_envar_t *p_vam = &p_cms_envar->vam;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 	vsa_crd_node_t *p_crd = NULL,*pos = NULL;
     rt_bool_t  ccw_flag;
@@ -397,7 +384,6 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
     
     if (p_vsa->alert_mask & (1<<warning_id)){
         
-            rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
     
             if(list_empty(&p_vsa->crd_list))
                 {
@@ -430,7 +416,6 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                                         "pid(%d%d%d%d) come in \n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
                                         p_crd->pid[3]);
                 }   
-            rt_sem_release(p_vam->sem_sta);                 
         /* danger is detected */    
             if (p_vsa->alert_pend & (1<<warning_id)){
             /* do nothing */    
@@ -450,7 +435,6 @@ return 0;
 static int ccw_del_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 {
     
-    vam_envar_t *p_vam = &p_cms_envar->vam;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 	vsa_crd_node_t *pos = NULL;
 
@@ -459,7 +443,6 @@ static int ccw_del_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
     
     if (p_vsa->alert_mask & (1<<warning_id)){
 
-            rt_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
             
               list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list)                 
                     {
@@ -473,9 +456,7 @@ static int ccw_del_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                             }   
                             
                     }   
-              
-             rt_sem_release(p_vam->sem_sta);                  
-                
+                              
             if ((p_vsa->alert_pend & (1<<warning_id))&&(list_empty(&p_vsa->crd_list))){
             /* inform system to stop alert */
                 p_vsa->alert_pend &= ~(1<<warning_id);
@@ -493,19 +474,67 @@ static int ccw_proc(vsa_envar_t *p_vsa, void *arg)
 {
     int err = 1;  /* '1' represent is not handled. */
     int vsa_id;
-    vsa_position_node_t *pos_pnt;
-    preprocess_pos();
+    vsa_position_node_t *pos_pnt = NULL;
+    static uint8_t empty_detec = 1;
+    uint32_t count_neighour;
+    uint32_t i;
+    
+#if 0
+
+    if(count_neighour = preprocess_pos()){
+        
+        empty_detec = 1;
+        osal_printf("has %d neighour!!\n\n\n",count_neighour);
+        }
+    else
+        {
+        if(empty_detec){
+            
+            empty_detec = 0;
+            osal_printf("has no neighour!!\n\n\n");
+         }
+        return err;
+
+    }
+#endif
+    if(count_neighour = preprocess_pos()){
+        empty_detec = 1;
     if(list_empty(&p_vsa->position_list))
         return err;
     else
-        list_for_each_entry(pos_pnt,vsa_position_node_t,&p_vsa->position_list,list){
+        //list_for_each_entry(pos_pnt,vsa_position_node_t,&p_vsa->position_list,list)
+        {
+        for(i = 0;i < count_neighour;i++){
+            pos_pnt = &p_vsa->position_node[i];
             vsa_id = ccw_judge(pos_pnt);
-            if(vsa_id)
-                ccw_add_list(vsa_id,pos_pnt);
-            else
-                ccw_del_list(vsa_id,pos_pnt);                            
+            if(vsa_id){
 
+                pos_pnt->vsa_position.vsa_id = vsa_id;
+                
+                ccw_add_list(vsa_id,pos_pnt);
+                
+                osal_printf("add list \n\n");
+                }
+            else{ 
+                    if(pos_pnt->vsa_position.vsa_id){
+                            ccw_del_list(vsa_id,pos_pnt);
+                            osal_printf("del list \n\n");
+                        }
+                   // else
+                           // osal_printf("out of danger!!\n\n",);
+                }
         }
+        }
+    }
+    else{
+            if(empty_detec){
+                
+                empty_detec = 0;
+                osal_printf("has no neighour!!\n\n\n");
+             }
+            return err;
+    }
+
     return err;
 }
 

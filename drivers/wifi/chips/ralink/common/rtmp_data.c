@@ -45,7 +45,8 @@ UCHAR *DbgRxFilterAddrTable[] = {
     "\x00\x11\x22\x24\x00\x1e",
     "\x00\x11\x22\x2d\x00\x1e",
     #elif defined(GEXUEYUAN)
-    
+    "\x00\x11\x22\x35\x00\x34",
+    "\x00\x11\x22\x3d\x00\x37",
     #endif
     NULL
 };
