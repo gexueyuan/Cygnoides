@@ -739,7 +739,7 @@ static int alarm_update_proc(vsa_envar_t *p_vsa, void *arg)
     return err;
 }
 
-static int gsnr_detect_proc(vsa_envar_t *p_vsa, void *arg)
+static int ebd_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {   
     if ((p_vsa->local.speed >= p_vsa->working_param.danger_detect_speed_threshold)){
         vam_active_alert(1);
@@ -753,7 +753,7 @@ static int gsnr_detect_proc(vsa_envar_t *p_vsa, void *arg)
 }
 
 
-static int key_update_proc(vsa_envar_t *p_vsa, void *arg)
+static int vbd_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
 	int err = 1;  /* '1' represent is not handled. */ 
 	uint16_t peer_alert;
@@ -859,8 +859,8 @@ vsa_app_handler vsa_app_handler_tbl[] = {
 
     ccw_proc,
     alarm_update_proc,
-    key_update_proc,
-    gsnr_detect_proc,
+    vbd_broadcast_proc,
+    ebd_broadcast_proc,
     NULL
 };
 
