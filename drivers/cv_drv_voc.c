@@ -180,7 +180,7 @@ void adpcm_play(char* pBuffer, uint32_t Size)
             pBuffer += Size;
         }
 
-       osal_printf("this %d times decode and play,size = %d Byte\nchannel is %d\naddress is %x\n\n",count_play,Size,cursor%BUFFER_COUNT,audio_pcm.addr);
+       osal_printf("this %d times decode and play,size = %lu Byte\nchannel is %d\naddress is %x\n\n",count_play,play_pcm_data.size,cursor%BUFFER_COUNT,audio_pcm.addr);
        cursor++;       
        osal_sem_release(sem_play);
    }

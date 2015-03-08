@@ -517,6 +517,7 @@ static int ccw_proc(vsa_envar_t *p_vsa, void *arg)
                 }
             else{ 
                     if(pos_pnt->vsa_position.vsa_id){
+							pos_pnt->vsa_position.vsa_id = 0;
                             ccw_del_list(vsa_id,pos_pnt);
                             osal_printf("del list \n\n");
                         }
