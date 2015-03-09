@@ -159,6 +159,8 @@ uint32_t  preprocess_pos(void)
     uint8_t peer_pid[VAM_NEIGHBOUR_MAXNUM][RCP_TEMP_ID_LEN];
     uint32_t peer_count;
 
+    static uint32_t count_pos = 0;
+
     vam_get_all_peer_pid(peer_pid,VAM_NEIGHBOUR_MAXNUM,&peer_count);
 
     if(peer_count != 0){
@@ -170,10 +172,14 @@ uint32_t  preprocess_pos(void)
 
         memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
 
-        temp_dis = getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
+        temp_dis = 1000.0*getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
                     (double)remote_status.pos.lat,(double)remote_status.pos.lon);
 
         p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,temp_dis);
+
+        p_pnt->vsa_position.local_speed = local_status.speed;
+
+        p_pnt->vsa_position.remote_speed = remote_status.speed;
 
         p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;
 
@@ -196,6 +202,16 @@ uint32_t  preprocess_pos(void)
                 p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3]);
            */
         }
+       if(count_pos++ > 30){
+           for(i = 0;i < peer_count;i++){ 
+            p_pnt = &p_vsa->position_node[i];
+            osal_printf("pid(%02X %02X %02X %02X),vsa_location = %d ldis = %lu  safe_dis = %lu\n\n",p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1],\
+                p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
+                p_pnt->vsa_position.vsa_location,p_pnt->vsa_position.linear_distance,p_pnt->vsa_position.safe_distance);
+            }
+          count_pos = 0; 
+        }
+         
     }
     else
         return 0; 
@@ -294,7 +310,7 @@ void vsa_gsnr_ebd_update(void *parameter)
 
 void vsa_start(void)
 {
-    vam_set_event_handler(VAM_EVT_LOCAL_UPDATE, vsa_local_status_update);
+    //vam_set_event_handler(VAM_EVT_LOCAL_UPDATE, vsa_local_status_update);
     //vam_set_event_handler(VAM_EVT_PEER_UPDATE, vsa_peer_status_update);
     vam_set_event_handler(VAM_EVT_PEER_ALARM, vsa_peer_alarm_update);
     vam_set_event_handler(VAM_EVT_GPS_STATUS, vsa_gps_status_update);
@@ -353,18 +369,19 @@ static int ccw_judge(vsa_position_node_t *p_node)
     if (dis_actual > dis_alert){
         return 0;
     }
-	
+	/*
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Close range danger alert(safty:%d, actual:%d)!!!",\
                         dis_alert, dis_actual,p_vsa->remote.pid[0],p_vsa->remote.pid[1],p_vsa->remote.pid[2],p_vsa->remote.pid[3]);
-    
+    */
     return VSA_ID_CRD;
     }
     else if((p_node->vsa_position.vsa_location >= BEHIND_LEFT)&&
         (p_node->vsa_position.vsa_location <= BEHIND_RIGHT)){
             
-
+/*
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Close range danger alert(safty:%d, actual:%d)!!!",\
                         dis_alert, dis_actual,p_vsa->remote.pid[0],p_vsa->remote.pid[1],p_vsa->remote.pid[2],p_vsa->remote.pid[3]);
+*/
     return VSA_ID_CRD_REAR;
     }    
 //	rt_kprintf("Close range danger alert(safty:%d, actual:%d)!!! Id:%d%d%d%d\n", dis_alert, dis_actual,p_vsa->remote.pid[0],p_vsa->remote.pid[1],p_vsa->remote.pid[2],p_vsa->remote.pid[3]);
@@ -392,8 +409,8 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                     p_crd->ccw_id = warning_id;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                        "pid(%d%d%d%d) come in \n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
-                                        p_crd->pid[3]);
+                                        "pid(%d%d%d%d) come in %lu list\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                        p_crd->pid[3],warning_id);
                 }
             else
               list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list)
@@ -413,8 +430,8 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                     p_crd->ccw_id = warning_id;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                        "pid(%d%d%d%d) come in \n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
-                                        p_crd->pid[3]);
+                                        "pid(%d%d%d%d) come in %lu\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                        p_crd->pid[3],warning_id);
                 }   
         /* danger is detected */    
             if (p_vsa->alert_pend & (1<<warning_id)){
@@ -513,12 +530,13 @@ static int ccw_proc(vsa_envar_t *p_vsa, void *arg)
                 
                 ccw_add_list(vsa_id,pos_pnt);
                 
-                osal_printf("add list \n\n");
+                //osal_printf("add list \n\n");
                 }
             else{ 
                     if(pos_pnt->vsa_position.vsa_id){
+							pos_pnt->vsa_position.vsa_id = 0;
                             ccw_del_list(vsa_id,pos_pnt);
-                            osal_printf("del list \n\n");
+                            //osal_printf("del list \n\n");
                         }
                    // else
                            // osal_printf("out of danger!!\n\n",);
@@ -738,7 +756,7 @@ static int alarm_update_proc(vsa_envar_t *p_vsa, void *arg)
     return err;
 }
 
-static int gsnr_detect_proc(vsa_envar_t *p_vsa, void *arg)
+static int ebd_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {   
     if ((p_vsa->local.speed >= p_vsa->working_param.danger_detect_speed_threshold)){
         vam_active_alert(1);
@@ -752,7 +770,7 @@ static int gsnr_detect_proc(vsa_envar_t *p_vsa, void *arg)
 }
 
 
-static int key_update_proc(vsa_envar_t *p_vsa, void *arg)
+static int vbd_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
 	int err = 1;  /* '1' represent is not handled. */ 
 	uint16_t peer_alert;
@@ -838,28 +856,29 @@ static int vbd_proc(vsa_envar_t *p_vsa, void *arg)
 
 }
 #endif
-static void vsa_default_proc(vsa_envar_t *p_vsa, void *arg)
+static int vsa_default_proc(vsa_envar_t *p_vsa, void *arg)
 {
     sys_msg_t *p_msg = (sys_msg_t *)arg;
     
-    switch(p_msg->id){
-        case VSA_MSG_GPS_UPDATE:
-            p_vsa->gps_status = p_msg->argc;
-            sys_add_event_queue(&p_cms_envar->sys, \
-                            SYS_MSG_GPS_UPDATE, 0, p_msg->argc, NULL);
-        break;
+    if(VSA_MSG_GPS_UPDATE == p_msg->id){
 
-        default:
-        break;
+        p_vsa->gps_status = p_msg->argc;
+        sys_add_event_queue(&p_cms_envar->sys, \
+                SYS_MSG_GPS_UPDATE, 0, p_msg->argc, NULL);
     }
+    else
+        return 0;
+
+    return 1;
 }
 
 vsa_app_handler vsa_app_handler_tbl[] = {
 
     ccw_proc,
     alarm_update_proc,
-    key_update_proc,
-    gsnr_detect_proc,
+    vbd_broadcast_proc,
+    ebd_broadcast_proc,
+    vsa_default_proc,
     NULL
 };
 

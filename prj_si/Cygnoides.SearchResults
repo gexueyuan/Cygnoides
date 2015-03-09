@@ -1,5 +1,1 @@
----- full!!! Matches (1 in 1 files) ----
-Cv_osal_debug.c (os\common):        osal_printf("!!!Log buffer is full!!!\n");
----- full!!! Search Errors Encountered (1) ----
-The following 1 files could not be processed:
-E:\vanet\Prototype(CMS)\develop\firmware\branch\gexueyuan\Cygnoides\prj_keil\JLinkLog.txt : File could not be opened.
+---- fp: Matches (0 in 0 files) ----
