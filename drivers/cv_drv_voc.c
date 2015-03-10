@@ -66,13 +66,13 @@ int DecodeADPCMC( int adpcmSample, ADPCMStatePtr decodeStatePtr )
     int predictionAdjustment ;
     
     if( ( adpcmSample < 0 ) || ( adpcmSample > 15 ) ) {
-        osal_printf("[DecodeADPCMC] Error in ADPCM sample, aborting.\n\n" ) ;
+		OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_ERROR,"[DecodeADPCMC] Error in ADPCM sample, aborting.\n\n");
         /* function name given since intended as internal error for programmer */
         return 0 ;
     }
     
     if( !decodeStatePtr ) {
-        osal_printf("[DecodeADPCMC] Error in ADPCMState, aborting.\n\n" ) ;
+		OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_ERROR,"[DecodeADPCMC] Error in ADPCMState, aborting.\n\n");
         /* function name given since intended as internal error for programmer */
         return 0 ;
     }
@@ -147,7 +147,7 @@ adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
     tick_adpcm_fh = osal_get_systemtime();
 
 
-    rt_kprintf("time of decode is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
+	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"time of decode is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
     audio_pcm.addr = (uint32_t)buffer_voc[channel];
     audio_pcm.size = 8*sourceFileLen;
 
@@ -161,7 +161,7 @@ void adpcm_play(char* pBuffer, uint32_t Size)
 
     uint16_t count_play = 0;
 
-    osal_printf("total size of voc is %d\n\n",Size);
+	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"total size of voc is %d\n\n",Size);
     while(Size > 0){ 
         
         osal_sem_take(sem_adpcm,OSAL_WAITING_FOREVER);
@@ -180,8 +180,10 @@ void adpcm_play(char* pBuffer, uint32_t Size)
             pBuffer += Size;
         }
 
-       osal_printf("this %d times decode and play,size = %lu Byte\nchannel is %d\naddress is %x\n\n",count_play,play_pcm_data.size,cursor%BUFFER_COUNT,audio_pcm.addr);
-       cursor++;       
+	   OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,\
+	   		"this %d times decode and play,size = %lu Byte\nchannel is %d\naddress is %x\n\n",\
+	   		count_play,play_pcm_data.size,cursor%BUFFER_COUNT,audio_pcm.addr);
+	   cursor++;       
        osal_sem_release(sem_play);
    }
 }

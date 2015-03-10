@@ -345,7 +345,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
 				p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
-				//voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
+				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
 				break;
 
 			case HI_OUT_BSM_UPDATE:

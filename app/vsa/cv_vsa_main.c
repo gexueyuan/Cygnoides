@@ -33,7 +33,9 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 #define DIRECTION_DIVIDE         22.5f
 #define PI 3.1415926
 
+#define VSA_MSG_PROC    (VSA_MSG_BASE+1)
 
+static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg);
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 /*****************************************************************************
  * implementation of functions                                               *
@@ -129,7 +131,7 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
 }
 
 
-uint32_t  preprocess_pos(void)
+int32_t  preprocess_pos(void)
 {
     vam_stastatus_t local_status;  
     vam_stastatus_t remote_status;
@@ -226,15 +228,7 @@ void  timer_preprocess_pos_callback( void *parameter )
 {
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     
-    //vsa_add_event_queue(p_vsa, VSA_MSG_PEER_UPDATE, 0,0,NULL);
-    uint32_t tick_adpcm_bg,tick_adpcm_fh;
-
-    tick_adpcm_bg = rt_hw_tick_get_microsecond();
-    preprocess_pos();
-    tick_adpcm_fh = rt_hw_tick_get_microsecond();
-
-
-    rt_kprintf("time of decode is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
+    vsa_add_event_queue(p_vsa, VSA_MSG_BASE, 0,0,NULL);
 
 }
 
@@ -315,10 +309,14 @@ void vsa_eebl_broadcast_update(void *parameter)
 
 void vsa_start(void)
 {
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     vam_set_event_handler(VAM_EVT_PEER_UPDATE, vsa_bsm_status_update);
     vam_set_event_handler(VAM_EVT_PEER_ALARM, vsa_receive_alarm_update);
     vam_set_event_handler(VAM_EVT_GPS_STATUS, vsa_gps_status_update);
     vam_set_event_handler(VAM_EVT_GSNR_EBD_DETECT, vsa_eebl_broadcast_update);
+    osal_timer_start(p_vsa->timer_position_prepro);
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: --->\n", __FUNCTION__);
+
 }
 
 /*****************************************************************************
@@ -660,21 +658,37 @@ static int vsa_vbd_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 
 static int vsa_cfcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
-
-
+/*
+	static int cfcw_count = 0;
+	if(cfcw_count++ >20 ){
+		osal_printf("cfcw  occur!!\n\n");
+		cfcw_count = 0;
+	}
+	*/
   return 0;
 }
 
 static int vsa_crcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
-
-
+/*
+	static int cfcw_count = 0;
+	if(cfcw_count++ >40 ){
+		osal_printf("crcw  occur!!\n\n");
+		cfcw_count = 0;
+	}
+*/
   return 0;
 }
 
 static int vsa_opposite_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
-
+/*
+  static int cfcw_count = 0;
+  if(cfcw_count++ >40 ){
+	  osal_printf("oppo  occur!!\n\n");
+	  cfcw_count = 0;
+  }
+*/
 
   return 0;
 }
@@ -928,7 +942,6 @@ static int vbd_proc(vsa_envar_t *p_vsa, void *arg)
 
 vsa_app_handler vsa_app_handler_tbl[] = {
 
-    
     vsa_manual_broadcast_proc,
     vsa_eebl_broadcast_proc,
     vsa_vbd_broadcast_proc,
@@ -952,6 +965,32 @@ vsa_app_handler vsa_app_handler_tbl[] = {
   //  NULL
 };
 
+static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
+{
+    static uint8_t empty_detec = 1;
+    int count_neighour;
+
+	count_neighour = preprocess_pos();
+
+	//if(0 == count_neighour){
+	//		return 0;
+	//	}
+
+	if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])	
+    	vsa_add_event_queue(p_vsa, VSA_MSG_CFCW_ALARM, 0,0,NULL);
+	
+	if(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC])	
+    	vsa_add_event_queue(p_vsa, VSA_MSG_CRCW_ALARM, 0,0,NULL);
+	
+	if(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC])	
+    	vsa_add_event_queue(p_vsa, VSA_MSG_OPPOSITE_ALARM, 0,0,NULL);
+	
+	if(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC])	
+    	vsa_add_event_queue(p_vsa, VSA_MSG_SIDE_ALARM, 0,0,NULL);
+
+  	return count_neighour;
+}
+
 void rt_vsa_thread_entry(void *parameter)
 {
     rt_err_t err;
@@ -963,13 +1002,12 @@ void rt_vsa_thread_entry(void *parameter)
 	while(1){
         err = osal_queue_recv(p_vsa->queue_vsa,&p_msg,RT_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
-            if(vsa_app_handler_tbl[p_msg->id-0x0301] != NULL)
-                err = vsa_app_handler_tbl[p_msg->id-0x0301](p_vsa,p_msg);
+			if(p_msg->id == VSA_MSG_BASE)
+				vsa_base_proc(p_vsa,p_msg);
+            else if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
+                	err = vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC](p_vsa,p_msg);
 
-            //if (err == 1){
-             //   vsa_default_proc(p_vsa, p_msg);
-           // }
-            osal_free(p_msg);
+				osal_free(p_msg);
             
        }
         else{
@@ -1063,7 +1101,6 @@ void vsa_init()
 
     p_vsa->timer_position_prepro = osal_timer_create("tm-pos",\
         timer_preprocess_pos_callback,NULL,VSA_POS_PERIOD,RT_TIMER_FLAG_PERIODIC);
-    osal_timer_start(p_vsa->timer_position_prepro);
     osal_assert(p_vsa->timer_position_prepro != NULL);
 
     p_vsa->queue_voc = osal_queue_create("q-voc",  VOC_QUEUE_SIZE);
