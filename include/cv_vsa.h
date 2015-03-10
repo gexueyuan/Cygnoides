@@ -15,6 +15,16 @@
 /*****************************************************************************
  * definition of micro                                                       *
 *****************************************************************************/
+
+
+/*down to top*/
+#define  HIGRHWAY_MODE   0x0F9F
+#define  MOUNTAIN_MODE   0x0FBF
+#define  CITY_MODE       0x0FD7
+#define  CUSTOM_MODE     0x019F
+
+
+
 enum VSA_APP_ID{
     VSA_ID_NONE = 0,
     VSA_ID_CRD,

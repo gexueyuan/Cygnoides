@@ -40,52 +40,40 @@ OSAL_DEBUG_ENTRY_DEFINE(sysc)
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-extern const unsigned char bibi_front_16k_8bits[];
-extern const unsigned char bibi_behind_16k_8bits[];
-extern const unsigned int bibi_front_16k_8bitsLen;
-extern const unsigned int bibi_behind_16k_8bitsLen;
-extern const uint16_t AUDIO_SAMPLE[];
-extern void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length);
+extern const unsigned char CFCW_8K_16bits[];
+extern const unsigned int CFCW_8K_16bitsLen;
+extern const unsigned char CRCW_8K_16bits[];
+extern const unsigned int CRCW_8K_16bitsLen;
+extern const unsigned char EEBL_8K_16bits[];
+extern const unsigned int EEBL_8K_16bitsLen;
+extern const unsigned char VBD_8K_16bits[];
+extern const unsigned int VBD_8K_16bitsLen;
+extern const unsigned char init_8K_16bits[];
+extern const unsigned int init_8K_16bitsLen;
+
+
 extern void led_on(Led_TypeDef led);
 extern void led_off(Led_TypeDef led);
 extern void led_blink(Led_TypeDef led);
 
 extern int param_set(uint8_t param, int32_t value);
-extern uint32_t Pt8211_AUDIO_Play(uint16_t * pBuffer,uint32_t Size);
-extern const unsigned short AUDIO_SAMPLE[];
 extern void cpu_usage_get(rt_uint8_t *major, rt_uint8_t *minor);
 
-
-void voc_play(uint32_t sample_rate, uint8_t *p_data, uint32_t length)
+void null_space(void)
 {
-
 }
 
-/* Flash error code */
-typedef enum {
-    FLASH_NO_ERR,
-    FLASH_ERASE_ERR,
-    FLASH_WRITE_ERR,
-    FLASH_ENV_NAME_ERR,
-    FLASH_ENV_NAME_EXIST,
-    FLASH_ENV_FULL,
-} FlashErrCode;
+void voc_contrl(uint32_t cmd, uint8_t *p_data, uint32_t length)
+{
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 
-uint8_t flash_set_env(const char *key, const char *value) {
-    FlashErrCode result = FLASH_NO_ERR;
-    uint32_t readbuffer;
-
-    /* if value is null, delete it */
-    if (*value == NULL) {
-        readbuffer = *value;
-        osal_printf("not crap!!!\n\n  value = %lu",readbuffer);
-    }
-    return result;
+    p_vsa->adpcm_data.addr = (uint32_t)p_data;
+    p_vsa->adpcm_data.size = length;
+    p_vsa->adpcm_data.channel = 0;
+    p_vsa->adpcm_data.cmd = cmd;
+    voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,cmd);
 }
 
-FINSH_FUNCTION_EXPORT(flash_set_env, debug: );
-
-//extern void Delay(volatile uint32_t nCount);
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -181,9 +169,6 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
 	uint32_t type = 0;
 	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-
-    char c_value = NULL;
-    char *value = &c_value;
 	
     switch(p_msg->id){
         case SYS_MSG_INITED:
@@ -191,8 +176,7 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
             vam_start();
             vsa_start();
-
-            //hi_add_event_queue(p_sys, SYS_MSG_HI_OUT_UPDATE,0,HI_OUT_SYS_INIT, 0);
+            hi_add_event_queue(p_sys, SYS_MSG_HI_OUT_UPDATE,0,HI_OUT_SYS_INIT, 0);
 
             break;
 		case SYS_MSG_BSM_UPDATE:
@@ -202,15 +186,15 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){
                 
-			    vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
-                p_vsa->adpcm_data.addr = (uint32_t)AUDIO_SAMPLE;
-                p_vsa->adpcm_data.size = bibi_front_16k_8bitsLen;
-                p_vsa->adpcm_data.channel = 0;
-                p_vsa->adpcm_data.cmd = VOC_PLAY;
+			    //vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
+               // p_vsa->adpcm_data.addr = (uint32_t)AUDIO_SAMPLE;
+               // p_vsa->adpcm_data.size = bibi_front_16k_8bitsLen;
+               // p_vsa->adpcm_data.channel = 0;
+               // p_vsa->adpcm_data.cmd = VOC_PLAY;
               // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
                // voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
-               flash_set_env("abc",value);
+              // flash_set_env("abc",value);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
@@ -331,15 +315,15 @@ void timer_out_vsa_process(void* parameter)
 	
 
 	if(p_vsa->alert_pend & (1<<VSA_ID_EBD))	
-		voc_play(16000, (uint8_t *)bibi_front_16k_8bits, bibi_front_16k_8bitsLen);// vioce,EBD最优先,同时报警选择EBD,VBD次之
+		voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);// vioce,EBD最优先,同时报警选择EBD,VBD次之
 
 	else if(p_vsa->alert_pend & (1<<VSA_ID_VBD))
-		voc_play(16000, (uint8_t *)bibi_front_16k_8bits, bibi_front_16k_8bitsLen);// 
+		voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);// 
 
 	else if(p_vsa->alert_pend & (1<<VSA_ID_CRD))	
-		voc_play(16000, (uint8_t *)bibi_front_16k_8bits, bibi_front_16k_8bitsLen);// 
+		voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);// 
 	else if(p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR))	
-		voc_play(16000, (uint8_t *)bibi_behind_16k_8bits, bibi_behind_16k_8bitsLen);// 
+		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);// 
 
 	rt_timer_control(p_cms_envar->sys.timer_voc,RT_TIMER_CTRL_SET_TIME,(void*)&timevalue);
 }
@@ -361,7 +345,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
 				p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
-				voc_play(16000, (uint8_t *)bibi_behind_16k_8bits, 3200);
+				//voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
 				break;
 
 			case HI_OUT_BSM_UPDATE:
@@ -374,7 +358,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
             case HI_OUT_CRD_ALERT:
 				if(!p_sys->voc_flag)
 					{
-                		voc_play(16000, (uint8_t *)bibi_front_16k_8bits, bibi_front_16k_8bitsLen);
+                		voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
 						p_sys->voc_flag = 0xff;
 					}
                 rt_timer_start(p_cms_envar->sys.timer_hi);
@@ -390,7 +374,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			case HI_OUT_CRD_REAR_ALERT:
                 if(!p_sys->voc_flag)
 					{
-                		voc_play(16000, (uint8_t *)bibi_behind_16k_8bits, bibi_behind_16k_8bitsLen);
+                		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
 						p_sys->voc_flag = 0xff;
 					}
                 rt_timer_start(p_cms_envar->sys.timer_hi);
@@ -416,7 +400,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 break;				
 
 			case HI_OUT_EBD_ALERT:
-              //  voc_play(16000, (uint8_t *)voice_16k_8bits, voice_16k_8bitsLen);
+              //  voc_contrl(16000, (uint8_t *)voice_16k_8bits, voice_16k_8bitsLen);
               	rt_timer_start(p_cms_envar->sys.timer_voc);            
 			   	p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
                 break;
@@ -484,7 +468,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 break;
 
             case HI_OUT_GPS_LOST:
-                //voc_play(16000, (uint8_t *)notice_16k_8bits, 6400);
+                //voc_contrl(16000, (uint8_t *)notice_16k_8bits, 6400);
                	//rt_timer_start(p_cms_envar->sys.timer_gps);
                 //p_sys->led_blink_duration[LED_GREEN] = 0xFFFF;
                 //p_sys->led_blink_period[LED_GREEN] = 20;
@@ -691,7 +675,7 @@ FINSH_FUNCTION_EXPORT(test_alert, debug: testing alert voice and led);
 void start_voc( uint8_t  type)
 {
 
-    voc_play(16000, (uint8_t *)bibi_behind_16k_8bits, bibi_behind_16k_8bitsLen);// 
+    //voc_contrl(16000, (uint8_t *)bibi_behind_16k_8bits, bibi_behind_16k_8bitsLen);// 
 
 }
 	

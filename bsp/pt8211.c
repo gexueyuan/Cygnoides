@@ -40,8 +40,6 @@ typedef struct
 
 REC_T g_tRec;
 
-short mdata;
-
 extern void release_semadpcm(void);
 //g_tRec.ucVolume = 39;
 
@@ -67,13 +65,7 @@ static void     Audio_MAL_DeInit(void);
 static void     Audio_MAL_Play(uint32_t Addr, uint32_t Size);
 static void     Audio_MAL_PauseResume(uint32_t Cmd, uint32_t Addr);
 static void     Audio_MAL_Stop(void);
-/*----------------------------------------------------------------------------*/
 
-extern const unsigned char bibi_front_16k_8bits[];
-extern const unsigned char bibi_behind_16k_8bits[];
-extern const unsigned int bibi_front_16k_8bitsLen;
-extern const unsigned int bibi_behind_16k_8bitsLen;
-extern const uint16_t AUDIO_SAMPLE[];
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -355,9 +347,6 @@ static void I2S_Mode_Config(uint16_t _usStandard, uint16_t _usWordLen, uint16_t 
 
 void I2S_StartPlay(uint16_t _usStandard, uint16_t _usWordLen, uint16_t _usAudioFreq)
 {
-    mdata = 0x8000;
-    g_tRec.uiCursor = 0;
-    g_tRec.pAudio = (int16_t *)AUDIO_SAMPLE;
 
 	I2S_Mode_Config(_usStandard, I2S_DataFormat_16b, _usAudioFreq, I2S_Mode_MasterTx);
 
@@ -403,10 +392,9 @@ void I2S_CODEC_DataTransfer(void)
 		usData = g_tRec.pAudio[g_tRec.uiCursor++];		
 //		if (SPI_I2S_GetFlagStatus(SPI2, I2S_FLAG_CHSIDE) != SET)	
 //		{		
-			if (g_tRec.uiCursor >= bibi_front_16k_8bitsLen / 2)
+			if (g_tRec.uiCursor >= sizeof(g_tRec.pAudio) / 2)
 			{
-			    rt_kprintf("spi i2s cpu irq end\n  count = %d  mdata= %hd",g_tRec.uiCursor,mdata);
-				g_tRec.uiCursor = bibi_front_16k_8bitsLen/ 2;
+				g_tRec.uiCursor = sizeof(g_tRec.pAudio)/ 2;
 				SPI_I2S_ITConfig(I2S, SPI_I2S_IT_RXNE, DISABLE);
 				SPI_I2S_ITConfig(I2S, SPI_I2S_IT_TXE, DISABLE);			
 				//bsp_PutKey(KEY_DOWN_JOY_OK);	/* ?¡ê?a¨ª¡ê?1?¨¹¡ã¡ä?? */
@@ -613,6 +601,9 @@ static void Audio_MAL_Play(uint32_t Addr, uint32_t Size)
 
 
 #if 0
+g_tRec.uiCursor = 0;
+g_tRec.pAudio = (int16_t *)Addr;
+
 I2S_StartPlay(I2S_Standard_LSB,I2S_DataFormat_16b,I2S_AudioFreq_8k);
 
 #endif

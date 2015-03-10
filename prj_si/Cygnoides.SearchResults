@@ -1,1 +1,38 @@
----- fp: Matches (0 in 0 files) ----
+---- rt_sem_take Matches (37 in 14 files) ----
+Cmsis_rtthread.c (os\rtthread\components\cmsis\rtos):	rt_sem_take(semaphore_id, ticks);
+Cv_osal_rtt.h (include):    error = rt_sem_take(sem, wait_time);
+Ipc.c (os\rtthread\src):rt_err_t rt_sem_take(rt_sem_t sem, rt_int32_t time)
+Ipc.c (os\rtthread\src):RTM_EXPORT(rt_sem_take);
+Ipc.c (os\rtthread\src):    return rt_sem_take(sem, 0);
+Mem.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Mem.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Mem.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Memheap.c (os\rtthread\src):        result = rt_sem_take(&(heap->lock), RT_WAITING_FOREVER);
+Memheap.c (os\rtthread\src):        result = rt_sem_take(&(heap->lock), RT_WAITING_FOREVER);
+Memheap.c (os\rtthread\src):    result = rt_sem_take(&(heap->lock), RT_WAITING_FOREVER);
+Memheap.c (os\rtthread\src):    result = rt_sem_take(&(heap->lock), RT_WAITING_FOREVER);
+Module.c (os\rtthread\src):    rt_sem_take(&mod_sem, RT_WAITING_FOREVER);
+Module.c (os\rtthread\src):    rt_sem_take(&mod_sem, RT_WAITING_FOREVER);
+Mqueue.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_mq_lock, RT_WAITING_FOREVER);
+Mqueue.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_mq_lock, RT_WAITING_FOREVER);
+Mqueue.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_mq_lock, RT_WAITING_FOREVER);
+Pthread.c (os\rtthread\components\pthreads):    result = rt_sem_take(ptd->joinable_sem, RT_WAITING_FOREVER);
+Pthread_cond.c (os\rtthread\components\pthreads):    result = rt_sem_take(&(cond->sem), timeout);
+Rtthread.h (os\rtthread\include):rt_err_t rt_sem_take(rt_sem_t sem, rt_int32_t time);
+Rt_include.h (drivers\wifi\chips\ralink\include):#define OS_SEM_EVENT_WAIT(_pSema, _status)        do{_status = rt_sem_take(_pSema, RT_WAITING_FOREVER);}while(0)
+Semaphore.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_sem_lock, RT_WAITING_FOREVER);
+Semaphore.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_sem_lock, RT_WAITING_FOREVER);
+Semaphore.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_sem_lock, RT_WAITING_FOREVER);
+Semaphore.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_sem_lock, RT_WAITING_FOREVER);
+Semaphore.c (os\rtthread\components\pthreads):    rt_sem_take(&posix_sem_lock, RT_WAITING_FOREVER);
+Semaphore.c (os\rtthread\components\pthreads):    result = rt_sem_take(sem->sem, tick);
+Semaphore.c (os\rtthread\components\pthreads):    result = rt_sem_take(sem->sem, RT_WAITING_FOREVER);
+Semaphore.c (os\rtthread\components\pthreads):    result = rt_sem_take(sem->sem, RT_WAITING_FOREVER);
+Shell.c (os\rtthread\components\finsh):        if (rt_sem_take(&shell->rx_sem, RT_WAITING_FOREVER) != RT_EOK) continue;
+Slab.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Slab.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Slab.c (os\rtthread\src):        rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Slab.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Slab.c (os\rtthread\src):            rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Slab.c (os\rtthread\src):        rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
+Slab.c (os\rtthread\src):    rt_sem_take(&heap_sem, RT_WAITING_FOREVER);
