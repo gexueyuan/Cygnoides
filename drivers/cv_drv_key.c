@@ -185,7 +185,7 @@ static void key_thread_entry(void *parameter)
 
             }
 		if(key_value)	
-			sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,key_value,NULL);
+			hi_add_event_queue(p_sys,SYS_MSG_HI_IN_UPDATE,key_value,HI_IN_KEY_PRESSED,NULL);
 
 		key_value = 0;
 	}	

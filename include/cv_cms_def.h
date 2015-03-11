@@ -95,9 +95,9 @@ enum SYSTEM_MSG_TYPE{
 
 
     VSA_MSG_BASE = 0x0300,
-    VSA_MSG_MANUAL_BC,
+    VSA_MSG_MANUAL_BC,   
     VSA_MSG_EEBL_BC,
-    VSA_MSG_VBD_BC,
+    VSA_MSG_AUTO_BC,
     
     VSA_MSG_CFCW_ALARM,
     VSA_MSG_CRCW_ALARM,
@@ -131,6 +131,12 @@ enum HI_OUT_TYPE{
     HI_OUT_EBD_STATUS,
     HI_OUT_EBD_STOP,
     HI_OUT_CANCEL_ALERT,
+};
+
+enum HI_IN_TYPE{
+    HI_IN_NONE = 0,
+    HI_IN_KEY_PRESSED,
+    HI_IN_KEY_RELEASE,
 };
 
 
@@ -203,8 +209,8 @@ typedef struct _sys_envar{
     osal_task_t *task_sys_mng;
     osal_queue_t *queue_sys_mng;
 
-    rt_thread_t task_sys_hi;
-    rt_mq_t queue_sys_hi;
+    osal_task_t *task_sys_hi;
+    osal_queue_t *queue_sys_hi;
 
     rt_timer_t timer_hi;
     rt_timer_t timer_voc;
@@ -291,11 +297,17 @@ static __inline float cv_ntohf(float f32)
 extern cms_global_t cms_envar, *p_cms_envar;
 extern cfg_param_t cms_param, *p_cms_param;
 
-int sys_add_event_queue(sys_envar_t *p_sys, 
+osal_status_t sys_add_event_queue(sys_envar_t *p_sys, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
                              uint32_t msg_argc,
                              void    *msg_argv);
+osal_status_t hi_add_event_queue(sys_envar_t *p_sys, 
+                             uint16_t msg_id, 
+                             uint16_t msg_len, 
+                             uint32_t msg_argc,
+                             void    *msg_argv);
+
 
 #endif /* __CV_CMS_DEF_H__ */
 

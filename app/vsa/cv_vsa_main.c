@@ -291,11 +291,11 @@ void vsa_receive_alarm_update(void *parameter)
     memcpy(&p_vsa->remote, p_sta, sizeof(vam_stastatus_t));
 
     if(peer_alert&VAM_ALERT_MASK_VBD)
-        vsa_add_event_queue(p_vsa, VSA_MSG_ACC_RC, 0,0,NULL); 
+        vsa_add_event_queue(p_vsa, VSA_MSG_ACC_RC, 0,VAM_ALERT_MASK_VBD,NULL); 
     else if(peer_alert&VAM_ALERT_MASK_EBD)
-        vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_RC, 0,0,NULL); 
+        vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_RC, 0,VAM_ALERT_MASK_EBD,NULL); 
     else if(peer_alert&VAM_ALERT_MASK_VOT)
-        vsa_add_event_queue(p_vsa, VSA_MSG_ACC_RC, 0,0,NULL);
+        vsa_add_event_queue(p_vsa, VSA_MSG_ACC_RC, 0,VAM_ALERT_MASK_VOT,NULL);
        
     
 }
@@ -494,8 +494,9 @@ void timer_ebd_send_callback(void* parameter)
                                             
 }
 
-static int ebd_judge(vsa_position_node_t *p_node)
+static int ebd_judge(vsa_envar_t *p_vsa)
 {
+#if 0
 
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 
@@ -514,7 +515,7 @@ static int ebd_judge(vsa_position_node_t *p_node)
 
      //   return 0;
     }
-#if 0
+
     int32_t dis_actual;
 
     dis_actual = vam_get_peer_relative_pos(p_vsa->remote.pid,0);
@@ -537,8 +538,10 @@ static int ebd_judge(vsa_position_node_t *p_node)
 
 }
 
-static int vbd_judge(vsa_position_node_t *p_node)
+static int vbd_judge(vsa_envar_t *p_vsa)
 {
+#if 0
+
  //   int32_t dis_actual, dis_alert;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     /* put the beginning only in order to output debug infomations */
@@ -561,7 +564,7 @@ static int vbd_judge(vsa_position_node_t *p_node)
     }
 
 
-#if 0
+
     int32_t dis_actual;
 
     dis_actual = vam_get_peer_relative_pos(p_vsa->remote.pid,0);// relative position
@@ -582,6 +585,12 @@ static int vbd_judge(vsa_position_node_t *p_node)
 	OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Vehicle Breakdown Alert!!! Id:%d%d%d%d\n",\
 	    p_vsa->remote.pid[0],p_vsa->remote.pid[1],p_vsa->remote.pid[2],p_vsa->remote.pid[3]);
     return 1;
+
+}
+
+static int vot_judge(vsa_envar_t *p_vsa)
+{
+    
 
 }
 
@@ -636,9 +645,32 @@ static int ebd_proc(vsa_envar_t *p_vsa, void *arg)
 
 static int vsa_manual_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
+  int err = 1;  /* '1' represent is not handled. */ 
+  static uint8_t keycnt = 0xff;
+  sys_msg_t *p_msg = (sys_msg_t *)arg;
+  
+  if(p_msg->argc){
+      vam_active_alert(VAM_ALERT_MASK_VBD);
+      sys_add_event_queue(&p_cms_envar->sys, \
+                    SYS_MSG_ALARM_ACTIVE, 0, VSA_ID_VBD, NULL);
+      OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Active Vihicle Break Down Alert\n");
+  }   
+  else {   
+      vam_cancel_alert(VAM_ALERT_MASK_VBD);
+      sys_add_event_queue(&p_cms_envar->sys, \
+                    SYS_MSG_ALARM_CANCEL, 0, VSA_ID_VBD, NULL);
+      OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Cancel Vihicle Break Down Alert\n");
+  }
+  
+  
+  return err;
+}
 
 
-  return 0;
+static int vsa_auto_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
+{
+
+    return 0;
 }
 
 static int vsa_eebl_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
@@ -648,23 +680,15 @@ static int vsa_eebl_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
   return 0;
 }
 
-
-static int vsa_vbd_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
-{
-
-
-  return 0;
-}
-
 static int vsa_cfcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
-/*
-	static int cfcw_count = 0;
-	if(cfcw_count++ >20 ){
-		osal_printf("cfcw  occur!!\n\n");
-		cfcw_count = 0;
-	}
-	*/
+    int count_neighour;
+    
+    count_neighour = *((int*)arg);
+
+    
+    
+
   return 0;
 }
 
@@ -702,14 +726,49 @@ static int vsa_side_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 
 static int vsa_accident_recieve_proc(vsa_envar_t *p_vsa, void *arg)
 {
+    sys_msg_t* p_msg = (sys_msg_t*)arg;
+    int32_t dis_actual;
+    
+
+    switch(p_msg->argc){
+
+            case VAM_ALERT_MASK_VBD:
+                  if(vbd_judge(p_vsa)){
+
+                    /* danger is detected */	
+					  if (p_vsa->alert_pend & (1<<VSA_ID_VBD)){
+					  /* do nothing */	  
+				        }
+					  else{
+					  /* inform system to start alert */
+						  p_vsa->alert_pend |= (1<<VSA_ID_VBD);
+						  sys_add_event_queue(&p_cms_envar->sys, \
+											  SYS_MSG_START_ALERT, 0, VSA_ID_VBD, NULL);
+					  }
 
 
-  return 0;
+                  }
+                    
+                    
+                break;
+
+            default:
+            break;
+
+
+
+    }
+
+
+
+    
+        return 1;
+
 }
 
 static int vsa_eebl_recieve_proc(vsa_envar_t *p_vsa, void *arg)
 {
-
+    osal_printf("recive eebl!!\n\n");
 
   return 0;
 }
@@ -944,7 +1003,7 @@ vsa_app_handler vsa_app_handler_tbl[] = {
 
     vsa_manual_broadcast_proc,
     vsa_eebl_broadcast_proc,
-    vsa_vbd_broadcast_proc,
+    vsa_auto_broadcast_proc,
 
     vsa_cfcw_alarm_proc,
     vsa_crcw_alarm_proc,
@@ -972,22 +1031,29 @@ static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
 
 	count_neighour = preprocess_pos();
 
-	//if(0 == count_neighour){
-	//		return 0;
-	//	}
 
-	if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])	
-    	vsa_add_event_queue(p_vsa, VSA_MSG_CFCW_ALARM, 0,0,NULL);
-	
-	if(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC])	
-    	vsa_add_event_queue(p_vsa, VSA_MSG_CRCW_ALARM, 0,0,NULL);
-	
-	if(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC])	
-    	vsa_add_event_queue(p_vsa, VSA_MSG_OPPOSITE_ALARM, 0,0,NULL);
-	
-	if(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC])	
-    	vsa_add_event_queue(p_vsa, VSA_MSG_SIDE_ALARM, 0,0,NULL);
 
+	if(( count_neighour < 0)||(count_neighour > VAM_NEIGHBOUR_MAXNUM)){
+			return -1;
+	    }
+    
+    if(count_neighour == 0)
+        return 0;
+
+
+	if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC] != NULL)	
+        vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
+	
+	if(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC] != NULL)	
+        vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
+	
+	if(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC] != NULL)	
+        vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
+	
+	if(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC] != NULL)	
+        vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
+
+    
   	return count_neighour;
 }
 

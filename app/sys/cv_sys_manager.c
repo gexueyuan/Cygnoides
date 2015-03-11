@@ -63,17 +63,6 @@ void null_space(void)
 {
 }
 
-void voc_contrl(uint32_t cmd, uint8_t *p_data, uint32_t length)
-{
-	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-
-    p_vsa->adpcm_data.addr = (uint32_t)p_data;
-    p_vsa->adpcm_data.size = length;
-    p_vsa->adpcm_data.channel = 0;
-    p_vsa->adpcm_data.cmd = cmd;
-    voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,cmd);
-}
-
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -142,32 +131,48 @@ osal_status_t voc_add_event_queue(vsa_envar_t *p_vsa,
 }
 
 
-rt_err_t hi_add_event_queue(sys_envar_t *p_sys, 
+osal_status_t hi_add_event_queue(sys_envar_t *p_sys, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
                              uint32_t msg_argc,
                              void    *msg_argv)
 {
-    rt_err_t err = RT_ENOMEM;
-    sys_msg_t msg;
+    osal_status_t err = OSAL_STATUS_NOMEM;
+    sys_msg_t *p_msg;
+    p_msg = osal_malloc(sizeof(sys_msg_t));
+    if (p_msg) {
+        p_msg->id = msg_id;
+        p_msg->len = msg_len;
+        p_msg->argc = msg_argc;
+        p_msg->argv = msg_argv;
+        err = osal_queue_send(p_sys->queue_sys_hi, p_msg);
+    }
 
-    msg.id = msg_id;
-    msg.len = msg_len;
-    msg.argc = msg_argc;
-    msg.argv = msg_argv;
-    err = rt_mq_send(p_sys->queue_sys_hi, &msg, sizeof(sys_msg_t));
-
-    if (err != RT_EOK){
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: failed=[%d], msg=%04x\n", __FUNCTION__, err, msg_id);
+    if (err != OSAL_STATUS_SUCCESS) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                           __FUNCTION__, err, msg_id);
+        osal_free(p_msg);                   
     }
 
     return err;
 }
 
 
+void voc_contrl(uint32_t cmd, uint8_t *p_data, uint32_t length)
+{
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    p_vsa->adpcm_data.addr = (uint32_t)p_data;
+    p_vsa->adpcm_data.size = length;
+    p_vsa->adpcm_data.channel = 0;
+    p_vsa->adpcm_data.cmd = cmd;
+    voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,cmd);
+}
+
 void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
-	uint32_t type = 0;
+	uint32_t type = 0; 
+	static uint8_t keycnt = 0xff;
 	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 	
     switch(p_msg->id){
@@ -184,9 +189,9 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			break;
 			
 		case SYS_MSG_KEY_PRESSED:
-			if(p_msg->argc == C_UP_KEY){
-                
-			    //vsa_add_event_queue(p_vsa, VSA_MSG_KEY_UPDATE, 0,p_msg->argc,NULL);
+			if(p_msg->argc == C_UP_KEY){             
+			        vsa_add_event_queue(p_vsa, VSA_MSG_VBD_BC, 0,keycnt,NULL);
+                    keycnt = ~keycnt;
                // p_vsa->adpcm_data.addr = (uint32_t)AUDIO_SAMPLE;
                // p_vsa->adpcm_data.size = bibi_front_16k_8bitsLen;
                // p_vsa->adpcm_data.channel = 0;
@@ -328,17 +333,7 @@ void timer_out_vsa_process(void* parameter)
 	rt_timer_control(p_cms_envar->sys.timer_voc,RT_TIMER_CTRL_SET_TIME,(void*)&timevalue);
 }
 
-#if 0
-void timer_out_cpuusage(void* parameter)
-{
-	uint8_t cpuusage_maj,cpuusage_min;
-	
-	cpu_usage_get(&cpuusage_maj,&cpuusage_min);
 
-	rt_kprintf("cpu usage = %d%\n",cpuusage_maj);
-	
-}
-#endif
 void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
     if (p_msg->id == SYS_MSG_HI_OUT_UPDATE){
@@ -489,6 +484,14 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         }
     }
     else if (p_msg->id == SYS_MSG_HI_IN_UPDATE){
+        
+        switch(p_msg->argc){
+            case HI_IN_KEY_PRESSED:
+                sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED, 0, p_msg->len, NULL);
+                break;
+            default:
+                break;
+            }
 
     }
 	
@@ -538,23 +541,25 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 void rt_hi_thread_entry(void *parameter)
 {
-    rt_err_t err;
+    osal_status_t err;
     sys_msg_t msg, *p_msg = &msg;
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
 	//static uint8_t ledss = 0xff;
 
     rt_timer_start(p_sys->timer_hi);
 
-	while(1){
-        err = rt_mq_recv(p_sys->queue_sys_hi, p_msg, sizeof(sys_msg_t), RT_WAITING_NO);
-        if (err == RT_EOK){
+    while(1){
+        err = osal_queue_recv(p_sys->queue_sys_hi, &p_msg, OSAL_WAITING_FOREVER);
+        if (err == OSAL_STATUS_SUCCESS){
             sys_human_interface_proc(p_sys, p_msg);
+            osal_free(p_msg);
         }
-/*
-		if(p_sys->led_priority&(1<<HI_OUT_SYS_BSM))
-		if(list_empty(&(p_cms_envar->vam.neighbour_list)))		
-		p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
-*/
+        else{
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: osal_queue_recv error [%d]\n", __FUNCTION__, err);           
+            osal_free(p_msg);
+        }
+    }
+
         /* update led status */    
 #if 0
             if (p_sys->led_blink_period == 0){/* always off */
@@ -610,9 +615,7 @@ void rt_hi_thread_entry(void *parameter)
             
         }
 #endif
-        rt_thread_delay(1);
 	}
-}
 
 void sys_init(void)
 {
