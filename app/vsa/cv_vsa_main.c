@@ -713,10 +713,27 @@ static int vsa_auto_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 static int vsa_cfcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
     int count_neighour;
-    
+    uint32_t i;	
+    int vsa_id;
+    vsa_position_node_t *pos_pnt = NULL;
+	
     count_neighour = *((int*)arg);
 
-    
+	for(i = 0;i < count_neighour;i++){
+		pos_pnt = &p_vsa->position_node[i];
+		vsa_id = ccw_judge(pos_pnt);
+		if(vsa_id){
+			pos_pnt->vsa_position.vsa_id = vsa_id;
+			ccw_add_list(vsa_id,pos_pnt);
+		}
+		else{ 
+			if(pos_pnt->vsa_position.vsa_id){
+				pos_pnt->vsa_position.vsa_id = 0;
+				ccw_del_list(vsa_id,pos_pnt);
+			}
+
+		}
+	}
     
 
   return 0;
