@@ -139,7 +139,6 @@ int32_t  preprocess_pos(void)
     vsa_position_node_t *p_pnt = NULL;
     double temp_dis;
     int8_t i = 0;
-    static uint8_t send_flag = 1;
     uint8_t peer_pid[VAM_NEIGHBOUR_MAXNUM][RCP_TEMP_ID_LEN];
     uint32_t peer_count;
 
@@ -256,10 +255,18 @@ vsa_position_node_t *vsa_find_pn(vsa_envar_t *p_vsa, uint8_t *temporary_id)
     return p_pn;
 }
 
-void vsa_bsm_status_update(void *parameter)
+
+void vsa_local_status_update(void* parameter)
 {
     vam_stastatus_t *p_sta = (vam_stastatus_t *)parameter;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    memcpy(&p_vsa->local, p_sta, sizeof(vam_stastatus_t));
+}
+
+void vsa_bsm_status_update(void *parameter)
+{
+    vam_stastatus_t *p_sta = (vam_stastatus_t *)parameter;
 
 	if(p_sta)
 		{
@@ -309,7 +316,8 @@ void vsa_eebl_broadcast_update(void *parameter)
 
 void vsa_start(void)
 {
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;	
+    vam_set_event_handler(VAM_EVT_LOCAL_UPDATE, vsa_local_status_update);
     vam_set_event_handler(VAM_EVT_PEER_UPDATE, vsa_bsm_status_update);
     vam_set_event_handler(VAM_EVT_PEER_ALARM, vsa_receive_alarm_update);
     vam_set_event_handler(VAM_EVT_GPS_STATUS, vsa_gps_status_update);
@@ -591,7 +599,7 @@ static int vbd_judge(vsa_envar_t *p_vsa)
 static int vot_judge(vsa_envar_t *p_vsa)
 {
     
-
+return 0;
 }
 
 #if 0
@@ -646,7 +654,6 @@ static int ebd_proc(vsa_envar_t *p_vsa, void *arg)
 static int vsa_manual_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
   int err = 1;  /* '1' represent is not handled. */ 
-  static uint8_t keycnt = 0xff;
   sys_msg_t *p_msg = (sys_msg_t *)arg;
   
   if(p_msg->argc){
@@ -667,17 +674,23 @@ static int vsa_manual_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 }
 
 
+static int vsa_eebl_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
+{
+	if ((p_vsa->local.speed >= p_vsa->working_param.danger_detect_speed_threshold)){
+		vam_active_alert(1);
+		rt_timer_stop(p_vsa->timer_ebd_send);
+		rt_timer_start(p_vsa->timer_ebd_send);
+		OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Detect Emergency braking \n\n");
+		sys_add_event_queue(&p_cms_envar->sys, \
+		                            SYS_MSG_ALARM_ACTIVE, 0, VSA_ID_EBD, NULL);
+	}
+	return 0;
+
+}
 static int vsa_auto_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
 
     return 0;
-}
-
-static int vsa_eebl_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
-{
-
-
-  return 0;
 }
 
 static int vsa_cfcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
@@ -727,7 +740,6 @@ static int vsa_side_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 static int vsa_accident_recieve_proc(vsa_envar_t *p_vsa, void *arg)
 {
     sys_msg_t* p_msg = (sys_msg_t*)arg;
-    int32_t dis_actual;
     
 
     switch(p_msg->argc){
@@ -808,7 +820,7 @@ static int alarm_update_proc(vsa_envar_t *p_vsa, void *arg)
 
     }
     
-
+#if 0
     if((peer_alert&VAM_ALERT_MASK_EBD)&&(ebd_judge(p_pnt)>0)){           
             if (p_vsa->alert_pend & (1<<VSA_ID_EBD)){        
             }
@@ -843,7 +855,7 @@ static int alarm_update_proc(vsa_envar_t *p_vsa, void *arg)
     		  sys_add_event_queue(&p_cms_envar->sys, \
     							  SYS_MSG_STOP_ALERT, 0, VSA_ID_VBD, NULL);
     	}    
-
+#endif
     return err;
 }
 
@@ -1026,7 +1038,6 @@ vsa_app_handler vsa_app_handler_tbl[] = {
 
 static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
 {
-    static uint8_t empty_detec = 1;
     int count_neighour;
 
 	count_neighour = preprocess_pos();
