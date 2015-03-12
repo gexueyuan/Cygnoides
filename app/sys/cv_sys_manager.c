@@ -383,20 +383,19 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;
 				
             case HI_OUT_VBD_ALERT:
-                rt_timer_start(p_cms_envar->sys.timer_voc);
+                //rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT))
 					return;
 				else
 					{
 			   			p_sys->led_priority |= 1<<HI_OUT_VBD_ALERT;
 						//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
-						OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"vbd alert!!\n\n");
+						OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert!!\n\n");
 					}	
                 break;				
 
 			case HI_OUT_EBD_ALERT:
-              //  voc_contrl(16000, (uint8_t *)voice_16k_8bits, voice_16k_8bitsLen);
-              	rt_timer_start(p_cms_envar->sys.timer_voc);            
+              //	rt_timer_start(p_cms_envar->sys.timer_voc);            
 			   	p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
                 break;
 
@@ -418,14 +417,14 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				if(p_cms_envar->vsa.alert_pend == 0)
 					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_VBD_ALERT);
-                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"vbd alert  cancel!!\n\n");
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert  cancel!!\n\n");
 				break;
 
-			case HI_OUT_EBD_CANCEL:
+			case HI_OUT_EBD_CANCEL://cancel alarm
 				if(p_cms_envar->vsa.alert_pend == 0)
 					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_EBD_ALERT);
-
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI ebd alert  cancel!!\n\n");
 				break;
 				
 			case HI_OUT_VBD_STATUS:
@@ -436,10 +435,10 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;
 
 			case HI_OUT_VBD_STOP:
-				p_sys->led_priority &= ~(1<<HI_OUT_VBD_STATUS);
+				p_sys->led_priority &= ~(1<<HI_OUT_VBD_STATUS);//stop broadcast
 				break;
 			case HI_OUT_EBD_STOP:
-				p_sys->led_priority &= ~(1<<HI_OUT_EBD_STATUS);
+				p_sys->led_priority &= ~(1<<HI_OUT_EBD_STATUS);//stop broadcast
 				break;	
 
 				

@@ -45,7 +45,7 @@ static void GPIO_Configuration(void)
 static void key_thread_entry(void *parameter)
 {
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
-	uint32_t  key_value = 0;
+    uint32_t  key_value = 0;
 	
 	
 	GPIO_Configuration();

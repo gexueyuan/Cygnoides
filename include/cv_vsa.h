@@ -31,6 +31,7 @@ enum VSA_APP_ID{
     VSA_ID_CRD_REAR,
     VSA_ID_VBD,    
     VSA_ID_EBD,
+    VSA_ID_VOT,
     VSM_ID_END
 };
 
