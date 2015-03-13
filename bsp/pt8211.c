@@ -366,29 +366,9 @@ void I2S_CODEC_DataTransfer(void)
 {
 	uint16_t usData;
 
-#if 1	/* ????¡Á¨®¨¦¨´¦Ì¨¤(¡ã2??¨¤3STM32?a¡¤¡é¡ã?MIC¡ã2¡Á¡ã?¨²¡Á¨®¨¦¨´¦Ì¨¤), ¡¤?¨°?¨º¡À¡Á¨®¨®¨°¨¦¨´¦Ì¨¤?¨¤¨ª? */
-#if 0
-    if (g_tRec.ucStatus == STA_RECORDING)	/* ??¨°?¡Á¡ä¨¬? */
-	{	
-		usData = SPI_I2S_ReceiveData(SPI2);
-		if (SPI_I2S_GetFlagStatus(SPI2, I2S_FLAG_CHSIDE) != SET)	/* ?D??¨º?2?¨º?¡Á¨®¨¦¨´¦Ì¨¤ */
-		{
-			g_tRec.pAudio[g_tRec.uiCursor] = usData;	/* ¡À¡ê¡ä?¨°??¦Ì¨ºy?Y */
-			if (++g_tRec.uiCursor >= EXT_SRAM_SIZE / 2)
-			{		
-				g_tRec.uiCursor = EXT_SRAM_SIZE / 2;
-				/* ???1I2S2 RXNE?D??(?¨®¨º?2???)¡ê?D¨¨¨°a¨º¡À?¨´¡ä¨°?a */ 
-				SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_RXNE, DISABLE);
-				/* ???1I2S2 TXE?D??(¡¤¡é?¨ª?o3?????)¡ê?D¨¨¨°a¨º¡À?¨´¡ä¨°?a */ 
-				SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_TXE, DISABLE);
-				bsp_PutKey(KEY_DOWN_JOY_OK);	/* ?¡ê?a¨ª¡ê?1?¨¹¡ã¡ä?? */
-			}
-		}
-	}
-	else if (g_tRec.ucStatus == STA_PLAYING)	/* ¡¤?¨°?¡Á¡ä¨¬?¡ê?¨®¨°¨¦¨´¦Ì¨¤¦Ì??¦Ì¦Ì¨¨¨®¨²¡Á¨®¨¦¨´¦Ì¨¤ */
-#endif
+#if 1
+
     {
-        //mdata = -30000;
 		usData = g_tRec.pAudio[g_tRec.uiCursor++];		
 //		if (SPI_I2S_GetFlagStatus(SPI2, I2S_FLAG_CHSIDE) != SET)	
 //		{		
@@ -401,7 +381,6 @@ void I2S_CODEC_DataTransfer(void)
 			}		
 //		}
 		SPI_I2S_SendData(I2S, usData);	
-       // mdata++;
 
 	}
 /*
@@ -412,7 +391,7 @@ void I2S_CODEC_DataTransfer(void)
 		SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_TXE, DISABLE);
 	}	
 	*/
-#else	/* ??¨¦¨´¦Ì¨¤??¨°?o¨ª¡¤?¨°? */
+#else	
 	if (g_tRec.ucStatus == STA_RECORDING)	/* ??¨°?¡Á¡ä¨¬? */
 	{	
 		usData = SPI_I2S_ReceiveData(SPI2);

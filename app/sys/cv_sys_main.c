@@ -73,10 +73,11 @@ void rt_init_thread_entry(void *parameter)
     wnet_init();
     vam_init();
     mda_init();
-    vsa_init();    
-    sys_init();
     gsnr_init();
     voc_init();
+    sys_init();
+    vsa_init();    
+
 
     //EVAL_AUDIO_Init(4,100, I2S_AudioFreq_16k);
     //quit...

@@ -29,6 +29,8 @@ enum VSA_APP_ID{
     VSA_ID_NONE = 0,
     VSA_ID_CRD,
     VSA_ID_CRD_REAR,
+    VSA_ID_OPS,
+    VSA_ID_SIDE,
     VSA_ID_VBD,    
     VSA_ID_EBD,
     VSA_ID_VOT,

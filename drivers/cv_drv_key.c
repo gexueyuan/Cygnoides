@@ -10,6 +10,10 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "key"
+#include "cv_osal_dbg.h"
 
 #include "cv_cms_def.h"
 #include "key.h"
@@ -163,8 +167,7 @@ static void key_thread_entry(void *parameter)
 		if (((key->key_get)==C_UP_KEY) && ((key->key_flag) & C_FLAG_SHORT))
             {
                 key_value = C_UP_KEY;
-                rt_kprintf("key0 press!\n ");
-                led_blink(LED_RED);
+                OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"key0 press!\n\n");
 
             }      
         
@@ -172,16 +175,14 @@ static void key_thread_entry(void *parameter)
 		if (((key->key_get)==C_DOWN_KEY) && ((key->key_flag) & C_FLAG_SHORT))
             {      
                 key_value = C_DOWN_KEY;
-                rt_kprintf("key1 press!\n");
-                led_blink(LED_GREEN);
+                OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"key1 press!\n\n");
 
             }
 
 		if (((key->key_get)==C_LEFT_KEY) && ((key->key_flag) & C_FLAG_SHORT))
             {      
                 key_value = C_LEFT_KEY;
-                rt_kprintf("key2 press!\n");
-                led_blink(LED_BLUE);
+                OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"key2 press!\n\n");
 
             }
 		if(key_value)	
@@ -196,13 +197,13 @@ static void key_thread_entry(void *parameter)
 	
 int rt_key_init(void)
 {
-    rt_thread_t key_tid;
+    osal_task_t  *key_tid;
     sys_envar_t *p_sys = &p_cms_envar->sys;
 	
-    key_tid = rt_thread_create("key",
+    key_tid = osal_task_create("t-key",
                                key_thread_entry, p_sys,
-                               512, 13, 5);
-    if (key_tid != RT_NULL) rt_thread_startup(key_tid);
+                               RT_KEY_THREAD_STACK_SIZE, RT_KEY_THREAD_PRIORITY);
+    osal_assert(key_tid != NULL);
 
 	return 0;
 }

@@ -345,6 +345,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 			case HI_OUT_BSM_UPDATE:
 					p_sys->led_priority |= 1<<SYS_MSG_BSM_UPDATE;
+                    led_blink(LED2);
 				break;
 			case HI_OUT_BSM_NONE:
 					p_sys->led_priority &= ~(1<<SYS_MSG_BSM_UPDATE);
@@ -383,7 +384,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;
 				
             case HI_OUT_VBD_ALERT:
-                //rt_timer_start(p_cms_envar->sys.timer_voc);
+                rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT))
 					return;
 				else
@@ -395,7 +396,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 break;				
 
 			case HI_OUT_EBD_ALERT:
-              //	rt_timer_start(p_cms_envar->sys.timer_voc);            
+              	rt_timer_start(p_cms_envar->sys.timer_voc);            
 			   	p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
                 break;
 
@@ -468,6 +469,8 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 //p_sys->led_blink_period[LED_GREEN] = 20;
                 //p_sys->led_blink_cnt[LED_GREEN] = 0;
                 p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
+                
+                led_off(LED0);
                 break;
 
             case HI_OUT_GPS_CAPTURED:
@@ -476,6 +479,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 //p_sys->led_blink_period[LED_GREEN] = 0xFFFF;
                 //p_sys->led_blink_cnt[LED_GREEN] = 0;
                 p_sys->led_priority &= ~(1<<HI_OUT_GPS_LOST);
+                led_on(LED0);
                 break;
 
             default:
@@ -494,7 +498,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
     }
 	
-
+#if 0
 	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
 		||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
 		{
@@ -534,7 +538,8 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_cnt = 0;
 
 	}
-		
+#endif
+
 	
 }
 
