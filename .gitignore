@@ -78,6 +78,9 @@ $RECYCLE.BIN/
 *.GXY
 *.Gexueyuan
 *.lnp
-prj_si/*
+prj_si/
+prj_keil/
+!prj_keil/*.uvproj
 *.ini
 *.wangyifeng
+/bin
