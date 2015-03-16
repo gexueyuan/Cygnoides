@@ -37,6 +37,8 @@ OSAL_DEBUG_ENTRY_DEFINE(sysc)
 
 #define AUDIO_START_ADDRESS     58 /* Offset relative to audio file header size */
 
+#define USE_THREE_LED
+
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
@@ -63,6 +65,16 @@ void null_space(void)
 {
 }
 
+#ifdef USE_THREE_LED
+
+uint32_t  RED_blink_period = 250;
+uint32_t  RED_blink_cnt = 0;
+uint32_t  GREEN_blink_period = 25;
+uint32_t  GREEN_blink_cnt = 0;
+uint32_t  BLUE_blink_period = 25;
+uint32_t  BLUE_blink_cnt = 0;
+
+#endif
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -538,9 +550,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_cnt = 0;
 
 	}
-#endif
-
-	
+#endif	
 }
 
 void rt_hi_thread_entry(void *parameter)
@@ -562,7 +572,7 @@ void rt_hi_thread_entry(void *parameter)
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: osal_queue_recv error [%d]\n", __FUNCTION__, err);           
             osal_free(p_msg);
         }
-    }
+   // }
 
         /* update led status */    
 #if 0
@@ -619,64 +629,56 @@ void rt_hi_thread_entry(void *parameter)
             
         }
 #endif
+if (++RED_blink_cnt >= RED_blink_period){
+    led_blink(LED_RED);
+    RED_blink_cnt = 0;
+    }
+
+#if 0
 	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
 		||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
 		{
-			p_sys->led_color = LED_RED;//r=1,b=0,g=0
-		    p_sys->led_blink_duration = 0xFFFF;
-            p_sys->led_blink_period = 15;
-            p_sys->led_blink_cnt = 0;
-			if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
-				led_blink(p_sys->led_color);
-				p_sys->led_blink_cnt = 0;
+			if (++RED_blink_cnt >= RED_blink_period){
+				led_blink(LED_RED);
+				RED_blink_cnt = 0;
 				}
 	}
 	else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS))){
-			p_sys->led_color = LED_RED;//r=1,b=0,g=1			
-			led_on(p_sys->led_color);
+			led_on(LED_RED);
 	}
 	else{
-			led_off(p_sys->led_color);
+        
+			led_off(LED_RED);
 	}
 
 	if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
 		{
-			p_sys->led_color = LED_BLUE;//r=1,b=0,g=1
-			p_sys->led_blink_duration= 0xFFFF;
-            p_sys->led_blink_period = 25;
-            p_sys->led_blink_cnt = 0;
-			if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
-				led_blink(p_sys->led_color);
-				p_sys->led_blink_cnt = 0;
+			if (++GREEN_blink_cnt >= GREEN_blink_period){
+				led_blink(LED_GREEN);
+				GREEN_blink_cnt = 0;
 				}
 		}
 	else {
-			p_sys->led_color = LED_BLUE;//r=0,b=0,g=1
-			led_off(p_sys->led_color);
+			led_off(LED_GREEN);
 
 	}
 	
 	if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
 		{
-            p_sys->led_color = LED_GREEN;//r=1,b=0,g=1
-			p_sys->led_blink_duration= 0xFFFF;
-			p_sys->led_blink_period = 25;
-			p_sys->led_blink_cnt = 0;
 			//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
-			if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
-				led_blink(p_sys->led_color);
-				p_sys->led_blink_cnt = 0;
+			if (++BLUE_blink_cnt >= BLUE_blink_period){
+				led_blink(LED_BLUE);
+				BLUE_blink_cnt = 0;
 				}
 
 	}
 	else{
-			p_sys->led_color = LED_GREEN;//r=1,b=0,g=1
-			led_off(p_sys->led_color);
+			led_off(LED_BLUE);
 	}
-
-
+    
+ #endif
 	}
-
+}
 void sys_init(void)
 {
     sys_envar_t *p_sys = &p_cms_envar->sys;
