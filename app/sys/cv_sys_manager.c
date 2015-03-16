@@ -345,7 +345,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 			case HI_OUT_BSM_UPDATE:
 					p_sys->led_priority |= 1<<SYS_MSG_BSM_UPDATE;
-                    led_blink(LED2);
+                    //led_blink(LED2);
 				break;
 			case HI_OUT_BSM_NONE:
 					p_sys->led_priority &= ~(1<<SYS_MSG_BSM_UPDATE);
@@ -619,6 +619,62 @@ void rt_hi_thread_entry(void *parameter)
             
         }
 #endif
+	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
+		||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
+		{
+			p_sys->led_color = LED_RED;//r=1,b=0,g=0
+		    p_sys->led_blink_duration = 0xFFFF;
+            p_sys->led_blink_period = 15;
+            p_sys->led_blink_cnt = 0;
+			if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
+				led_blink(p_sys->led_color);
+				p_sys->led_blink_cnt = 0;
+				}
+	}
+	else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS))){
+			p_sys->led_color = LED_RED;//r=1,b=0,g=1			
+			led_on(p_sys->led_color);
+	}
+	else{
+			led_off(p_sys->led_color);
+	}
+
+	if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
+		{
+			p_sys->led_color = LED_BLUE;//r=1,b=0,g=1
+			p_sys->led_blink_duration= 0xFFFF;
+            p_sys->led_blink_period = 25;
+            p_sys->led_blink_cnt = 0;
+			if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
+				led_blink(p_sys->led_color);
+				p_sys->led_blink_cnt = 0;
+				}
+		}
+	else {
+			p_sys->led_color = LED_BLUE;//r=0,b=0,g=1
+			led_off(p_sys->led_color);
+
+	}
+	
+	if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
+		{
+            p_sys->led_color = LED_GREEN;//r=1,b=0,g=1
+			p_sys->led_blink_duration= 0xFFFF;
+			p_sys->led_blink_period = 25;
+			p_sys->led_blink_cnt = 0;
+			//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
+			if (++p_sys->led_blink_cnt >= p_sys->led_blink_period){
+				led_blink(p_sys->led_color);
+				p_sys->led_blink_cnt = 0;
+				}
+
+	}
+	else{
+			p_sys->led_color = LED_GREEN;//r=1,b=0,g=1
+			led_off(p_sys->led_color);
+	}
+
+
 	}
 
 void sys_init(void)
