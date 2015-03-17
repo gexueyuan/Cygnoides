@@ -66,7 +66,7 @@ void rt_init_thread_entry(void *parameter)
     gps_init();
   	nmea_init();
     //voc_init();
-    led_init();
+    rt_led_init();
 	rt_key_init();
     usb_init();
 

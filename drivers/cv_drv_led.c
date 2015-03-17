@@ -10,6 +10,12 @@
            ...
 ******************************************************************************/
 #include "cv_osal.h"
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "led"
+#include "cv_osal_dbg.h"
+
+
 
 #include "components.h"
 #include "cv_vam.h"
@@ -60,4 +66,49 @@ void led_blink(Led_TypeDef led)
 
 
 }
+
+static void led_thread_entry(void *parameter)
+{
+
+    osal_status_t err;
+    sys_msg_t msg, *p_msg = &msg;
+    sys_envar_t *p_sys = (sys_envar_t *)parameter;
+
+    while(1){
+        osal_printf("this hi thread!!\n\n");
+        if (++RED_blink_cnt >= RED_blink_period){
+            led_blink(LED_RED);
+            RED_blink_cnt = 0;
+            }
+        err = osal_queue_recv(p_sys->queue_sys_hi, &p_msg, OSAL_WAITING_FOREVER);
+        if (err == OSAL_STATUS_SUCCESS){
+            sys_human_interface_proc(p_sys, p_msg);
+            osal_free(p_msg);
+        }
+        else{
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: osal_queue_recv error [%d]\n", __FUNCTION__, err);           
+            osal_free(p_msg);
+        }
+    }
+
+
+}
+
+int rt_led_init(void)
+{
+    osal_task_t  *led_tid;
+    sys_envar_t *p_sys = &p_cms_envar->sys;
+
+    led_init();
+	
+    led_tid = osal_task_create("t-led",
+                               led_thread_entry, p_sys,
+                               RT_KEY_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
+    osal_assert(led_tid != NULL);
+
+    
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
+	return 0;
+}
+
 

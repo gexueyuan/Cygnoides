@@ -214,6 +214,8 @@ typedef struct _sys_envar{
     osal_task_t *task_sys_hi;
     osal_queue_t *queue_sys_hi;
 
+    osal_queue_t *queue_hi_led;
+
     rt_timer_t timer_hi;
     rt_timer_t timer_voc;
 	rt_timer_t timer_cpuusage;

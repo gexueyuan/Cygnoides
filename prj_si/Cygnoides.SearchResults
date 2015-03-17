@@ -1,11 +1,1 @@
----- vam_active_alert Matches (10 in 4 files) ----
-Cv_vam.h (include):int32_t vam_active_alert(uint16_t alert);
-Cv_vam_api.c (app\vam):int32_t vam_active_alert(uint16_t alert)
-Cv_vam_api.c (app\vam):        vam_active_alert(type);
-Cv_vsa_main.c (app\vsa):				vam_active_alert(1);
-Cv_vsa_main.c (app\vsa):      vam_active_alert(VAM_ALERT_MASK_VBD);
-Cv_vsa_main.c (app\vsa):		vam_active_alert(VAM_ALERT_MASK_EBD);
-Cv_vsa_main.c (app\vsa):        vam_active_alert(1);
-Cv_vsa_main.c (app\vsa):                vam_active_alert(VAM_ALERT_MASK_VBD);
-Cv_vsa_main.c (app\vsa):								vam_active_alert(0);
-Key.h (include):extern int32_t vam_active_alert(uint16_t alert);
+---- test_comm Matches (0 in 0 files) ----
