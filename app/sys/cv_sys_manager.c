@@ -563,6 +563,11 @@ void rt_hi_thread_entry(void *parameter)
     rt_timer_start(p_sys->timer_hi);
 
     while(1){
+        osal_printf("this hi thread!!\n\n");
+        if (++RED_blink_cnt >= RED_blink_period){
+            led_blink(LED_RED);
+            RED_blink_cnt = 0;
+            }
         err = osal_queue_recv(p_sys->queue_sys_hi, &p_msg, OSAL_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
             sys_human_interface_proc(p_sys, p_msg);
@@ -572,7 +577,7 @@ void rt_hi_thread_entry(void *parameter)
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "%s: osal_queue_recv error [%d]\n", __FUNCTION__, err);           
             osal_free(p_msg);
         }
-   // }
+
 
         /* update led status */    
 #if 0
@@ -629,10 +634,7 @@ void rt_hi_thread_entry(void *parameter)
             
         }
 #endif
-if (++RED_blink_cnt >= RED_blink_period){
-    led_blink(LED_RED);
-    RED_blink_cnt = 0;
-    }
+
 
 #if 0
 	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
