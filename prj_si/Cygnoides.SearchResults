@@ -1,5 +1,0 @@
----- HUMAN_ITERFACE_VOC Matches (4 in 1 files) ----
-Cv_sys_manager.c (app\sys):#define HUMAN_ITERFACE_VOC         	   SECOND_TO_TICK(3)
-Cv_sys_manager.c (app\sys):	timevalue = HUMAN_ITERFACE_VOC;
-Cv_sys_manager.c (app\sys):        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_ONE_SHOT); 					
-Cv_sys_manager.c (app\sys):        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_ONE_SHOT); 					
