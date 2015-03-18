@@ -239,7 +239,15 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                // p_vsa->adpcm_data.cmd = VOC_PLAY;
               // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
-                voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
+               //voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);// 
+               
+              //voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
+
+               
+              // voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
+
+               
+              // voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);
               // flash_set_env("abc",value);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
@@ -381,7 +389,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
 				p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
-				//voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
+				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
 				break;
 
 			case HI_OUT_BSM_UPDATE:

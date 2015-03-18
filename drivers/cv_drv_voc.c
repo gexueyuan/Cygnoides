@@ -182,7 +182,7 @@ void adpcm_play(char* pBuffer, uint32_t Size)
 
 	   OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,\
 	   		"this %d times decode and play,size = %lu Byte\nchannel is %d\naddress is %x\n\n",\
-	   		count_play,play_pcm_data.size,cursor%BUFFER_COUNT,audio_pcm.addr);
+	   		count_play,play_pcm_data.size,cursor%BUFFER_COUNT,play_pcm_data.addr);
 	   cursor++;       
        osal_sem_release(sem_play);
    }
