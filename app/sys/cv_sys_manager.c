@@ -170,6 +170,35 @@ osal_status_t hi_add_event_queue(sys_envar_t *p_sys,
 }
 
 
+
+
+osal_status_t led_add_event_queue(sys_envar_t *p_sys, 
+                             uint16_t msg_id, 
+                             uint16_t msg_len, 
+                             uint32_t msg_argc,
+                             void    *msg_argv)
+{
+    osal_status_t err = OSAL_STATUS_NOMEM;
+    sys_msg_t *p_msg;
+    p_msg = osal_malloc(sizeof(sys_msg_t));
+    if (p_msg) {
+        p_msg->id = msg_id;
+        p_msg->len = msg_len;
+        p_msg->argc = msg_argc;
+        p_msg->argv = msg_argv;
+        err = osal_queue_send(p_sys->queue_hi_led, p_msg);
+    }
+
+    if (err != OSAL_STATUS_SUCCESS) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                           __FUNCTION__, err, msg_id);
+        osal_free(p_msg);                   
+    }
+
+    return err;
+}
+
+
 void voc_contrl(uint32_t cmd, uint8_t *p_data, uint32_t length)
 {
 	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
@@ -210,7 +239,7 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                // p_vsa->adpcm_data.cmd = VOC_PLAY;
               // rt_mb_send(p_vsa->mb_sound,(uint32_t)&(p_vsa->adpcm_data));
               //adpcm_play((char*)AUDIO_SAMPLE, bibi_front_16k_8bitsLen);
-               // voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
+                voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,VOC_PLAY);
               // flash_set_env("abc",value);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
@@ -352,15 +381,16 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
 				p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
-				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
+				//voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
 				break;
 
 			case HI_OUT_BSM_UPDATE:
 					p_sys->led_priority |= 1<<SYS_MSG_BSM_UPDATE;
-                    //led_blink(LED2);
+					led_add_event_queue(p_sys,LED_BLUE,0,LED_BLINK,NULL);
 				break;
 			case HI_OUT_BSM_NONE:
 					p_sys->led_priority &= ~(1<<SYS_MSG_BSM_UPDATE);
+					led_add_event_queue(p_sys,LED_BLUE,0,LED_OFF,NULL);
 				break;				
 				
             case HI_OUT_CRD_ALERT:
@@ -480,9 +510,9 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 //p_sys->led_blink_duration[LED_GREEN] = 0xFFFF;
                 //p_sys->led_blink_period[LED_GREEN] = 20;
                 //p_sys->led_blink_cnt[LED_GREEN] = 0;
-                p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
+                p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;			
+				led_add_event_queue(p_sys,LED_GREEN,0,LED_OFF,NULL);
                 
-                led_off(LED0);
                 break;
 
             case HI_OUT_GPS_CAPTURED:
@@ -491,7 +521,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 //p_sys->led_blink_period[LED_GREEN] = 0xFFFF;
                 //p_sys->led_blink_cnt[LED_GREEN] = 0;
                 p_sys->led_priority &= ~(1<<HI_OUT_GPS_LOST);
-                led_on(LED0);
+				led_add_event_queue(p_sys,LED_GREEN,0,LED_ON,NULL);
                 break;
 
             default:
@@ -510,7 +540,6 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
     }
 	
-#if 0
 	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
 		||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
 		{
@@ -518,6 +547,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		    p_sys->led_blink_duration = 0xFFFF;
             p_sys->led_blink_period = 15;
             p_sys->led_blink_cnt = 0;
+			led_add_event_queue(p_sys,LED_RED,0,LED_BLINK,NULL);
 	}
 	else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS)))
 		{
@@ -525,22 +555,32 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_duration= 0xFFFF;
             p_sys->led_blink_period = 15;
             p_sys->led_blink_cnt = 0;
+			led_add_event_queue(p_sys,LED_RED,0,LED_ON,NULL);
+	}
+	else {
+		led_add_event_queue(p_sys,LED_RED,0,LED_OFF,NULL);
+
 	}
 
-	else if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
+	 if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
 		{
 			p_sys->led_color = LED_BLUE;//r=1,b=0,g=1
 			p_sys->led_blink_duration= 0xFFFF;
             p_sys->led_blink_period = 25;
             p_sys->led_blink_cnt = 0;
+			led_add_event_queue(p_sys,LED_GREEN,0,LED_OFF,NULL);
 		}
-	else if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
+	 else{
+		 led_add_event_queue(p_sys,LED_GREEN,0,LED_ON,NULL);
+
+	 }
+	 if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
 		{
             p_sys->led_color = LED_BLUE;//r=1,b=0,g=1
 			p_sys->led_blink_duration= 0xFFFF;
 			p_sys->led_blink_period = 25;
 			p_sys->led_blink_cnt = 0;
-			//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
+			led_add_event_queue(p_sys,LED_BLUE,0,LED_BLINK,NULL);
 
 	}
 	else {
@@ -548,9 +588,8 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_duration= 0xFFFF;
 			p_sys->led_blink_period = 0xFFFF;
 			p_sys->led_blink_cnt = 0;
-
+			led_add_event_queue(p_sys,LED_BLUE,0,LED_OFF,NULL);
 	}
-#endif	
 }
 
 void rt_hi_thread_entry(void *parameter)
@@ -563,11 +602,6 @@ void rt_hi_thread_entry(void *parameter)
     rt_timer_start(p_sys->timer_hi);
 
     while(1){
-        osal_printf("this hi thread!!\n\n");
-        if (++RED_blink_cnt >= RED_blink_period){
-            led_blink(LED_RED);
-            RED_blink_cnt = 0;
-            }
         err = osal_queue_recv(p_sys->queue_sys_hi, &p_msg, OSAL_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
             sys_human_interface_proc(p_sys, p_msg);
@@ -699,6 +733,10 @@ void sys_init(void)
     /* object for human interface */
     p_sys->queue_sys_hi = rt_mq_create("q-hi", sizeof(sys_msg_t), SYS_QUEUE_SIZE, RT_IPC_FLAG_FIFO);
     RT_ASSERT(p_sys->queue_sys_hi != RT_NULL);
+
+    p_sys->queue_hi_led = rt_mq_create("q-led", sizeof(sys_msg_t), SYS_QUEUE_SIZE, RT_IPC_FLAG_FIFO);
+    RT_ASSERT(p_sys->queue_hi_led != RT_NULL);
+
 
     p_sys->task_sys_hi = rt_thread_create("t-hi",
                            rt_hi_thread_entry, p_sys,

@@ -699,7 +699,7 @@ static int cfcw_judge(vsa_position_node_t *p_node)
 		
         return 0;
     }
-
+#if 0
     if((p_node->vsa_position.vsa_location >= AHEAD_LEFT)&&
         (p_node->vsa_position.vsa_location <= AHEAD_RIGHT)){
         
@@ -728,8 +728,27 @@ static int cfcw_judge(vsa_position_node_t *p_node)
 
     return VSA_ID_CRD_REAR;
     }    
+#endif
+		
+	if (p_node->vsa_position.local_speed <= (p_node->vsa_position.remote_speed +\
+											p_vsa->working_param.crd_oppsite_speed)){
+		
+		return 0;
+	}
 
-    return 0;
+
+
+	/* remote is behind of local */
+	if (dis_actual <= 0){
+		
+		return 0;
+	}
+
+	if (dis_actual > dis_alert){
+		return 0;
+	}
+	return VSA_ID_CRD;
+
 }
 
 
@@ -767,7 +786,7 @@ static int crcw_judge(vsa_position_node_t *p_node)
 		
         return 0;
     }
-
+#if 0
     if((p_node->vsa_position.vsa_location >= AHEAD_LEFT)&&
         (p_node->vsa_position.vsa_location <= AHEAD_RIGHT)){
         
@@ -796,8 +815,21 @@ static int crcw_judge(vsa_position_node_t *p_node)
 
     return VSA_ID_CRD_REAR;
     }    
+#endif
+	if ((p_node->vsa_position.local_speed + p_vsa->working_param.crd_oppsite_speed) >= p_node->vsa_position.remote_speed){
+		
+		return 0;
+	}
 
-    return 0;
+    /*local  is behind of remote */
+    if (dis_actual >= 0){
+		
+        return 0;
+    }
+
+    if ((-dis_actual) > dis_alert){
+        return 0;
+    }
 }
 
 

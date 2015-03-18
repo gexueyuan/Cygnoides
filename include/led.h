@@ -11,6 +11,11 @@ typedef enum
   LED3 = 3,
 }Led_TypeDef;
 
+enum{
+	LED_ON = 0,
+	LED_OFF,
+	LED_BLINK,
+};
 
 #define LEDn  3
 #define LED_RED     LED0
@@ -42,10 +47,8 @@ void STM_EVAL_LEDOn(Led_TypeDef Led);
 void STM_EVAL_LEDOff(Led_TypeDef Led);
 void STM_EVAL_LEDBlink(Led_TypeDef Led);
 
-void led_init(void);
-void led_on(Led_TypeDef led);
-void led_off(Led_TypeDef led);
-void led_blink(Led_TypeDef led);
+int rt_led_init(void);
+
 
 
 #endif
