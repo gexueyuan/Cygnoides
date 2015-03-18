@@ -525,7 +525,6 @@ void timer_ebd_send_callback(void* parameter)
 
 static int ebd_judge(vsa_envar_t *p_vsa)
 {
-#if 0
     int32_t dis_actual;
     vsa_position_node_t *p_node;
     p_node = vsa_find_pn(p_vsa,p_vsa->remote.pid);
@@ -552,14 +551,12 @@ static int ebd_judge(vsa_envar_t *p_vsa)
     if (dis_actual <= 0){
         return 0;
     }
-#endif
     return 1;
 
 }
 
 static int vbd_judge(vsa_envar_t *p_vsa)
 {
-#if 0
     vsa_position_node_t *p_node;    
     int32_t dis_actual;
     p_node = vsa_find_pn(p_vsa,p_vsa->remote.pid);
@@ -606,7 +603,6 @@ static int vbd_judge(vsa_envar_t *p_vsa)
     if (dis_actual <= 0){
         return 0;
     }
-#endif
 #endif
     return 1;
 
@@ -830,6 +826,7 @@ static int crcw_judge(vsa_position_node_t *p_node)
     if ((-dis_actual) > dis_alert){
         return 0;
     }
+	return VSA_ID_CRD;
 }
 
 
@@ -858,14 +855,14 @@ static int vsa_manual_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 
 static int vsa_eebl_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
-	//if ((p_vsa->local.speed >= p_vsa->working_param.danger_detect_speed_threshold)){
+	if ((p_vsa->local.speed >= p_vsa->working_param.danger_detect_speed_threshold)){
 		vam_active_alert(VAM_ALERT_MASK_EBD);
 		rt_timer_stop(p_vsa->timer_ebd_send);
 		rt_timer_start(p_vsa->timer_ebd_send);
 		OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Detect Emergency braking \n\n");
 		sys_add_event_queue(&p_cms_envar->sys, \
 		                            SYS_MSG_ALARM_ACTIVE, 0, VSA_ID_EBD, NULL);
-	//}
+	}
 	return 0;
 
 }
