@@ -31,7 +31,7 @@ short buffer_voc[BUFFER_COUNT][BUFFER_SIZE];
 static uint8_t cursor = 0;
 adpcm_t play_pcm_data; 
 osal_sem_t   *sem_adpcm;
-osal_sem_t   *sem_play;
+osal_sem_t   *sem_play,*sem_ful;
 
 
 static ADPCMState adpcm_state;
