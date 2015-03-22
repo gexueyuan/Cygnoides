@@ -31,7 +31,7 @@ short buffer_voc[BUFFER_COUNT][BUFFER_SIZE];
 static uint8_t cursor = 0;
 adpcm_t play_pcm_data; 
 osal_sem_t   *sem_adpcm;
-osal_sem_t   *sem_play,*sem_ful;
+osal_sem_t   *sem_play,*sem_finish;
 
 
 static ADPCMState adpcm_state;
@@ -229,6 +229,8 @@ void release_semadpcm(void)
 {
 
     osal_sem_release(sem_adpcm);
+	
+    osal_sem_release(sem_finish);
 }
 
 void rt_play_thread_entry(void *parameter)
@@ -238,6 +240,7 @@ void rt_play_thread_entry(void *parameter)
     
     while(1){
         osal_sem_take(sem_play,OSAL_WAITING_FOREVER);
+		osal_sem_take(sem_finish,OSAL_WAITING_FOREVER);
         Pt8211_AUDIO_Play((uint16_t *)(p_audio_pcm->addr), p_audio_pcm->size);
 
     }
@@ -272,6 +275,9 @@ void voc_init(void)
 
 	sem_play = osal_sem_create("sem-play",0);
 	osal_assert(sem_play != NULL);
+
+	sem_finish = osal_sem_create("sem-finish",1);
+	osal_assert(sem_finish != NULL);
 
 	
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
