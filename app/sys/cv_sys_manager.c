@@ -9,6 +9,9 @@
            2014-6-20    wangyifeng    Created file
            ...
 ******************************************************************************/
+#pragma -O3
+
+
 #include "cv_osal.h"
 
 #define OSAL_MODULE_DEBUG
@@ -122,6 +125,7 @@ osal_status_t voc_add_event_queue(vsa_envar_t *p_vsa,
                              uint8_t  msg_cmd)
 {
     int err = OSAL_STATUS_NOMEM;
+    /*
     adpcm_t *p_msg;
 
     p_msg = osal_malloc(sizeof(adpcm_t));
@@ -138,7 +142,7 @@ osal_status_t voc_add_event_queue(vsa_envar_t *p_vsa,
                                    __FUNCTION__, err, msg_cmd);
         osal_free(p_msg);
     }
-
+*/
     return err;
 }
 
@@ -178,7 +182,9 @@ osal_status_t led_add_event_queue(sys_envar_t *p_sys,
                              uint32_t msg_argc,
                              void    *msg_argv)
 {
+
     osal_status_t err = OSAL_STATUS_NOMEM;
+    /*
     sys_msg_t *p_msg;
     p_msg = osal_malloc(sizeof(sys_msg_t));
     if (p_msg) {
@@ -194,7 +200,7 @@ osal_status_t led_add_event_queue(sys_envar_t *p_sys,
                            __FUNCTION__, err, msg_id);
         osal_free(p_msg);                   
     }
-
+*/
     return err;
 }
 
@@ -248,7 +254,12 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
                
               // voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);
-              // flash_set_env("abc",value);
+               voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/3);
+
+               
+               voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/3);
+
+             voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/3);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
@@ -389,7 +400,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
 				p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
-				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
+				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/6);
 				break;
 
 			case HI_OUT_BSM_UPDATE:
@@ -555,7 +566,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		    p_sys->led_blink_duration = 0xFFFF;
             p_sys->led_blink_period = 15;
             p_sys->led_blink_cnt = 0;
-			led_add_event_queue(p_sys,LED_RED,0,LED_BLINK,NULL);
+			//led_add_event_queue(p_sys,LED_RED,0,LED_BLINK,NULL);
 	}
 	else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS)))
 		{
@@ -563,10 +574,10 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_duration= 0xFFFF;
             p_sys->led_blink_period = 15;
             p_sys->led_blink_cnt = 0;
-			led_add_event_queue(p_sys,LED_RED,0,LED_ON,NULL);
+			//led_add_event_queue(p_sys,LED_RED,0,LED_ON,NULL);
 	}
 	else {
-		led_add_event_queue(p_sys,LED_RED,0,LED_OFF,NULL);
+		//led_add_event_queue(p_sys,LED_RED,0,LED_OFF,NULL);
 
 	}
 
@@ -576,10 +587,10 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_duration= 0xFFFF;
             p_sys->led_blink_period = 25;
             p_sys->led_blink_cnt = 0;
-			led_add_event_queue(p_sys,LED_GREEN,0,LED_OFF,NULL);
+			//led_add_event_queue(p_sys,LED_GREEN,0,LED_OFF,NULL);
 		}
 	 else{
-		 led_add_event_queue(p_sys,LED_GREEN,0,LED_ON,NULL);
+		// led_add_event_queue(p_sys,LED_GREEN,0,LED_ON,NULL);
 
 	 }
 	 if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
@@ -588,7 +599,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_duration= 0xFFFF;
 			p_sys->led_blink_period = 25;
 			p_sys->led_blink_cnt = 0;
-			led_add_event_queue(p_sys,LED_BLUE,0,LED_BLINK,NULL);
+			//led_add_event_queue(p_sys,LED_BLUE,0,LED_BLINK,NULL);
 
 	}
 	else {
@@ -596,7 +607,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_duration= 0xFFFF;
 			p_sys->led_blink_period = 0xFFFF;
 			p_sys->led_blink_cnt = 0;
-			led_add_event_queue(p_sys,LED_BLUE,0,LED_OFF,NULL);
+			//led_add_event_queue(p_sys,LED_BLUE,0,LED_OFF,NULL);
 	}
 }
 
