@@ -1304,7 +1304,7 @@ static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
   	return count_neighour;
 }
 
-void rt_vsa_thread_entry(void *parameter)
+void vsa_thread_entry(void *parameter)
 {
     rt_err_t err;
     sys_msg_t* p_msg = NULL;
@@ -1402,11 +1402,6 @@ void vsa_init()
     p_vsa->queue_vsa = osal_queue_create("q-vsa",  VSA_QUEUE_SIZE);
     osal_assert(p_vsa->queue_vsa != NULL);
     
-	p_vsa->task_vsa = osal_task_create("t-vsa",
-                           rt_vsa_thread_entry, p_vsa,
-                           RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY);
-    
-    osal_assert(p_vsa->task_vsa != NULL);
 
     p_vsa->timer_ebd_send = osal_timer_create("tm-ebd",timer_ebd_send_callback,NULL,\
         VSA_EBD_SEND_PERIOD,RT_TIMER_FLAG_ONE_SHOT); 					
@@ -1418,6 +1413,12 @@ void vsa_init()
 
     p_vsa->queue_voc = osal_queue_create("q-voc",  VOC_QUEUE_SIZE);
     osal_assert(p_vsa->queue_voc != NULL);
+
+	p_vsa->task_vsa = osal_task_create("t-vsa",
+                           vsa_thread_entry, p_vsa,
+                           RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY);
+    osal_assert(p_vsa->task_vsa != NULL);
+    
 
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
                              

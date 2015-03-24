@@ -145,7 +145,6 @@ static void led_thread_entry(void *parameter)
     osal_status_t err;
     sys_msg_t msg, *p_msg = &msg;
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
-
     while(1){
         err = osal_queue_recv(p_sys->queue_hi_led, &p_msg, OSAL_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
@@ -158,7 +157,6 @@ static void led_thread_entry(void *parameter)
         }
     }
 
-
 }
 
 int rt_led_init(void)
@@ -167,12 +165,16 @@ int rt_led_init(void)
     sys_envar_t *p_sys = &p_cms_envar->sys;
 
     led_init();
-	
+    
     led_tid = osal_task_create("t-led",
                                led_thread_entry, p_sys,
                                RT_KEY_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
     osal_assert(led_tid != NULL);
 
+    p_sys->queue_hi_led = osal_queue_create("q-led",  2*VOC_QUEUE_SIZE);
+    osal_assert(p_sys->queue_hi_led != NULL);
+
+    
     p_sys->timer_red = osal_timer_create("tm-red",\
         timer_red_blink_callback,NULL,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
     osal_assert(p_sys->timer_red != NULL);
@@ -185,7 +187,7 @@ int rt_led_init(void)
 	timer_blue_blink_callback,NULL,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
 	osal_assert(p_sys->timer_red != NULL);
 	
-    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");   
 	return 0;
 }
 

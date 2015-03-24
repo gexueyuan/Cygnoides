@@ -81,3 +81,4 @@ prj_si/
 *.ini
 *.wangyifeng
 /bin
+\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\prj_lib\keil
