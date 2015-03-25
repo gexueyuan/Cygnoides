@@ -74,9 +74,9 @@ void rt_init_thread_entry(void *parameter)
     vam_init();
     mda_init();
     gsnr_init();
-    voc_init();
-    sys_init();
+    voc_init();    
     vsa_init();    
+    sys_init();
 
 
     //EVAL_AUDIO_Init(4,100, I2S_AudioFreq_16k);

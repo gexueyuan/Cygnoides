@@ -444,16 +444,21 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                                         p_crd->pid[3],warning_id);
                 }
             else
-              list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list)
-                    {
+              list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list){
                         if(memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0)
                             {
+                                if(pos->ccw_id == warning_id){//have this id and vsa warning do nor change
+                                    /*do nothing*/
+                                }
+                                else{//list have this id ,but warning changed,one id to another id
+                                    pos->ccw_id = warning_id;    
+                                }
                                 ccw_flag = RT_FALSE;
                                 break;
                             }   
                         else
                             ccw_flag = RT_TRUE;
-                    }
+              }
             if(ccw_flag )
                 {
                     p_crd = (vsa_crd_node_t*)rt_malloc(sizeof(vsa_crd_node_t));
@@ -875,59 +880,30 @@ static int vsa_auto_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 static int vsa_cfcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
     int count_neighour;
-    uint32_t i;	
     int vsa_id;
     vsa_position_node_t *pos_pnt = NULL;
 	
     count_neighour = *((int*)arg);
 
-	for(i = 0;i < count_neighour;i++){
-		pos_pnt = &p_vsa->position_node[i];
-		vsa_id = cfcw_judge(pos_pnt);
-		if(vsa_id){
-			pos_pnt->vsa_position.vsa_id = vsa_id;
-			ccw_add_list(vsa_id,pos_pnt);
-		}
-		else{ 
-			if(pos_pnt->vsa_position.vsa_id){
-				pos_pnt->vsa_position.vsa_id = 0;
-				ccw_del_list(vsa_id,pos_pnt);
-			}
+	pos_pnt = &p_vsa->position_node[count_neighour];
+	vsa_id = cfcw_judge(pos_pnt);
 
-		}
-	}
-    
-
-  return 0;
+    return vsa_id;
 }
 
 static int vsa_crcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
 {
     int count_neighour;
-    uint32_t i;	
     int vsa_id;
     vsa_position_node_t *pos_pnt = NULL;
 	
     count_neighour = *((int*)arg);
 
-	for(i = 0;i < count_neighour;i++){
-		pos_pnt = &p_vsa->position_node[i];
-		vsa_id = crcw_judge(pos_pnt);
-		if(vsa_id){
-			pos_pnt->vsa_position.vsa_id = vsa_id;
-			ccw_add_list(vsa_id,pos_pnt);
-		}
-		else{ 
-			if(pos_pnt->vsa_position.vsa_id){
-				pos_pnt->vsa_position.vsa_id = 0;
-				ccw_del_list(vsa_id,pos_pnt);
-			}
+	pos_pnt = &p_vsa->position_node[count_neighour];
+	vsa_id = crcw_judge(pos_pnt);
 
-		}
-	}
-    
+    return vsa_id;
 
-  return 0;
 }
 
 static int vsa_opposite_alarm_proc(vsa_envar_t *p_vsa, void *arg)
@@ -1275,6 +1251,9 @@ vsa_app_handler vsa_app_handler_tbl[] = {
 static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
 {
     int count_neighour;
+    uint16_t i;
+    int vsa_id;
+    uint8_t vsa_id_count[VSM_ID_END+1]; 
 
 	count_neighour = preprocess_pos();
 
@@ -1287,18 +1266,38 @@ static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
     if(count_neighour == 0)
         return 0;
 
+    for(i = 0;i < count_neighour;i++)
+        {
+        
+        if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])    
+            vsa_id = vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
+        
+        if(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC])    
+            vsa_id = vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
+        
+        if(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC])    
+            vsa_id = vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&i);
+        
+        if(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC])    
+            vsa_id = vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&i);
 
-	if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])	
-        vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
-	
-	if(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC])	
-        vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
-	
-	if(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC])	
-        vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
-	
-	if(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC])	
-        vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&count_neighour);
+        vsa_id_count[vsa_id]++;
+      // #if 0
+        if(vsa_id){
+            p_vsa->position_node[i].vsa_position.vsa_id = vsa_id;
+            ccw_add_list(vsa_id,&p_vsa->position_node[i]);
+        }
+        else{ 
+            if(p_vsa->position_node[i].vsa_position.vsa_id){
+                p_vsa->position_node[i].vsa_position.vsa_id = 0;
+                ccw_del_list(vsa_id,&p_vsa->position_node[i]);
+            }
+    
+        }
+       //#endif
+        
+
+    }
 
     
   	return count_neighour;
