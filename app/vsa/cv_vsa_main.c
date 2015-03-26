@@ -9,6 +9,8 @@
            2014-6-19    wangyifeng    Created file
            ...
 ******************************************************************************/
+//#pragma O3
+
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
 #define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
@@ -510,7 +512,7 @@ static int ccw_del_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                             
                     }   
                               
-            if ((p_vsa->alert_pend & (1<<warning_id))&&(list_empty(&p_vsa->crd_list))){
+            if ((p_vsa->alert_pend & (1<<warning_id))&&(!(p_vsa->alert_cnt & (1<<warning_id)))){
             /* inform system to stop alert */
                 p_vsa->alert_pend &= ~(1<<warning_id);
                 sys_add_event_queue(&p_cms_envar->sys, \
@@ -566,7 +568,7 @@ static int vbd_judge(vsa_envar_t *p_vsa)
     int32_t dis_actual;
     p_node = vsa_find_pn(p_vsa,p_vsa->remote.pid);
 
-
+#if 0
     /* put the beginning only in order to output debug infomations */
     dis_actual = p_node->vsa_position.linear_distance;
 
@@ -591,7 +593,6 @@ static int vbd_judge(vsa_envar_t *p_vsa)
     }
 
 
-#if 0
     int32_t dis_actual;
 
     dis_actual = vam_get_peer_relative_pos(p_vsa->remote.pid,0);// relative position
@@ -1251,7 +1252,7 @@ vsa_app_handler vsa_app_handler_tbl[] = {
 static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
 {
     int count_neighour;
-    uint16_t i;
+    int i;
     int vsa_id;
     uint8_t vsa_id_count[VSM_ID_END+1]; 
 
@@ -1266,22 +1267,25 @@ static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
     if(count_neighour == 0)
         return 0;
 
+    p_vsa->alert_cnt = 0;
+    
     for(i = 0;i < count_neighour;i++)
         {
         
         if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])    
             vsa_id = vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
         
-        if(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC])    
+        if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC]))    
             vsa_id = vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
         
-        if(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC])    
+        if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC]))    
             vsa_id = vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&i);
         
-        if(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC])    
+        if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC]))    
             vsa_id = vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&i);
 
-        vsa_id_count[vsa_id]++;
+        //vsa_id_count[vsa_id]++;
+        p_vsa->alert_cnt |= 1<<vsa_id;
       // #if 0
         if(vsa_id){
             p_vsa->position_node[i].vsa_position.vsa_id = vsa_id;

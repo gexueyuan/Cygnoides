@@ -209,7 +209,7 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){             
 			        vsa_add_event_queue(p_vsa, VSA_MSG_MANUAL_BC, 0,keycnt,NULL);
-                    keycnt = ~keycnt;
+			        keycnt = ~keycnt;
              }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
@@ -322,9 +322,9 @@ void timer_out_vsa_process(void* parameter)
 {
 	int  timevalue;
 	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
-	timevalue = HUMAN_ITERFACE_VOC;
+	timevalue = HUMAN_ITERFACE_GPS_VOC;
 	
-
+#if 0
 	if(p_vsa->alert_pend & (1<<VSA_ID_EBD))	
 		voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);// vioce,EBD最优先,同时报警选择EBD,VBD次之
 
@@ -335,7 +335,8 @@ void timer_out_vsa_process(void* parameter)
 		voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);// 
 	else if(p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR))	
 		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);// 
-
+#endif
+    voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
 	rt_timer_control(p_cms_envar->sys.timer_voc,RT_TIMER_CTRL_SET_TIME,(void*)&timevalue);
 }
 
