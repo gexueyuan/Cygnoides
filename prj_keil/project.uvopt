@@ -73,7 +73,7 @@
       <OPTFL>
         <tvExp>1</tvExp>
         <tvExpOptDlg>0</tvExpOptDlg>
-        <IsCurrentTarget>0</IsCurrentTarget>
+        <IsCurrentTarget>1</IsCurrentTarget>
       </OPTFL>
       <CpuCode>255</CpuCode>
       <Books>
@@ -148,12 +148,12 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>/</Name>
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
           <Key>JL2CM3</Key>
-          <Name>-U286370559 -O15 -S0 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight JTAG-DP") -D00(4BA00477) -L00(4) -N01("Unknown JTAG device") -D01(06413041) -L01(5) -TO18 -TC10000000 -TP21 -TDS8007 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO15 -FD20000000 -FC800 -FN1 -FF0STM32F4xx_1024 -FS08000000 -FL0100000</Name>
+          <Name>-U4294967295 -O15 -S0 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight JTAG-DP") -D00(4BA00477) -L00(4) -N01("Unknown JTAG device") -D01(06413041) -L01(5) -TO18 -TC10000000 -TP21 -TDS8007 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO15 -FD20000000 -FC800 -FN1 -FF0STM32F4xx_1024 -FS08000000 -FL0100000</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -165,73 +165,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>108</LineNumber>
+          <LineNumber>935</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134222820</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\app\vam\cv_vam_lip.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>1</Number>
-          <Type>0</Type>
-          <LineNumber>160</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134228790</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\app\vam\cv_vam_vsm.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>2</Number>
-          <Type>0</Type>
-          <LineNumber>523</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134245578</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\app\sys\cv_sys_manager.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>3</Number>
-          <Type>0</Type>
-          <LineNumber>513</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134245552</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\app\sys\cv_sys_manager.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>4</Number>
-          <Type>0</Type>
-          <LineNumber>284</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134236746</Address>
+          <Address>134239336</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -239,22 +175,6 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>..\app\vsa\cv_vsa_main.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>5</Number>
-          <Type>0</Type>
-          <LineNumber>94</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\drivers\cv_drv_led.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -353,7 +273,7 @@
       <OPTFL>
         <tvExp>1</tvExp>
         <tvExpOptDlg>0</tvExpOptDlg>
-        <IsCurrentTarget>1</IsCurrentTarget>
+        <IsCurrentTarget>0</IsCurrentTarget>
       </OPTFL>
       <CpuCode>255</CpuCode>
       <DebugOpt>
@@ -406,7 +326,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>/</Name>
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -423,18 +343,114 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>94</LineNumber>
+          <LineNumber>317</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134266524</Address>
+          <Address>134231936</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\drivers\cv_drv_led.c</Filename>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\Cygnoides\../drivers/cv_drv_led.c\94</Expression>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>313</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134231904</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>308</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134231886</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>3</Number>
+          <Type>0</Type>
+          <LineNumber>304</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134231852</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>4</Number>
+          <Type>0</Type>
+          <LineNumber>322</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134231968</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\Cygnoides\../app/vsa/cv_vsa_main.c\322</Expression>
+        </Bp>
+        <Bp>
+          <Number>5</Number>
+          <Type>0</Type>
+          <LineNumber>326</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134231980</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\Cygnoides\../app/vsa/cv_vsa_main.c\326</Expression>
+        </Bp>
+        <Bp>
+          <Number>6</Number>
+          <Type>0</Type>
+          <LineNumber>935</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>..\app\vsa\cv_vsa_main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
         </Bp>
       </Breakpoint>
       <Tracepoint>
@@ -549,8 +565,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>543</TopLine>
-      <CurrentLine>572</CurrentLine>
+      <TopLine>1</TopLine>
+      <CurrentLine>1</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\app\vam\cv_vam_rcp.c</PathWithFileName>
       <FilenameWithoutPath>cv_vam_rcp.c</FilenameWithoutPath>
@@ -565,7 +581,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>141</TopLine>
+      <TopLine>165</TopLine>
       <CurrentLine>170</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\app\vam\cv_vam_vsm.c</PathWithFileName>
@@ -755,10 +771,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>18</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>28</TopLine>
-      <CurrentLine>37</CurrentLine>
+      <TopLine>35</TopLine>
+      <CurrentLine>36</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\app\vsa\cv_cpuusage.c</PathWithFileName>
       <FilenameWithoutPath>cv_cpuusage.c</FilenameWithoutPath>
@@ -829,7 +845,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>184</TopLine>
+      <TopLine>190</TopLine>
       <CurrentLine>195</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\drivers\cv_drv_voc.c</PathWithFileName>
@@ -843,10 +859,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>4</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1</TopLine>
-      <CurrentLine>1</CurrentLine>
+      <TopLine>87</TopLine>
+      <CurrentLine>94</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\drivers\cv_drv_led.c</PathWithFileName>
       <FilenameWithoutPath>cv_drv_led.c</FilenameWithoutPath>
@@ -885,8 +901,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>487</TopLine>
-      <CurrentLine>488</CurrentLine>
+      <TopLine>531</TopLine>
+      <CurrentLine>533</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\drivers\wifi\cv_drv_wifi_usb.c</PathWithFileName>
       <FilenameWithoutPath>cv_drv_wifi_usb.c</FilenameWithoutPath>
@@ -997,8 +1013,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>1</TopLine>
+      <CurrentLine>1</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\drivers\wifi\chips\ralink\common\rtmp_data.c</PathWithFileName>
       <FilenameWithoutPath>rtmp_data.c</FilenameWithoutPath>
@@ -1105,7 +1121,7 @@
 
   <Group>
     <GroupName>Bsp</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1275,9 +1291,9 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>6</ColumnNumber>
+      <ColumnNumber>12</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>361</TopLine>
+      <TopLine>367</TopLine>
       <CurrentLine>372</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\bsp\pt8211.c</PathWithFileName>
@@ -1333,7 +1349,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>188</TopLine>
+      <TopLine>195</TopLine>
       <CurrentLine>200</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\library\STM32F4xx_Libraries\STM32_USB_OTG_Driver\src\usb_hcd_int.c</PathWithFileName>
@@ -1347,10 +1363,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>55</ColumnNumber>
+      <ColumnNumber>10</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>333</TopLine>
-      <CurrentLine>341</CurrentLine>
+      <TopLine>737</TopLine>
+      <CurrentLine>335</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\library\STM32F4xx_Libraries\STM32_USB_HOST_Library\Core\src\usbh_core.c</PathWithFileName>
       <FilenameWithoutPath>usbh_core.c</FilenameWithoutPath>
@@ -1917,7 +1933,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>85</TopLine>
+      <TopLine>86</TopLine>
       <CurrentLine>113</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\startup\startup.c</PathWithFileName>
@@ -1933,7 +1949,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>170</TopLine>
+      <TopLine>172</TopLine>
       <CurrentLine>175</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\startup\startup_stm32f4xx.s</PathWithFileName>
@@ -2021,7 +2037,7 @@
       <Focus>0</Focus>
       <ColumnNumber>3</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>2095</TopLine>
+      <TopLine>2102</TopLine>
       <CurrentLine>2107</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\src\ipc.c</PathWithFileName>
@@ -2053,7 +2069,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1220</TopLine>
+      <TopLine>1235</TopLine>
       <CurrentLine>1248</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\src\kservice.c</PathWithFileName>
@@ -2133,7 +2149,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>254</TopLine>
+      <TopLine>256</TopLine>
       <CurrentLine>257</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\src\scheduler.c</PathWithFileName>
@@ -2149,7 +2165,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>615</TopLine>
+      <TopLine>618</TopLine>
       <CurrentLine>623</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\src\thread.c</PathWithFileName>
@@ -2165,7 +2181,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>413</TopLine>
+      <TopLine>415</TopLine>
       <CurrentLine>416</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\src\timer.c</PathWithFileName>
@@ -2189,7 +2205,7 @@
       <Focus>0</Focus>
       <ColumnNumber>2</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>167</TopLine>
+      <TopLine>172</TopLine>
       <CurrentLine>177</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\libcpu\arm\cortex-m4\cpuport.c</PathWithFileName>
@@ -2205,7 +2221,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>42</TopLine>
+      <TopLine>43</TopLine>
       <CurrentLine>44</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\rtthread\libcpu\arm\cortex-m4\context_rvds.S</PathWithFileName>
@@ -2709,7 +2725,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>196</TopLine>
+      <TopLine>198</TopLine>
       <CurrentLine>199</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\os\common\cv_osal_dmem.c</PathWithFileName>

@@ -187,6 +187,7 @@ int32_t  preprocess_pos(void)
                 p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3]);
            */
         }
+        #if 0
        if(count_pos++ > 30){
            for(i = 0;i < peer_count;i++){ 
             p_pnt = &p_vsa->position_node[i];
@@ -196,7 +197,7 @@ int32_t  preprocess_pos(void)
             }
           count_pos = 0; 
         }
-         
+         #endif
     }
     else
         return 0; 
@@ -1313,13 +1314,26 @@ void vsa_thread_entry(void *parameter)
     sys_msg_t* p_msg = NULL;
     vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
 
+    
+    uint32_t tick_adpcm_bg,tick_adpcm_fh;
+
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: ---->\n", __FUNCTION__);
 
 	while(1){
         err = osal_queue_recv(p_vsa->queue_vsa,&p_msg,RT_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
-			if(p_msg->id == VSA_MSG_BASE)
-				vsa_base_proc(p_vsa,p_msg);
+			if(p_msg->id == VSA_MSG_BASE){
+
+    
+
+                tick_adpcm_bg = osal_get_systemtime();
+                vsa_base_proc(p_vsa,p_msg);
+
+                tick_adpcm_fh = osal_get_systemtime();
+
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"time of proc is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
+                
+             }
             else if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
                 	err = vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC](p_vsa,p_msg);
 

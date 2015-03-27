@@ -358,64 +358,73 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;				
 				
             case HI_OUT_CRD_ALERT:
+                voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);               
+                rt_timer_start(p_cms_envar->sys.timer_hi);
+                #if 0
 				if(!p_sys->voc_flag)
 					{
                 		voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
 						p_sys->voc_flag = 0xff;
 					}
                 rt_timer_start(p_cms_envar->sys.timer_hi);
+                #endif
 				if(p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))
 					return;
 				else
 					{
              			p_sys->led_priority |= 1<<HI_OUT_CRD_ALERT;
-						//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
 					}
 				break;
 
 			case HI_OUT_CRD_REAR_ALERT:
+                
+                voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
+                rt_timer_start(p_cms_envar->sys.timer_hi);
+                #if 0
                 if(!p_sys->voc_flag)
 					{
                 		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
 						p_sys->voc_flag = 0xff;
 					}
                 rt_timer_start(p_cms_envar->sys.timer_hi);
+                #endif
 				if(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))
 					return;
 				else
 					{
              			p_sys->led_priority |= 1<<HI_OUT_CRD_REAR_ALERT;
-						//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
 					}	
 				break;
 				
             case HI_OUT_VBD_ALERT:
+                
+                voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);                
                 rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT))
 					return;
 				else
 					{
 			   			p_sys->led_priority |= 1<<HI_OUT_VBD_ALERT;
-						//p_sys->led_priority &= ~(1<<HI_OUT_SYS_BSM);
 						OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert!!\n\n");
 					}	
                 break;				
 
 			case HI_OUT_EBD_ALERT:
+                voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);
               	rt_timer_start(p_cms_envar->sys.timer_voc);            
 			   	p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
                 break;
 
 			case HI_OUT_CRD_CANCEL:
-				//if(p_cms_envar->vsa.alert_pend == 0)
-					//rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0)
+					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_ALERT);
 
 				break;
 
 			case HI_OUT_CRD_REAR_CANCEL:
-				//if(p_cms_envar->vsa.alert_pend == 0)
-					//rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0)
+					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_REAR_ALERT);
 
 				break;	
@@ -644,7 +653,7 @@ void sys_init(void)
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
     p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        1,RT_TIMER_FLAG_PERIODIC); 					
+        HUMAN_ITERFACE_GPS_VOC,RT_TIMER_FLAG_PERIODIC); 					
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
 
