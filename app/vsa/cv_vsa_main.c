@@ -1326,12 +1326,12 @@ void vsa_thread_entry(void *parameter)
 
     
 
-                tick_adpcm_bg = osal_get_systemtime();
+               // tick_adpcm_bg = osal_get_systemtime();
                 vsa_base_proc(p_vsa,p_msg);
 
-                tick_adpcm_fh = osal_get_systemtime();
+              //  tick_adpcm_fh = osal_get_systemtime();
 
-                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"time of proc is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
+              //  OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"time of proc is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
                 
              }
             else if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
