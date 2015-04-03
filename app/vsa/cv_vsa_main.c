@@ -331,6 +331,17 @@ void vsa_receive_alarm_update(void *parameter)
     
 }
 
+void vsa_receive_rsa_update(void *parameter)
+{
+    vam_rsa_evt_info_t *param = (vam_rsa_evt_info_t*)parameter;
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    
+    
+
+
+
+}
 
 void vsa_eebl_broadcast_update(void *parameter)
 {
@@ -346,6 +357,7 @@ void vsa_start(void)
     vam_set_event_handler(VAM_EVT_PEER_ALARM, vsa_receive_alarm_update);
     vam_set_event_handler(VAM_EVT_GPS_STATUS, vsa_gps_status_update);
     vam_set_event_handler(VAM_EVT_GSNR_EBD_DETECT, vsa_eebl_broadcast_update);
+    vam_set_event_handler(VAM_EVT_RSA_UPDATE, vsa_receive_rsa_update);
     osal_timer_start(p_vsa->timer_position_prepro);
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: --->\n", __FUNCTION__);
 
@@ -1384,11 +1396,10 @@ rt_err_t vsa_add_event_queue(vsa_envar_t *p_vsa,
 void vsa_init()
 {
     int i;
-    uint32_t vsa_function;
 
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     
-    vsa_function = ~CUSTOM_MODE;
+    p_vsa->vsa_mode = ~CUSTOM_MODE;
     
     memset(p_vsa, 0, sizeof(vsa_envar_t));
     memcpy(&p_vsa->working_param, &p_cms_param->vsa, sizeof(vsa_config_t));
@@ -1403,14 +1414,11 @@ void vsa_init()
     
 	for(i = 0;i < sizeof(vsa_app_handler_tbl)/sizeof(vsa_app_handler);i++){
 
-        if(vsa_function&1<<i){
+        if(p_vsa->vsa_mode&(1<<i)){
             
             vsa_app_handler_tbl[i] = (void*)NULL;
 
-        }
-            
-
-
+        }            
     }
 
     p_vsa->alert_mask = (1<<VSA_ID_CRD)|(1<<VSA_ID_CRD_REAR)|(1<<VSA_ID_VBD)|(1<<VSA_ID_EBD);

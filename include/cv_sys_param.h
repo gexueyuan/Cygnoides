@@ -21,7 +21,9 @@ typedef struct _flash_param{
 
 #define PARAM_FLAG_ADDR     ((uint32_t)0x80E0000)
 
-#define PARAM_ADDR    		((uint32_t)0x80E0010)
+#define PARAM_MODE_ADDR     ((uint32_t)0x80E0010)
+
+#define PARAM_ADDR    		((uint32_t)0x80E0020)
 
 #define name_to_str(name)  (#name)
 

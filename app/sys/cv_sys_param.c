@@ -31,10 +31,199 @@ extern	int drv_fls_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t le
 
 cfg_param_t cms_param, *p_cms_param;
 
-uint8_t	param_init_words[] = "Vanet-param0";
+uint8_t	param_init_words[] = "Vanet-param1";
 /*****************************************************************************
- * implementation of functions                                               *
+* implementation of functions                                               *
 *****************************************************************************/
+
+void load_default_param_custom(cfg_param_t *param)
+{
+    memset(param, 0 , sizeof(cfg_param_t));
+    /******************** VAM *********************/
+    param->vam.bsm_hops = 1; 
+    param->vam.bsm_boardcast_mode = 1;  /* 0 - disable, 1 - auto, 2 - fixed period */
+    param->vam.bsm_boardcast_saftyfactor = 5;  /* 1~10 */
+    param->vam.bsm_pause_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vam.bsm_pause_hold_time = 5;  /* unit:s */
+    param->vam.bsm_boardcast_period = 100;  /* 100~3000, unit:ms, min accuracy :10ms */
+    
+    param->vam.evam_hops = 1; 
+    param->vam.evam_broadcast_type = 2;
+    param->vam.evam_broadcast_peroid = 50;
+
+    /******************** VSA *********************/
+    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+    
+    param->vsa.crd_saftyfactor = 4;  /* 1~10 */
+    param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
+    param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
+    param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+    
+    param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
+    param->vsa.ebd_alert_hold_time = 5;  /* unit:s */
+
+    param->gsnr.gsnr_cal_step = 0;
+    param->gsnr.gsnr_cal_thr = 4;
+    param->gsnr.gsnr_ebd_thr = -55;
+    param->gsnr.gsnr_ebd_cnt = 2;
+    
+    param->gsnr.AcceV_x = 0;
+    param->gsnr.AcceV_y = 0;
+    param->gsnr.AcceV_z= 0;
+    param->gsnr.AcceAhead_x= 0;
+    param->gsnr.AcceAhead_y = 0;
+    param->gsnr.AcceAhead_z = 0;
+
+    param->wnet.channel = 13;
+    param->wnet.txrate = 6;
+    
+
+}
+
+
+void load_default_param_highway(cfg_param_t *param)
+{
+    memset(param, 0 , sizeof(cfg_param_t));
+
+    /******************** VAM *********************/
+    param->vam.bsm_hops = 1; 
+    param->vam.bsm_boardcast_mode = 1;  /* 0 - disable, 1 - auto, 2 - fixed period */
+    param->vam.bsm_boardcast_saftyfactor = 5;  /* 1~10 */
+    param->vam.bsm_pause_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vam.bsm_pause_hold_time = 5;  /* unit:s */
+    param->vam.bsm_boardcast_period = 100;  /* 100~3000, unit:ms, min accuracy :10ms */
+	
+    param->vam.evam_hops = 1; 
+	param->vam.evam_broadcast_type = 2;
+	param->vam.evam_broadcast_peroid = 50;
+
+    /******************** VSA *********************/
+    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+	
+    param->vsa.crd_saftyfactor = 4;  /* 1~10 */
+	param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
+	param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
+	param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+	
+    param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
+    param->vsa.ebd_alert_hold_time = 5;  /* unit:s */
+
+	param->gsnr.gsnr_cal_step = 0;
+	param->gsnr.gsnr_cal_thr = 4;
+	param->gsnr.gsnr_ebd_thr = -55;
+	param->gsnr.gsnr_ebd_cnt = 2;
+	
+	param->gsnr.AcceV_x = 0;
+	param->gsnr.AcceV_y = 0;
+	param->gsnr.AcceV_z= 0;
+	param->gsnr.AcceAhead_x= 0;
+	param->gsnr.AcceAhead_y = 0;
+	param->gsnr.AcceAhead_z = 0;
+
+    param->wnet.channel = 13;
+    param->wnet.txrate = 6;
+	
+
+}
+
+
+void load_default_param_mountain(cfg_param_t *param)
+{
+    memset(param, 0 , sizeof(cfg_param_t));
+
+    /******************** VAM *********************/
+    param->vam.bsm_hops = 1; 
+    param->vam.bsm_boardcast_mode = 1;  /* 0 - disable, 1 - auto, 2 - fixed period */
+    param->vam.bsm_boardcast_saftyfactor = 5;  /* 1~10 */
+    param->vam.bsm_pause_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vam.bsm_pause_hold_time = 5;  /* unit:s */
+    param->vam.bsm_boardcast_period = 100;  /* 100~3000, unit:ms, min accuracy :10ms */
+	
+    param->vam.evam_hops = 1; 
+	param->vam.evam_broadcast_type = 2;
+	param->vam.evam_broadcast_peroid = 50;
+
+    /******************** VSA *********************/
+    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+	
+    param->vsa.crd_saftyfactor = 4;  /* 1~10 */
+	param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
+	param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
+	param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+	
+    param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
+    param->vsa.ebd_alert_hold_time = 5;  /* unit:s */
+
+	param->gsnr.gsnr_cal_step = 0;
+	param->gsnr.gsnr_cal_thr = 4;
+	param->gsnr.gsnr_ebd_thr = -55;
+	param->gsnr.gsnr_ebd_cnt = 2;
+	
+	param->gsnr.AcceV_x = 0;
+	param->gsnr.AcceV_y = 0;
+	param->gsnr.AcceV_z= 0;
+	param->gsnr.AcceAhead_x= 0;
+	param->gsnr.AcceAhead_y = 0;
+	param->gsnr.AcceAhead_z = 0;
+
+    param->wnet.channel = 13;
+    param->wnet.txrate = 6;
+	
+
+}
+
+void load_default_param_city(cfg_param_t *param)
+{
+    memset(param, 0 , sizeof(cfg_param_t));
+
+    /******************** VAM *********************/
+    param->vam.bsm_hops = 1; 
+    param->vam.bsm_boardcast_mode = 1;  /* 0 - disable, 1 - auto, 2 - fixed period */
+    param->vam.bsm_boardcast_saftyfactor = 5;  /* 1~10 */
+    param->vam.bsm_pause_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vam.bsm_pause_hold_time = 5;  /* unit:s */
+    param->vam.bsm_boardcast_period = 100;  /* 100~3000, unit:ms, min accuracy :10ms */
+	
+    param->vam.evam_hops = 1; 
+	param->vam.evam_broadcast_type = 2;
+	param->vam.evam_broadcast_peroid = 50;
+
+    /******************** VSA *********************/
+    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+	
+    param->vsa.crd_saftyfactor = 4;  /* 1~10 */
+	param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
+	param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
+	param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+	
+    param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
+    param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
+    param->vsa.ebd_alert_hold_time = 5;  /* unit:s */
+
+	param->gsnr.gsnr_cal_step = 0;
+	param->gsnr.gsnr_cal_thr = 4;
+	param->gsnr.gsnr_ebd_thr = -55;
+	param->gsnr.gsnr_ebd_cnt = 2;
+	
+	param->gsnr.AcceV_x = 0;
+	param->gsnr.AcceV_y = 0;
+	param->gsnr.AcceV_z= 0;
+	param->gsnr.AcceAhead_x= 0;
+	param->gsnr.AcceAhead_y = 0;
+	param->gsnr.AcceAhead_z = 0;
+
+    param->wnet.channel = 13;
+    param->wnet.txrate = 6;
+	
+
+}
 
 void load_default_param(cfg_param_t *param)
 {
@@ -90,9 +279,22 @@ void load_default_param(cfg_param_t *param)
 
 void load_param_from_fl(void)
 {
+    uint32_t param_mode;
+    uint8_t param_pos;
 	p_cms_param = &cms_param;
-	
-	drv_fls_read(PARAM_ADDR,(uint8_t *)p_cms_param,sizeof(cfg_param_t));
+
+    param_mode = drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&param_mode,4);
+
+    if(param_mode == CUSTOM_MODE)
+        param_pos = 0;
+    else if(param_mode == HIGHWAY_MODE)
+        param_pos = 1;
+    else if(param_mode == MOUNTAIN_MODE)
+        param_pos = 2;
+    else if(param_mode == MOUNTAIN_MODE)
+        param_pos = 3;
+    
+	drv_fls_read(PARAM_ADDR+param_pos*(sizeof(cfg_param_t)),(uint8_t *)p_cms_param,sizeof(cfg_param_t));
 	
 
 }
@@ -103,17 +305,28 @@ void  write_def_param(void)
 
 	rt_err_t err;
 
-	load_default_param(&flash_param);
 	
 	drv_fls_erase(FLASH_Sector_11);
 	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
-	err = drv_fls_write(PARAM_ADDR,(uint8_t *)&flash_param,sizeof(cfg_param_t));
+	drv_fls_write(PARAM_MODE_ADDR,CUSTOM_MODE,sizeof(CUSTOM_MODE));
+    
+	load_default_param_custom(&flash_param);
+	drv_fls_write(PARAM_ADDR,(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
+	load_default_param_highway(&flash_param);
+	drv_fls_write(PARAM_ADDR+sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
+
+    load_default_param_mountain(&flash_param);
+	drv_fls_write(PARAM_ADDR+2*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
+
+    load_default_param_city(&flash_param);
+	drv_fls_write(PARAM_ADDR+3*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
+/*
 	if(-1 == err)
 		rt_kprintf("error happened when writing default param to flash");
 	else
 		rt_kprintf("write default param to flash  success\n");
-
+*/
 
 }
 
@@ -129,7 +342,7 @@ void param_init(void)
 		if(strcmp((const char*)param_init_words,(const char*)magic_word) != 0)
 			{
 				p_cms_param = &cms_param;
-				load_default_param(p_cms_param);			
+				load_default_param_custom(p_cms_param);			
 				write_def_param();
 			}
 		else load_param_from_fl();
@@ -145,7 +358,6 @@ void param_get(void)
 	//drv_fls_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
 		
     rt_kprintf("-------------------parameters in ram------------------\n");
-
     rt_kprintf("----------------------vam---------------------\n");
 	rt_kprintf("ID(0)=%d%d%d%d\n",p_cms_param->pid[0],p_cms_param->pid[1],p_cms_param->pid[2],p_cms_param->pid[3]);
     rt_kprintf("vam.bsm_hops(1)=%d\n", p_cms_param->vam.bsm_hops);
@@ -194,6 +406,21 @@ void param_get(void)
 }
 FINSH_FUNCTION_EXPORT(param_get, get system parameters);
 
+void mode_get(void)
+{
+    rt_kprintf("----------------------mode---------------------\n");
+    rt_kprintf("mode = %d\n", p_cms_param->mode);
+
+}
+FINSH_FUNCTION_EXPORT(mode_get, get mode parameters);
+
+void mode_set(void)
+{
+    rt_kprintf("----------------------mode---------------------\n");
+    rt_kprintf("mode = %d\n", p_cms_param->mode);
+
+}
+FINSH_FUNCTION_EXPORT(mode_get, get mode parameters);
 
 void print_bn(void)
 {

@@ -18,7 +18,7 @@
 
 
 /*down to top*/
-#define  HIGRHWAY_MODE   0x0F9F
+#define  HIGHWAY_MODE   0x0F9F
 #define  MOUNTAIN_MODE   0x0FBF
 #define  CITY_MODE       0x0FD7
 #define  CUSTOM_MODE     0x019F
@@ -137,6 +137,9 @@ typedef struct _vsa_config{
 
 
 typedef struct _vsa_envar{
+    
+    uint32_t vsa_mode;
+    
     /* working_param */
     vsa_config_t working_param;
 
