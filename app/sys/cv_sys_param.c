@@ -304,11 +304,13 @@ void  write_def_param(void)
 	cfg_param_t  flash_param;
 
 	rt_err_t err;
+    uint8_t *mode;
 
+    *mode = CUSTOM_MODE;
 	
 	drv_fls_erase(FLASH_Sector_11);
 	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
-	drv_fls_write(PARAM_MODE_ADDR,CUSTOM_MODE,sizeof(CUSTOM_MODE));
+	drv_fls_write(PARAM_MODE_ADDR,mode,sizeof(CUSTOM_MODE));
     
 	load_default_param_custom(&flash_param);
 	drv_fls_write(PARAM_ADDR,(uint8_t *)&flash_param,sizeof(cfg_param_t));
@@ -420,7 +422,7 @@ void mode_set(void)
     rt_kprintf("mode = %d\n", p_cms_param->mode);
 
 }
-FINSH_FUNCTION_EXPORT(mode_get, get mode parameters);
+FINSH_FUNCTION_EXPORT(mode_set, get mode parameters);
 
 void print_bn(void)
 {
