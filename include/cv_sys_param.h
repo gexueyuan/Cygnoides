@@ -19,6 +19,16 @@ typedef struct _flash_param{
 }flash_param, *flash_param_t;
 
 
+typedef struct {
+
+	cfg_param_t cus_param;
+	cfg_param_t hw_param;
+	cfg_param_t mt_param;
+	cfg_param_t ct_param;
+
+}vanet_param;
+
+
 #define PARAM_FLAG_ADDR     ((uint32_t)0x80E0000)
 
 #define PARAM_MODE_ADDR     ((uint32_t)0x80E0010)
