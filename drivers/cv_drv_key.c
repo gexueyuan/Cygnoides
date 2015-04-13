@@ -20,12 +20,12 @@
 #include "components.h"
 
 
-static void GPIO_Configuration(void)
+static void key_GPIO_Configuration(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /* init gpio configuration */
-
+#ifdef HARDWARE_MODULE_WIFI_V1
     RCC_AHB1PeriphClockCmd(KEY0_GPIO_CLK | KEY1_GPIO_CLK | KEY2_GPIO_CLK,ENABLE);
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -40,7 +40,17 @@ static void GPIO_Configuration(void)
 
     GPIO_InitStructure.GPIO_Pin   = KEY2_PIN;
     GPIO_Init(KEY2_GPIO_PORT, &GPIO_InitStructure);
+#elif defined (HARDWARE_MODULE_WIFI_V2)
+    RCC_AHB1PeriphClockCmd(KEY0_GPIO_CLK,ENABLE);
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
 
+    GPIO_InitStructure.GPIO_Pin   = KEY0_PIN;
+    GPIO_Init(KEY0_GPIO_PORT, &GPIO_InitStructure);
+
+#endif
 }
 
 
@@ -52,7 +62,7 @@ static void key_thread_entry(void *parameter)
     uint32_t  key_value = 0;
 	
 	
-	GPIO_Configuration();
+	key_GPIO_Configuration();
 	
 	key = (struct rtgui_key*)rt_malloc (sizeof(struct rtgui_key));
     if (key == RT_NULL)
@@ -72,8 +82,8 @@ static void key_thread_entry(void *parameter)
 	{	
 		rt_thread_delay(2);	
 		
-		key->key_current = key_up_GETVALUE();
-		key->key_current |= key_down_GETVALUE()<<1;	
+        key->key_current = key_up_GETVALUE();
+        key->key_current |= key_down_GETVALUE()<<1;	
         key->key_current |= key_third_GETVALUE()<<2;
 		
 	  #if LCD_VERSION==1

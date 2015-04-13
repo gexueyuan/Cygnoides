@@ -1392,5 +1392,5 @@ int ili9341_init(void)
     return 0;
 }
 
-INIT_DEVICE_EXPORT(ili9341_init);
+//INIT_DEVICE_EXPORT(ili9341_init);
 

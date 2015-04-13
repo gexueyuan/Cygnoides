@@ -58,7 +58,6 @@
                     Hardware Configuration defines parameters
                                      -----------------------------------------*/
 /* I2S peripheral configuration defines */
-#ifdef USE_I2S3
 #define I2S                      SPI3
 #define I2S_CLK                  RCC_APB1Periph_SPI3
 #define I2S_ADDRESS              0x40003C0C
@@ -80,30 +79,12 @@
 #define I2S_CK_GPIO              GPIOC
 #define I2S_SD_GPIO              GPIOC   
 #define I2S_MCK_GPIO             GPIOC
-#else
-#define I2S                      SPI2
-#define I2S_CLK                  RCC_APB1Periph_SPI2
-#define I2S_ADDRESS              0x4000380C
-#define I2S_GPIO_AF              GPIO_AF_SPI2
-#define I2S_IRQ                  SPI2_IRQn
-#define I2S_GPIO_CLOCK           (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC)
-#define I2S_WS_PIN               GPIO_Pin_9
-#define I2S_SCK_PIN              GPIO_Pin_10
-#define I2S_SD_PIN               GPIO_Pin_3
-#define I2S_MCK_PIN              GPIO_Pin_6
-#define I2S_WS_PINSRC            GPIO_PinSource9
-#define I2S_SCK_PINSRC           GPIO_PinSource10
-#define I2S_SD_PINSRC            GPIO_PinSource3
-#define I2S_MCK_PINSRC           GPIO_PinSource6
-#define I2S_CK_GPIO              GPIOB
-#define I2S_WS_GPIO              GPIOB
-#define I2S_SD_GPIO              GPIOC   
-#define I2S_MCK_GPIO             GPIOC
-#endif
 
+
+#define I2S_EN_GPIO              GPIOC
+#define I2S_EN_PIN               GPIO_Pin_3       
 
 /* I2S DMA Stream definitions */
-#ifdef USE_I2S3
 #define AUDIO_MAL_DMA_CLOCK            RCC_AHB1Periph_DMA1
 #define AUDIO_MAL_DMA_STREAM           DMA1_Stream5
 #define AUDIO_MAL_DMA_CHANNEL          DMA_Channel_0
@@ -118,22 +99,7 @@
 #define DMA_MAX_SZE                    0xFFFF
 
 #define Audio_MAL_IRQHandler           DMA1_Stream5_IRQHandler
-#else
-#define AUDIO_MAL_DMA_CLOCK            RCC_AHB1Periph_DMA1
-#define AUDIO_MAL_DMA_STREAM           DMA1_Stream4
-#define AUDIO_MAL_DMA_CHANNEL          DMA_Channel_0
-#define AUDIO_MAL_DMA_IRQ              DMA1_Stream4_IRQn
-#define AUDIO_MAL_DMA_FLAG_TC          DMA_FLAG_TCIF4
-#define AUDIO_MAL_DMA_FLAG_HT          DMA_FLAG_HTIF4
-#define AUDIO_MAL_DMA_FLAG_FE          DMA_FLAG_FEIF4
-#define AUDIO_MAL_DMA_FLAG_TE          DMA_FLAG_TEIF4
-#define AUDIO_MAL_DMA_FLAG_DME         DMA_FLAG_DMEIF4
-#define AUDIO_MAL_DMA_PERIPH_DATA_SIZE DMA_PeripheralDataSize_HalfWord
-#define AUDIO_MAL_DMA_MEM_DATA_SIZE    DMA_MemoryDataSize_HalfWord
-#define DMA_MAX_SZE                    0xFFFF
 
-#define Audio_MAL_IRQHandler           DMA1_Stream4_IRQHandler
-#endif
  
 #define AUDIO_PAUSE                   0
 #define AUDIO_RESUME                  1

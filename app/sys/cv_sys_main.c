@@ -34,7 +34,6 @@ extern void osal_dbg_init(void);
 extern void rt_platform_init(void);
 extern void param_init(void);
 extern void gps_init(void);
-extern void voc_init(void);
 extern void led_init(void);
 extern void wnet_init(void);
 extern void vam_init(void);
@@ -65,7 +64,6 @@ void rt_init_thread_entry(void *parameter)
     cpu_usage_init();
     gps_init();
   	nmea_init();
-    //voc_init();
     rt_led_init();
 	rt_key_init();
     usb_init();

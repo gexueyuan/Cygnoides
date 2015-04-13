@@ -479,9 +479,9 @@ int param_set(uint8_t param, int32_t value)
 
 	int err;
 
-	vanet_param *cfg_param;
+	vanet_param *mode_param;
 
-	cfg_param_t *mode_param;
+	cfg_param_t *cfg_param;
 
     uint32_t mode;
 	
@@ -491,9 +491,9 @@ int param_set(uint8_t param, int32_t value)
 
 	
 
-	cfg_param = (vanet_param*)rt_malloc(sizeof(vanet_param));
+	mode_param = (vanet_param*)rt_malloc(sizeof(vanet_param));
 
-	drv_fls_read(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(vanet_param));
+	drv_fls_read(PARAM_ADDR,(uint8_t*)mode_param,sizeof(vanet_param));
 /*
 	if(param >31 )
 		{

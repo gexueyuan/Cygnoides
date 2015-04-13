@@ -204,8 +204,9 @@ static void I2S_GPIO_Init(void)
 
 #else
     /* Sound en enable*/
+    GPIO_InitStructure.GPIO_Pin =  I2S_EN_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
@@ -420,7 +421,6 @@ void I2S_CODEC_DataTransfer(void)
 }
 
 
-#ifdef USE_I2S3
 void SPI3_IRQHandler(void)
 {
 	if ( (SPI_I2S_GetITStatus(I2S, SPI_I2S_IT_TXE) == SET)
@@ -429,16 +429,7 @@ void SPI3_IRQHandler(void)
 		I2S_CODEC_DataTransfer();
 	}
 }
-#else
-void SPI2_IRQHandler(void)
-{
-	if ( (SPI_I2S_GetITStatus(SPI2, SPI_I2S_IT_TXE) == SET)
-		|| (SPI_I2S_GetITStatus(SPI2, SPI_I2S_IT_RXNE) == SET))
-	{	
-		I2S_CODEC_DataTransfer();
-	}
-}
-#endif
+
 /*========================
 
                 Audio MAL Interface Control Functions

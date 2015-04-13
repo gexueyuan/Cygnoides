@@ -56,15 +56,10 @@
 /** 
   * @brief  LCD Control pin  
   */ 
-#ifdef USE_I2S3
 #define LCD_SPI_CS_PIN                GPIO_Pin_10  
 #define LCD_SPI_CS_GPIO_PORT          GPIOB      
 #define LCD_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOB
-#else
-#define LCD_SPI_CS_PIN                GPIO_Pin_4  
-#define LCD_SPI_CS_GPIO_PORT          GPIOA      
-#define LCD_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOA  
-#endif
+
 
 /** 
   * @brief  LCD Command/data pin  
