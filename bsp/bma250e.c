@@ -253,7 +253,11 @@ void BMA250E_LowLevel_Init(void)
   SPI_InitTypeDef  SPI_InitStructure;
 
   /* Enable the SPI periph */
+#ifdef HARDWARE_MODULE_WIFI_V1
   RCC_APB1PeriphClockCmd(BMA250E_SPI_CLK, ENABLE);
+#elif defined (HARDWARE_MODULE_WIFI_V2)
+  RCC_APB2PeriphClockCmd(BMA250E_SPI_CLK, ENABLE);
+#endif
 
   /* Enable SCK, MOSI and MISO GPIO clocks */
   RCC_AHB1PeriphClockCmd(BMA250E_SPI_SCK_GPIO_CLK | BMA250E_SPI_MISO_GPIO_CLK | BMA250E_SPI_MOSI_GPIO_CLK, ENABLE);

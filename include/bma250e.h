@@ -21,7 +21,8 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
- #include "stm32f4xx.h"
+#include "stm32f4xx.h"
+#include <board.h>
 
 
 #define BMA250E_Sensitivity_2g    (float)0.038344f        /* m/s2 */
@@ -67,6 +68,9 @@ typedef struct
 /**
   * @brief  BMA250E SPI Interface pins
   */
+
+#ifdef HARDWARE_MODULE_WIFI_V1
+
 #define BMA250E_SPI                       SPI2
 #define BMA250E_SPI_CLK                   RCC_APB1Periph_SPI2
 
@@ -108,7 +112,49 @@ typedef struct
 #define BMA250E_SPI_INT2_EXTI_PIN_SOURCE  EXTI_PinSource1
 #define BMA250E_SPI_INT2_EXTI_IRQn        EXTI1_IRQn 
 
+#elif defined (HARDWARE_MODULE_WIFI_V2)
 
+#define BMA250E_SPI                       SPI1
+#define BMA250E_SPI_CLK                   RCC_APB2Periph_SPI1
+
+#define BMA250E_SPI_SCK_PIN               GPIO_Pin_5                 /* PA.5 */
+#define BMA250E_SPI_SCK_GPIO_PORT         GPIOA                       /* GPIOA */
+#define BMA250E_SPI_SCK_GPIO_CLK          RCC_AHB1Periph_GPIOA
+#define BMA250E_SPI_SCK_SOURCE            GPIO_PinSource5
+#define BMA250E_SPI_SCK_AF                GPIO_AF_SPI1
+
+#define BMA250E_SPI_MISO_PIN              GPIO_Pin_6                 /* PA.6 */
+#define BMA250E_SPI_MISO_GPIO_PORT        GPIOA                       /* GPIOA */
+#define BMA250E_SPI_MISO_GPIO_CLK         RCC_AHB1Periph_GPIOA
+#define BMA250E_SPI_MISO_SOURCE           GPIO_PinSource6
+#define BMA250E_SPI_MISO_AF               GPIO_AF_SPI1
+
+#define BMA250E_SPI_MOSI_PIN              GPIO_Pin_7                 /* PA.7 */
+#define BMA250E_SPI_MOSI_GPIO_PORT        GPIOA                       /* GPIOA */
+#define BMA250E_SPI_MOSI_GPIO_CLK         RCC_AHB1Periph_GPIOA
+#define BMA250E_SPI_MOSI_SOURCE           GPIO_PinSource7
+#define BMA250E_SPI_MOSI_AF               GPIO_AF_SPI1
+
+#define BMA250E_SPI_CS_PIN                GPIO_Pin_5                 /* PC.5 */
+#define BMA250E_SPI_CS_GPIO_PORT          GPIOC                       /* GPIOC */
+#define BMA250E_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOC
+
+#define BMA250E_SPI_INT1_PIN              GPIO_Pin_0                  /* PB.00 */
+#define BMA250E_SPI_INT1_GPIO_PORT        GPIOB                       /* GPIOC */
+#define BMA250E_SPI_INT1_GPIO_CLK         RCC_AHB1Periph_GPIOB
+#define BMA250E_SPI_INT1_EXTI_LINE        EXTI_Line0
+#define BMA250E_SPI_INT1_EXTI_PORT_SOURCE EXTI_PortSourceGPIOB
+#define BMA250E_SPI_INT1_EXTI_PIN_SOURCE  EXTI_PinSource0
+#define BMA250E_SPI_INT1_EXTI_IRQn        EXTI0_IRQn 
+
+#define BMA250E_SPI_INT2_PIN              GPIO_Pin_1                  /* PB.01 */
+#define BMA250E_SPI_INT2_GPIO_PORT        GPIOB                       /* GPIOB */
+#define BMA250E_SPI_INT2_GPIO_CLK         RCC_AHB1Periph_GPIOB
+#define BMA250E_SPI_INT2_EXTI_LINE        EXTI_Line1
+#define BMA250E_SPI_INT2_EXTI_PORT_SOURCE EXTI_PortSourceGPIOB
+#define BMA250E_SPI_INT2_EXTI_PIN_SOURCE  EXTI_PinSource1
+#define BMA250E_SPI_INT2_EXTI_IRQn        EXTI1_IRQn 
+#endif
 /******************************************************************************/
 /*************************** START REGISTER MAPPING  **************************/
 /******************************************************************************/
