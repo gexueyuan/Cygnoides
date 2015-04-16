@@ -13,39 +13,7 @@
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-
-
-/* page size for stm32 flash */
-#define PAGE_SIZE     128*1-24
-/* Environment variables start address */
-#define FLASH_ENV_START_ADDR            //(FLASH_BASE + 100 * 1024) /* from the chip position: 100KB */
-/* the minimum size of flash erasure */
-#define FLASH_ERASE_MIN_SIZE             PAGE_SIZE                /* it is one page for STM32 */
-/* Environment variables bytes size */
-#define FLASH_ENV_SECTION_SIZE           PAGE_SIZE           /* 1 pages */
-/* print debug information of flash */
-#define FLASH_PRINT_DEBUG
-
-
-
-typedef struct _flash_param{
-    char *key;
-    char *value_cus;
-    char *value_hw;
-    char *value_mt;
-    char *value_ct;
-}flash_param, *flash_param_t;
-
-/* Flash error code */
-typedef enum {
-    FLASH_NO_ERR,
-    FLASH_ERASE_ERR,
-    FLASH_WRITE_ERR,
-    FLASH_ENV_NAME_ERR,
-    FLASH_ENV_NAME_EXIST,
-    FLASH_ENV_FULL,
-} FlashErrCode;
-
+#include "flash.h"
 
 
 typedef struct {

@@ -9,35 +9,17 @@
            2014-6-26    wangyifeng    Created file
            ...
 ******************************************************************************/
-#include "cv_osal.h"
+#include "flash.h"
 
-#include "components.h"
-#include "cv_vam.h"
-#include "cv_cms_def.h"
-
-
-/*****************************************************************************
- * declaration of variables and functions                                    *
-*****************************************************************************/
-
-
-/*****************************************************************************
- * implementation of functions                                               *
-*****************************************************************************/
-
-/**
-    below functions are only simple realization for testing
-*/
-
-int drv_fls_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
+FlashErrCode flash_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 {
     memcpy(p_databuf, (uint8_t *)flash_address, length);
-	return 0;
+	return FLASH_NO_ERR;
 }
 
-int drv_fls_erase(uint32_t  sector)
+FlashErrCode flash_erase(uint32_t  sector)
 {
-    int err = 0;
+    FlashErrCode err = FLASH_NO_ERR;
     
     /* Enable the flash control register access */
     FLASH_Unlock();
@@ -47,7 +29,7 @@ int drv_fls_erase(uint32_t  sector)
                     FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR|FLASH_FLAG_PGSERR); 
 
     if (FLASH_EraseSector(sector, VoltageRange_3) != FLASH_COMPLETE){
-        err = -1;
+        err = FLASH_ERASE_ERR;
     }
 
     /* Disable the flash control register access */
@@ -57,9 +39,9 @@ int drv_fls_erase(uint32_t  sector)
 }
 
 
-int drv_fls_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
+FlashErrCode flash_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 {
-    int err = 0;
+    FlashErrCode err = FLASH_NO_ERR;
     
     /* Enable the flash control register access */
     FLASH_Unlock();
@@ -70,7 +52,7 @@ int drv_fls_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 
     while(length > 0){
         if ((FLASH_ProgramByte(flash_address, *p_databuf)) != FLASH_COMPLETE){
-            err = -1;
+            err = FLASH_WRITE_ERR;
             break;
         }
         flash_address++;
