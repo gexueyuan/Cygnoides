@@ -18,13 +18,6 @@
 #include "cv_cms_def.h"
 #include "cv_sys_param.h"
 
-
-
-
-extern 	int drv_fls_erase(uint32_t	sector);
-extern  int drv_fls_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length);
-extern	int drv_fls_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length);
-
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
@@ -337,6 +330,31 @@ void  write_def_param(void)
 FINSH_FUNCTION_EXPORT(write_def_param, debug:write default  param to flash);
 
 
+
+char* get_variate(char* var)
+{
+ char* var_pos;   
+ uint8_t i;
+ char c_char;
+ uint32_t  length;
+
+ var_pos = var;
+ length = strlen(var);
+ 
+ for(i = 0;i < length;i++){
+
+        c_char = *var_pos++;
+        if(c_char == '-'){
+            var_pos++;
+            //osal_printf("%s\n",var_pos);
+            return var_pos;
+        }
+           
+ }
+ //osal_printf("%s\n",var);
+ return var;
+}
+
 void param_init(void)
 {
 		uint8_t magic_word[sizeof(param_init_words)];
@@ -350,10 +368,11 @@ void param_init(void)
 				write_def_param();
 			}
 		else load_param_from_fl();
-	
+
+ //   rt_kprintf("%s=%d\n", get_variate(name_to_str(p_cms_param->vam.bsm_hops)),p_cms_param->vam.bsm_hops);
 }
 
-
+#define PRINT_PARAM(param)  osal_printf("%s(%d) = %d\n",get_variate(name_to_str(param)),i,param)
 
 void param_get(void)
 {
@@ -800,8 +819,6 @@ int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int
 
 
 FINSH_FUNCTION_EXPORT(gsnr_param_set, gsnr param setting);
-
-
-
+    
 
 
