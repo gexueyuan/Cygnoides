@@ -276,7 +276,7 @@ void load_param_from_fl(void)
     uint8_t param_pos;
 	p_cms_param = &cms_param;
 
-    param_mode = drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&param_mode,4);
+    param_mode = flash_read(PARAM_MODE_ADDR,(uint8_t *)&param_mode,4);
 
     osal_printf("mode is %d \n\n",param_mode);
 
@@ -289,7 +289,7 @@ void load_param_from_fl(void)
     else if(param_mode == MOUNTAIN_MODE)
         param_pos = 3;
     
-	drv_fls_read(PARAM_ADDR+param_pos*(sizeof(cfg_param_t)),(uint8_t *)p_cms_param,sizeof(cfg_param_t));
+	flash_read(PARAM_ADDR+param_pos*(sizeof(cfg_param_t)),(uint8_t *)p_cms_param,sizeof(cfg_param_t));
 	
 
 }
@@ -297,27 +297,25 @@ void load_param_from_fl(void)
 void  write_def_param(void)
 {
 	cfg_param_t  flash_param;
-
-	rt_err_t err;
     uint32_t mode;
 
     mode = CUSTOM_MODE;
 	
-	drv_fls_erase(FLASH_Sector_11);
-	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
-	drv_fls_write(PARAM_MODE_ADDR,(uint8_t *)&mode,sizeof(CUSTOM_MODE));
+	flash_erase(FLASH_Sector_11);
+	flash_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
+	flash_write(PARAM_MODE_ADDR,(uint8_t *)&mode,sizeof(CUSTOM_MODE));
     
 	load_default_param_custom(&flash_param);
-	drv_fls_write(PARAM_ADDR,(uint8_t *)&flash_param,sizeof(cfg_param_t));
+	flash_write(PARAM_ADDR,(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
 	load_default_param_highway(&flash_param);
-	drv_fls_write(PARAM_ADDR+sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
+	flash_write(PARAM_ADDR+sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
     load_default_param_mountain(&flash_param);
-	drv_fls_write(PARAM_ADDR+2*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
+	flash_write(PARAM_ADDR+2*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
     load_default_param_city(&flash_param);
-	drv_fls_write(PARAM_ADDR+3*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
+	flash_write(PARAM_ADDR+3*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
 /*
 	if(-1 == err)
 		rt_kprintf("error happened when writing default param to flash");
@@ -358,8 +356,14 @@ char* get_variate(char* var)
 void param_init(void)
 {
 		uint8_t magic_word[sizeof(param_init_words)];
+
+        int i=0;
+
+        char *str = "-55";
+        i = atoi(str);
+        osal_printf("string = %s integer = %d\n", str, i);
 	
-		drv_fls_read(PARAM_FLAG_ADDR,magic_word,sizeof(param_init_words));
+		flash_read(PARAM_FLAG_ADDR,magic_word,sizeof(param_init_words));
 	
 		if(strcmp((const char*)param_init_words,(const char*)magic_word) != 0)
 			{
@@ -472,7 +476,7 @@ void print_init_word(void)//print  flag of initialized
 	uint8_t init_word[sizeof(param_init_words)];
 
 	
-	drv_fls_read(PARAM_FLAG_ADDR,init_word,sizeof(param_init_words));
+	flash_read(PARAM_FLAG_ADDR,init_word,sizeof(param_init_words));
 
 	rt_kprintf("init word in flash is \"%s\"\n",init_word);
 
@@ -486,7 +490,7 @@ void print_fd(uint32_t addr)//print  data of specified  address ,e.g:print_fd(0x
 
 	uint8_t data;
 
-	drv_fls_read(addr,&data,1);
+	flash_read(addr,&data,1);
 
 	rt_kprintf("data in address %x  is \"%d\"\n",addr,data);
 }
@@ -506,13 +510,13 @@ int param_set(uint8_t param, int32_t value)
 
     uint32_t mode;
 	
-    drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&mode,4);
+    flash_read(PARAM_MODE_ADDR,(uint8_t *)&mode,4);
 
 	
 
 	all_param = (vanet_param*)rt_malloc(sizeof(vanet_param));
 
-	drv_fls_read(PARAM_ADDR,(uint8_t*)all_param,sizeof(vanet_param));
+	flash_read(PARAM_ADDR,(uint8_t*)all_param,sizeof(vanet_param));
 /*
 	if(param >31 )
 		{
@@ -689,10 +693,10 @@ int param_set(uint8_t param, int32_t value)
 
 	rt_kprintf("param is setting .....please don't power off!\n");
 		
-	drv_fls_erase(FLASH_Sector_11);
-	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
+	flash_erase(FLASH_Sector_11);
+	flash_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
 	
-	err = drv_fls_write(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
+	err = flash_write(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
 
 	if(err == -1)
 		rt_kprintf("parameter writing process error!!!\n");
@@ -713,13 +717,13 @@ FINSH_FUNCTION_EXPORT(param_set, set system parameters);
 
 
 
-void flash_read(void)
+void praram_flash_read(void)
 {
 	cfg_param_t  *param_temp;
 
 	param_temp = (cfg_param_t*)rt_malloc(sizeof(cfg_param_t));
 
-	drv_fls_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
+	flash_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
 		
     rt_kprintf("-------------------parameters in  flash------------------\n");	
     rt_kprintf("----------------------vam---------------------\n");	
@@ -776,7 +780,7 @@ void flash_read(void)
 
 }
 
-FINSH_FUNCTION_EXPORT(flash_read, debug:reading param);
+FINSH_FUNCTION_EXPORT(praram_flash_read, debug:reading param);
 
 
 int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int32_t AcceV_z,int32_t AcceAhead_x,int32_t AcceAhead_y,int32_t AcceAhead_z)
@@ -787,7 +791,7 @@ int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int
 
 	cfg_param = (cfg_param_t*)rt_malloc(sizeof(cfg_param_t));
 
-	drv_fls_read(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
+	flash_read(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
 	
 	cfg_param->gsnr.gsnr_cal_step = gsnr_cal_step;
 	cfg_param->gsnr.AcceV_x = AcceV_x;
@@ -799,10 +803,10 @@ int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int
 
 	memcpy((uint8_t*)p_cms_param,(uint8_t*)cfg_param,sizeof(cfg_param_t));
 	
-	drv_fls_erase(FLASH_Sector_11);
-	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
+	flash_erase(FLASH_Sector_11);
+	flash_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
 
-	err = drv_fls_write(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
+	err = flash_write(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
 
 	if(err == -1)
 		rt_kprintf("gsnr param setting failed!!!\n");

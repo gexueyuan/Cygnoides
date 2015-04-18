@@ -2,7 +2,8 @@
 
 #ifndef FLASH_H_
 #define FLASH_H_
-
+#include <stdint.h>
+#include <stddef.h>
 
 /* Flash error code */
 typedef enum {
@@ -16,9 +17,11 @@ typedef enum {
 
 
 /* flash.c */
-FlashErrCode flash_read(uint32_t addr, uint32_t *buf, size_t size);
-FlashErrCode flash_erase(uint32_t addr, size_t size);
-FlashErrCode flash_write(uint32_t addr, const uint32_t *buf, size_t size);
+FlashErrCode flash_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length);
+FlashErrCode flash_erase(uint32_t  sector);
+FlashErrCode flash_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length);
+void *flash_malloc(size_t size);
+void flash_free(void *p);
 
 #endif /* FLASH_H_ */
 

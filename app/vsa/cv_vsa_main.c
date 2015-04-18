@@ -144,7 +144,6 @@ int32_t  preprocess_pos(void)
     uint8_t peer_pid[VAM_NEIGHBOUR_MAXNUM][RCP_TEMP_ID_LEN];
     uint32_t peer_count;
 
-    static uint32_t count_pos = 0;
 
     vam_get_all_peer_pid(peer_pid,VAM_NEIGHBOUR_MAXNUM,&peer_count);
 

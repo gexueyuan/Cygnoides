@@ -458,14 +458,14 @@ void flash_print_env(void) {
     for (; env_cache_data_addr < env_cache_end_addr; env_cache_data_addr += 1) {
         for (j = 0; j < 4; j++) {
             c = (*env_cache_data_addr) >> (8 * j);
-            flash_print("%c", c);
+            osal_printf("%c", c);
             if (c == NULL) {
-                flash_print("\n");
+                osal_printf("\n");
                 break;
             }
         }
     }
-    flash_print("\nEnvironment variables size: %ld/%ld bytes, mode: normal.\n",
+    osal_printf("\nEnvironment variables size: %ld/%ld bytes, mode: normal.\n",
             flash_get_env_used_size(), flash_get_env_total_size());
 }
 
@@ -478,7 +478,7 @@ void flash_load_env(void) {
     FLASH_ASSERT(env_cache);
 
     /* read environment variables end address from flash */
-    flash_read(get_env_system_addr() + FLASH_ENV_SYSTEM_INDEX_END_ADDR * 4, &env_end_addr, 4);
+    flash_read(get_env_system_addr() + FLASH_ENV_SYSTEM_INDEX_END_ADDR * 4, (uint8_t *)&env_end_addr, 4);
     /* if environment variables is not initialize or flash has dirty data, set default for it */
     if ((env_end_addr == 0xFFFFFFFF) || (env_end_addr > env_start_addr + env_total_size)) {
         flash_env_set_default();
@@ -488,12 +488,12 @@ void flash_load_env(void) {
 
         env_cache_bak = env_cache + FLASH_ENV_SYSTEM_WORD_SIZE;
         /* read all environment variables from flash */
-        flash_read(get_env_data_addr(), env_cache_bak, get_env_data_size());
+        flash_read(get_env_data_addr(), (uint8_t *)env_cache_bak, get_env_data_size());
 
 #ifdef FLASH_ENV_USING_CRC_CHECK
         /* read environment variables CRC code from flash */
         flash_read(get_env_system_addr() + FLASH_ENV_SYSTEM_INDEX_DATA_CRC * 4,
-                &env_cache[FLASH_ENV_SYSTEM_INDEX_DATA_CRC] , 4);
+                (uint8_t *)&env_cache[FLASH_ENV_SYSTEM_INDEX_DATA_CRC] , 4);
 
         /* if environment variables CRC32 check is fault, set default for it */
         if (!env_crc_is_ok()) {
@@ -533,7 +533,7 @@ FlashErrCode flash_save_env(void) {
     }
 
     /* write environment variables to flash */
-    result = flash_write(get_env_system_addr(), env_cache, flash_get_env_used_size());
+    result = flash_write(get_env_system_addr(), (uint8_t *)env_cache, flash_get_env_used_size());
     switch (result) {
     case FLASH_NO_ERR: {
         FLASH_INFO("Saved environment variables OK.\n");

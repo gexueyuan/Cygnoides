@@ -666,6 +666,11 @@
               <FileType>1</FileType>
               <FilePath>..\bsp\pt8211.c</FilePath>
             </File>
+            <File>
+              <FileName>flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\flash.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1794,6 +1799,11 @@
               <FileName>pt8211.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\pt8211.c</FilePath>
+            </File>
+            <File>
+              <FileName>flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\flash.c</FilePath>
             </File>
           </Files>
         </Group>

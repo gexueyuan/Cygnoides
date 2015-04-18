@@ -3,7 +3,6 @@
 #define CV_DRV_FLS_H_
 
 #include "flash.h"
-#include "types.h"
 
 /* using CRC32 check when load environment variable from Flash */
 #define FLASH_ENV_USING_CRC_CHECK
@@ -26,7 +25,6 @@ if (!(EXPR))                                                                  \
 typedef struct _flash_env{
     char *key;
     char *value;
-	char *value;
 }flash_env, *flash_env_t;
 
 

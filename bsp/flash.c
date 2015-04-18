@@ -10,6 +10,10 @@
            ...
 ******************************************************************************/
 #include "flash.h"
+#include <rthw.h>
+#include <rtthread.h>
+#include "stm32f4xx.h"
+#include <string.h>
 
 FlashErrCode flash_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 {
@@ -64,5 +68,31 @@ FlashErrCode flash_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t le
     FLASH_Lock();
 
 	return err;
+}
+
+
+
+/**
+ * Allocate a block of memory with a minimum of 'size' bytes.
+ *
+ * @param size is the minimum size of the requested block in bytes.
+ *
+ * @return pointer to allocated memory or NULL if no free memory was found.
+ */
+void *flash_malloc(size_t size) {
+    return rt_malloc(size);
+}
+
+/**
+ * This function will release the previously allocated memory block by
+ * flash_malloc. The released memory block is taken back to system heap.
+ *
+ * @param p the pointer to allocated memory which will be released
+ */
+void flash_free(void *p) {
+	
+    /* You can add your code under here. */
+    rt_free(p);
+	
 }
 
