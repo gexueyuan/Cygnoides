@@ -272,7 +272,7 @@ static void USB_OTG_BSP_TimeInit ( void )
   NVIC_InitTypeDef NVIC_InitStructure;
   
   /* Set the Vector Table base address at 0x08000000 */
-  NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x00);
+  //NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x00);
   
   /* Configure the Priority Group to 2 bits */
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);

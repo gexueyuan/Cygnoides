@@ -272,6 +272,7 @@ void load_default_param(cfg_param_t *param)
 
 void load_param_from_fl(void)
 {
+#if 0
     uint32_t param_mode;
     uint8_t param_pos;
 	p_cms_param = &cms_param;
@@ -290,12 +291,13 @@ void load_param_from_fl(void)
         param_pos = 3;
     
 	flash_read(PARAM_ADDR+param_pos*(sizeof(cfg_param_t)),(uint8_t *)p_cms_param,sizeof(cfg_param_t));
-	
+#endif	
 
 }
 
 void  write_def_param(void)
 {
+#if 0
 	cfg_param_t  flash_param;
     uint32_t mode;
 
@@ -316,13 +318,8 @@ void  write_def_param(void)
 
     load_default_param_city(&flash_param);
 	flash_write(PARAM_ADDR+3*sizeof(cfg_param_t),(uint8_t *)&flash_param,sizeof(cfg_param_t));
-/*
-	if(-1 == err)
-		rt_kprintf("error happened when writing default param to flash");
-	else
-		rt_kprintf("write default param to flash  success\n");
-*/
 
+#endif
 }
 
 FINSH_FUNCTION_EXPORT(write_def_param, debug:write default  param to flash);
@@ -355,13 +352,8 @@ char* get_variate(char* var)
 
 void param_init(void)
 {
+/*
 		uint8_t magic_word[sizeof(param_init_words)];
-
-        int i=0;
-
-        char *str = "-55";
-        i = atoi(str);
-        osal_printf("string = %s integer = %d\n", str, i);
 	
 		flash_read(PARAM_FLAG_ADDR,magic_word,sizeof(param_init_words));
 	
@@ -372,6 +364,20 @@ void param_init(void)
 				write_def_param();
 			}
 		else load_param_from_fl();
+*/
+#if 0
+        int V = 0x0D0C0B0A;  
+        char c = *(char *)(&V);  
+          
+        if (c == 0x0A || c == 0x0D) {  
+            if (c == 0x0A)  
+                rt_kprintf("little endian machine");  
+            else  
+                rt_kprintf("big endian machine");  
+        } else  
+            rt_kprintf("test error");  
+#endif
+    flash_init();
 
  //   rt_kprintf("%s=%d\n", get_variate(name_to_str(p_cms_param->vam.bsm_hops)),p_cms_param->vam.bsm_hops);
 }
@@ -472,14 +478,14 @@ FINSH_FUNCTION_EXPORT(print_bn, data struct bytes needed);
 
 void print_init_word(void)//print  flag of initialized
 {
-	
+#if 0	
 	uint8_t init_word[sizeof(param_init_words)];
 
 	
 	flash_read(PARAM_FLAG_ADDR,init_word,sizeof(param_init_words));
 
 	rt_kprintf("init word in flash is \"%s\"\n",init_word);
-
+#endif
 }
 FINSH_FUNCTION_EXPORT(print_init_word, print init words  in flash);
 
@@ -487,12 +493,13 @@ FINSH_FUNCTION_EXPORT(print_init_word, print init words  in flash);
 
 void print_fd(uint32_t addr)//print  data of specified  address ,e.g:print_fd(0x80E0010),
 {
-
+#if 0
 	uint8_t data;
 
 	flash_read(addr,&data,1);
 
 	rt_kprintf("data in address %x  is \"%d\"\n",addr,data);
+#endif
 }
 
 FINSH_FUNCTION_EXPORT(print_fd, print  data of specified  address in flash);
@@ -501,7 +508,7 @@ FINSH_FUNCTION_EXPORT(print_fd, print  data of specified  address in flash);
 
 int param_set(uint8_t param, int32_t value)
 {
-
+#if 0
 	int err;
 
 	vanet_param *all_param;
@@ -708,7 +715,7 @@ int param_set(uint8_t param, int32_t value)
 	cfg_param = NULL;
 
 	return 0;
-
+#endif
 }
 
 
@@ -719,6 +726,7 @@ FINSH_FUNCTION_EXPORT(param_set, set system parameters);
 
 void praram_flash_read(void)
 {
+#if 0
 	cfg_param_t  *param_temp;
 
 	param_temp = (cfg_param_t*)rt_malloc(sizeof(cfg_param_t));
@@ -777,7 +785,7 @@ void praram_flash_read(void)
 	rt_free(param_temp);
 
 	param_temp = NULL;
-
+#endif
 }
 
 FINSH_FUNCTION_EXPORT(praram_flash_read, debug:reading param);
@@ -785,6 +793,7 @@ FINSH_FUNCTION_EXPORT(praram_flash_read, debug:reading param);
 
 int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int32_t AcceV_z,int32_t AcceAhead_x,int32_t AcceAhead_y,int32_t AcceAhead_z)
 {
+#if 0
 	int8_t err;
 
 	cfg_param_t *cfg_param;
@@ -818,7 +827,7 @@ int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int
 	cfg_param = NULL;
 
 	return 0;
-
+#endif
 }
 
 

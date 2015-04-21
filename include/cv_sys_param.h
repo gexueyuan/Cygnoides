@@ -13,8 +13,7 @@
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-#include "cv_drv_fls.h"
-
+#include "cv_cms_def.h"
 typedef struct _flash_param{
     char *key;
     char *cus_value;
@@ -40,16 +39,20 @@ typedef struct {
 
 #define PARAM_ADDR    		((uint32_t)0x80E0020)
 
+#define PARAM_ERASE_SECTOR   FLASH_Sector_11
+
 #define name_to_str(name)   (#name)
 
 
+typedef struct _flash_env{
+    char *key;
+    char *value;
+}flash_env, *flash_env_t;
 
-
-
-
-static const flash_param default_param_data[] = {
+const flash_param default_param_data[] = {
 
     {"(0)ID","0000","0000","0000","0000"},
+    {"(1)mode","0","1","2","3"},
         
     /*******************VAM*******************/    
     {"(1)vam.bsm_hops","1","1","1","1"},
