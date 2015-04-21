@@ -61,6 +61,7 @@ static const flash_env default_env_set[] = {
         {"stop_in_bootloader","0"},
         {"device_id","1"},
         {"boot_times","0"},
+        {"boot_xxxx","0"},
 };
 
 static char log_buf[RT_CONSOLEBUF_SIZE];
@@ -80,7 +81,7 @@ static uint32_t stm32_get_sector_size(uint32_t sector);
  * @return result
  */
 FlashErrCode flash_port_init(uint32_t *env_addr, size_t *env_total_size, size_t *erase_min_size,
-        flash_param const **default_env, size_t *default_env_size) {
+        flash_env const **default_env, size_t *default_env_size) {
     FlashErrCode result = FLASH_NO_ERR;
 
     FLASH_ASSERT(FLASH_USER_SETTING_ENV_SIZE % 4 == 0);
@@ -90,7 +91,7 @@ FlashErrCode flash_port_init(uint32_t *env_addr, size_t *env_total_size, size_t 
     *env_total_size = FLASH_ENV_SECTION_SIZE;
     *erase_min_size = FLASH_ERASE_MIN_SIZE;
     *default_env = default_param_data;
-    *default_env_size = sizeof(default_env_set)/sizeof(default_env_set[0]);
+    *default_env_size = sizeof(default_param_data)/sizeof(default_param_data[0]);
 
     return result;
 }

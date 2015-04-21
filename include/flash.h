@@ -41,7 +41,7 @@ typedef enum {
 /* flash.c */
 FlashErrCode flash_init(void);
 FlashErrCode flash_port_init(uint32_t *env_addr, size_t *env_total_size, size_t *erase_min_size,
-        flash_param const **default_env, size_t *default_env_size);
+        flash_env const **default_env, size_t *default_env_size);
 
 
 /* flash_env.c flash_env_wl.c */

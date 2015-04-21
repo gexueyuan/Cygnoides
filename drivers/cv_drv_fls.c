@@ -44,7 +44,7 @@ enum {
 #define     ENV_PARAM_MODE_GET   0x0000FFFF
 
     /* default ENV set, must be initialized by user */
-static flash_param const *default_env_set = NULL;
+static flash_env const *default_env_set = NULL;
 /* default ENV set size, must be initialized by user */
 static size_t default_env_set_size = NULL;
 /* ENV RAM cache */
@@ -86,7 +86,7 @@ static bool_t env_crc_is_ok(void);
  * @return result
  */
 FlashErrCode flash_env_init(uint32_t start_addr, size_t total_size, size_t erase_min_size,
-        flash_param const *default_env, size_t default_env_size) {
+        flash_env const *default_env, size_t default_env_size) {
     FlashErrCode result = FLASH_NO_ERR;
 
     FLASH_ASSERT(start_addr);
@@ -133,6 +133,7 @@ FlashErrCode flash_env_set_default(void){
 
     return result;
 }
+FINSH_FUNCTION_EXPORT(flash_env_set_default, list all neighbour sta);
 
 /**
  * Get ENV system section start address.
@@ -151,7 +152,7 @@ static uint32_t get_env_system_addr(void) {
  */
 static uint32_t get_env_data_addr(void) {
     FLASH_ASSERT(env_start_addr);
-    return env_start_addr + 2*ENV_PARAM_BYTE_SIZE;
+    return env_start_addr + ENV_PARAM_BYTE_SIZE;
 }
 
 /**
@@ -367,7 +368,7 @@ static FlashErrCode create_env(const char *key, const char *value) {
  *
  * @return result
  */
-static FlashErrCode create_env(const char *key, const char *value) {
+static FlashErrCode create_default_env(const char *key, const char *value) {
     FlashErrCode result = FLASH_NO_ERR;
 
     FLASH_ASSERT(key);
@@ -595,6 +596,7 @@ FlashErrCode flash_save_env(void) {
 
     return result;
 }
+FINSH_FUNCTION_EXPORT(flash_save_env, list all neighbour sta);
 
 #ifdef FLASH_ENV_USING_CRC_CHECK
 /**
@@ -635,7 +637,7 @@ static bool_t env_crc_is_ok(void) {
 FlashErrCode flash_init(void) {
     uint32_t env_start_addr;
     size_t env_total_size, erase_min_size, default_env_set_size;
-    const flash_param *default_env_set;
+    const flash_env *default_env_set;
     FlashErrCode result = FLASH_NO_ERR;
 
     result = flash_port_init(&env_start_addr, &env_total_size, &erase_min_size, &default_env_set,
