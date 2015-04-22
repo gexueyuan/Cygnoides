@@ -35,6 +35,8 @@ typedef struct {
 
 #define PARAM_ADDR    		((uint32_t)0x80E0020)
 
+#define PARAM_OFFSET          0x200
+
 #define name_to_str(name)  (#name)
 
 
