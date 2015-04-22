@@ -53,6 +53,7 @@ FlashErrCode flash_save_env(void);
 FlashErrCode flash_env_set_default(void);
 size_t flash_get_env_total_size(void);
 size_t flash_get_env_write_bytes(void);
+char *get_in_mode(const char *key,uint8_t mode);
 
 
 

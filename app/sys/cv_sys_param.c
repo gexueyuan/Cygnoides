@@ -16,7 +16,7 @@
 #include "cv_vam.h"
 #include "cv_vsa.h"
 #include "cv_cms_def.h"
-#include "cv_sys_param.h"
+#include "flash.h"
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -269,8 +269,9 @@ void load_default_param(cfg_param_t *param)
 	
 
 }
+#define GET_PARAM(param)  flash_get_env(name_to_str(param))
 
-void load_param_from_fl(void)
+void load_param(void)
 {
 #if 0
     uint32_t param_mode;
@@ -292,9 +293,30 @@ void load_param_from_fl(void)
     
 	flash_read(PARAM_ADDR+param_pos*(sizeof(cfg_param_t)),(uint8_t *)p_cms_param,sizeof(cfg_param_t));
 #endif	
+char* string_temp= NULL;
+uint32_t pid_mem;
+
+string_temp = flash_get_env("ID");
+pid_mem = atoi(string_temp);
+
+p_cms_param->pid[0] = pid_mem/1000;
+p_cms_param->pid[1] = (pid_mem%1000)/100;  
+p_cms_param->pid[2] = ((pid_mem%1000)%100)/10;
+p_cms_param->pid[3] = ((pid_mem%1000)%100)%10;
+
+rt_kprintf("ID(0)=%d%d%d%d\n",p_cms_param->pid[0],p_cms_param->pid[1],p_cms_param->pid[2],p_cms_param->pid[3]);
+
+string_temp = flash_get_env("mode");
+osal_printf("mode is %s\n",string_temp);
+
+//p_cms_param->vam.bsm_hops = GET_PARAM(vam.bsm_hops);
+//p_cms_param->vam.bsm_boardcast_mode = GET_PARAM(vam.bsm_boardcast_mode);
+//p_cms_param->vam.bsm_boardcast_period = GET_PARAM(vam.bsm_boardcast_period);
+
+
 
 }
-
+FINSH_FUNCTION_EXPORT(load_param, debug:write default  param to flash);
 void  write_def_param(void)
 {
 #if 0
@@ -393,9 +415,9 @@ void param_get(void)
     rt_kprintf("-------------------parameters in ram------------------\n");
     rt_kprintf("----------------------vam---------------------\n");
 	rt_kprintf("ID(0)=%d%d%d%d\n",p_cms_param->pid[0],p_cms_param->pid[1],p_cms_param->pid[2],p_cms_param->pid[3]);
-    rt_kprintf("vam.bsm_hops(1)=%d\n", p_cms_param->vam.bsm_hops);
-    rt_kprintf("vam.bsm_boardcast_mode(2)=%d\n", p_cms_param->vam.bsm_boardcast_mode);
-    rt_kprintf("vam.bsm_boardcast_saftyfactor(3)=%d\n", p_cms_param->vam.bsm_boardcast_saftyfactor);
+    rt_kprintf("vam.bsm_hops(1)=%s\n", GET_PARAM(vam.bsm_hops));
+    rt_kprintf("vam.bsm_boardcast_mode(2)=%s\n", GET_PARAM(vam.bsm_boardcast_mode));
+    rt_kprintf("vam.bsm_boardcast_saftyfactor(3)=%s\n", GET_PARAM(vam.bsm_boardcast_saftyfactor));//p_cms_param->vam.bsm_boardcast_saftyfactor);
     rt_kprintf("vam.bsm_pause_mode(4)=%d\n", p_cms_param->vam.bsm_pause_mode);
     rt_kprintf("vam.bsm_pause_hold_time(5)=%d (s)\n", p_cms_param->vam.bsm_pause_hold_time);
     rt_kprintf("vam.bsm_boardcast_period(6)=%d (ms)\n", p_cms_param->vam.bsm_boardcast_period);
@@ -508,6 +530,16 @@ FINSH_FUNCTION_EXPORT(print_fd, print  data of specified  address in flash);
 
 int param_set(uint8_t param, int32_t value)
 {
+
+   uint8_t param_no[10];
+
+   sprintf(param_no,"(%d)",param);
+
+   osal_printf("param no is %s\n",param_no);
+
+    get_in_mode(param_no,2);
+   
+
 #if 0
 	int err;
 

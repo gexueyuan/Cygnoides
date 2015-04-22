@@ -496,6 +496,84 @@ char *flash_get_env(const char *key) {
     return value;
 }
 /**
+ * Get an ENV value by key name.
+ *
+ * @param key ENV name
+ *
+ * @return value
+ */
+char *get_in_mode(const char *key,uint8_t mode) {
+    uint32_t *env_cache_addr = NULL;
+    char *value = NULL;
+    char *value_pos=NULL;
+    uint8_t i =1;
+    static char string_rt[10];
+    /*clear space*/
+    memset(string_rt,NULL,sizeof(string_rt));
+    /* find ENV */
+    osal_printf("key is %s\n",key);
+    env_cache_addr = find_env(key);
+    if (env_cache_addr == NULL) {
+        return NULL;
+    }
+    /* get value address */
+    osal_printf("value address is %p\n",env_cache_addr);
+    value = strstr((char *) env_cache_addr, "=");
+    if (value != NULL) {
+        /* the equal sign next character is value */
+        value++;
+    }
+    /*
+    value_pos = value;
+    for(;i < mode;value_pos++){
+
+        if(*value_pos == '/')
+            i++;
+
+    }
+    */
+   while(1) {
+    value_pos = strstr(value,"/");
+    if(value_pos == NULL){        
+        osal_printf("get param is %s\n",value);       
+        return value;
+    }
+    if(i<mode){
+        value_pos++;
+        i++;
+        value = value_pos;
+        continue;
+
+        }
+    else{
+        //*value_pos = NULL;      
+        strncpy(string_rt,value,value_pos-value);
+        break;
+    }
+        
+    }
+
+osal_printf("get param is %s\n",string_rt);
+return string_rt;
+
+
+}
+
+FINSH_FUNCTION_EXPORT(get_in_mode, print param);
+
+void flash_p(void)
+{
+char* string_print;
+
+string_print = flash_get_env("ID");
+
+rt_kprintf("ID is %s\n",string_print);
+
+
+}
+FINSH_FUNCTION_EXPORT(flash_p, print param);
+
+/**
  * Print ENV.
  */
 void flash_print_env(void) {
@@ -520,7 +598,6 @@ void flash_print_env(void) {
 }
 
 FINSH_FUNCTION_EXPORT(flash_print_env, list all neighbour sta);
-
 /**
  * Load flash ENV to ram.
  */
