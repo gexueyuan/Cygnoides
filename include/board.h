@@ -25,8 +25,8 @@
 //#define HARDWARE_MODULE_V2
 
 /**************new version*********************/
-#define HARDWARE_MODULE_WIFI_V1
-//#define HARDWARE_MODULE_WIFI_V2
+//#define HARDWARE_MODULE_WIFI_V1
+#define HARDWARE_MODULE_WIFI_V2
 
 /* board configuration */
 // <o> SDCard Driver <1=>SDIO sdcard <0=>SPI MMC card

@@ -18,9 +18,23 @@ enum{
 };
 
 #define LEDn  3
+#ifdef HARDWARE_MODULE_WIFI_V1
 #define LED_RED     LED0
 #define LED_GREEN   LED1
 #define LED_BLUE    LED2
+#elif defined(HARDWARE_MODULE_WIFI_V2)
+#define LED_RED     LED2
+#define LED_GREEN   LED0
+#define LED_BLUE    LED1
+#endif
+
+enum{
+    RED_STATE = 0,
+    GREEN_STATE,
+    BLUE_STATE,
+    YELLOW_STATE,
+    LIGHT_STATE,
+};
 
 
 #ifdef HARDWARE_MODULE_WIFI_V1

@@ -513,7 +513,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
             }
 
     }
-	
+#ifdef HARDWARE_MODULE_WIFI_V1
 	if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
 		||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
 		{
@@ -564,6 +564,40 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			p_sys->led_blink_cnt = 0;
 			led_add_event_queue(p_sys,LED_BLUE,0,LED_OFF,NULL);
 	}
+ #elif defined(HARDWARE_MODULE_WIFI_V2)
+ 
+ if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
+     ||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
+     {
+         p_sys->led_color = RED_STATE;//
+         led_add_event_queue(p_sys,RED_STATE,0,LED_BLINK,NULL);
+ }
+ else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS)))
+     {
+         p_sys->led_color = YELLOW_STATE;//
+         led_add_event_queue(p_sys,YELLOW_STATE,0,LED_ON,NULL);
+ }
+
+ else if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
+     {
+         p_sys->led_color = GREEN_STATE;//
+         led_add_event_queue(p_sys,GREEN_STATE,0,LED_BLINK,NULL);
+     }
+  else if(p_sys->led_priority&(1<<SYS_MSG_BSM_UPDATE))
+     {
+         p_sys->led_color = BLUE_STATE;//r=1,b=0,g=1
+         led_add_event_queue(p_sys,BLUE_STATE,0,LED_BLINK,NULL);
+ 
+ }
+ else if(p_sys->led_priority&(~(1<<HI_OUT_GPS_LOST))){
+         p_sys->led_color = GREEN_STATE;//
+         led_add_event_queue(p_sys,GREEN_STATE,0,LED_ON,NULL);
+ }
+ else {
+     p_sys->led_color = LIGHT_STATE;//
+     led_add_event_queue(p_sys,LIGHT_STATE,0,LED_OFF,NULL);
+ }
+ #endif
 }
 
 void rt_hi_thread_entry(void *parameter)
