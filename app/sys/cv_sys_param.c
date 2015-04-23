@@ -78,7 +78,7 @@ void load_default_param_custom(cfg_param_t *param)
     param->gsnr.AcceAhead_y = 0;
     param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 13;
+    param->wnet.channel = 11;
     param->wnet.txrate = 6;
     
 
@@ -126,7 +126,7 @@ void load_default_param_highway(cfg_param_t *param)
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 13;
+    param->wnet.channel = 11;
     param->wnet.txrate = 6;
 	
 
@@ -174,7 +174,7 @@ void load_default_param_mountain(cfg_param_t *param)
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 13;
+    param->wnet.channel = 11;
     param->wnet.txrate = 6;
 	
 
@@ -221,7 +221,7 @@ void load_default_param_city(cfg_param_t *param)
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 13;
+    param->wnet.channel = 11;
     param->wnet.txrate = 6;
 	
 
@@ -296,17 +296,99 @@ uint32_t get_param_addr(uint16_t mode)
 
 }
 
+
+uint8_t get_param_num(uint16_t mode)
+{
+	uint8_t param_no;
+  
+	if(param_mode == CUSTOM_MODE)
+		param_no = 0;
+	else if(param_mode == HIGHWAY_MODE)
+		param_no = 1;
+	else if(param_mode == MOUNTAIN_MODE)
+		param_no = 2;
+	else if(param_mode == CITY_MODE)
+		param_no = 3;
+
+	return param_no;
+
+}
+
+uint16_t  mode_get(void)
+{
+    uint16_t mode;
+    uint8_t get_str;
+    //rt_kprintf("----------------------mode---------------------\n");
+    drv_fls_read(PARAM_MODE_ADDR,(uint8_t*)&mode,sizeof(uint16_t));
+
+	if(mode == CUSTOM_MODE)
+		get_str = 0;
+	else if(mode == HIGHWAY_MODE)
+		get_str = 1;
+	else if(mode == MOUNTAIN_MODE)
+		get_str = 2;
+	else if(mode == CITY_MODE)
+		get_str = 3;
+    else{ 
+
+        osal_printf("mode reading error!!\n");
+    }
+    
+    rt_kprintf("mode value = %04X,mode is %s\n", mode,mode_string[get_str]);
+
+    return mode;
+
+}
+FINSH_FUNCTION_EXPORT(mode_get, get mode);
+
+void mode_set(uint16_t mode)
+{
+    cfg_param_t all_param[4];
+    param_mode = mode;
+    
+	drv_fls_read(PARAM_ADDR_CUSTOM,(uint8_t*)&all_param[0],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_HIGHWAY,(uint8_t*)&all_param[1],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_MOUNTAIN,(uint8_t*)&all_param[2],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_CITY,(uint8_t*)&all_param[3],sizeof(cfg_param_t));
+
+
+
+    drv_fls_erase(PARAM_SECTOR);
+	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));    
+	drv_fls_write(PARAM_MODE_ADDR,(uint8_t *)&param_mode,sizeof(uint16_t));
+	drv_fls_write(PARAM_ADDR_CUSTOM,(uint8_t*)&all_param[0],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_HIGHWAY,(uint8_t*)&all_param[1],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_MOUNTAIN,(uint8_t*)&all_param[2],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_CITY,(uint8_t*)&all_param[3],sizeof(cfg_param_t));
+    rt_kprintf("mode = %d  write in flash\n", param_mode);
+
+}
+FINSH_FUNCTION_EXPORT(mode_set, set mode by hex);
+
+void mode_change(uint8_t mode_num)
+{
+    uint16_t mode_setting;
+    
+	if(mode_num == 1)
+		mode_setting = CUSTOM_MODE;
+	else if(mode_num == 2)
+		mode_setting = HIGHWAY_MODE;
+	else if(mode_num == 3)
+		mode_setting = MOUNTAIN_MODE;
+	else if(mode_num == 4)
+		mode_setting = CITY_MODE;
+
+
+    mode_set(mode_setting);
+
+}
+FINSH_FUNCTION_EXPORT(mode_change, set mode by num:1-custom;2-highway;3-mountain;4-city);
+
 void load_param_from_fl(void)
 {
-    uint16_t param_mode;
-    uint8_t param_pos;
 	uint32_t param_addr;
 	p_cms_param = &cms_param;
-
-    param_mode = drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&param_mode,sizeof(uint16_t));
-
-    osal_printf("mode is %d \n\n",param_mode);
-
+    
     if(param_mode == CUSTOM_MODE)
         param_addr = PARAM_ADDR_CUSTOM;
     else if(param_mode == HIGHWAY_MODE)
@@ -325,23 +407,28 @@ void  write_def_param(void)
 {
 	cfg_param_t  flash_param;
 
-	rt_err_t err;
-
     param_mode = CUSTOM_MODE;
 	
-	drv_fls_erase(FLASH_Sector_11);
+	drv_fls_erase(PARAM_SECTOR);
 	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
 	drv_fls_write(PARAM_MODE_ADDR,(uint8_t *)&param_mode,sizeof(uint16_t));
+
     
 	load_default_param_custom(&flash_param);
 	drv_fls_write(PARAM_ADDR_CUSTOM,(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
+    
+    memset(&flash_param,0,sizeof(cfg_param_t));
 	load_default_param_highway(&flash_param);
 	drv_fls_write(PARAM_ADDR_HIGHWAY,(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
+    
+    memset(&flash_param,0,sizeof(cfg_param_t));
     load_default_param_mountain(&flash_param);
 	drv_fls_write(PARAM_ADDR_MOUNTAIN,(uint8_t *)&flash_param,sizeof(cfg_param_t));
 
+    
+    memset(&flash_param,0,sizeof(cfg_param_t));
     load_default_param_city(&flash_param);
 	drv_fls_write(PARAM_ADDR_CITY,(uint8_t *)&flash_param,sizeof(cfg_param_t));
 /*
@@ -358,34 +445,19 @@ FINSH_FUNCTION_EXPORT(write_def_param, debug:write default  param to flash);
 
 void param_init(void)
 {
-		uint8_t magic_word[sizeof(param_init_words)];
-		uint16_t mode;
-	
-        uint16_t param_mode;
-		drv_fls_read(PARAM_FLAG_ADDR,magic_word,sizeof(param_init_words));	
-		if(strcmp((const char*)param_init_words,(const char*)magic_word) != 0)
-			{
-				p_cms_param = &cms_param;
-				load_default_param_custom(p_cms_param);			
-				write_def_param();
-			}
-		else load_param_from_fl();
-
-
-	    param_mode = drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&param_mode,1);
-
-        osal_printf("mode is %d \n\n",param_mode);
-
-		param_mode = drv_fls_read(PARAM_MODE_ADDR+1,(uint8_t *)&param_mode,1);
-
-        osal_printf("mode is %d \n\n",param_mode);
-
-		param_mode = drv_fls_read(PARAM_MODE_ADDR+2,(uint8_t *)&param_mode,1);
-
-        osal_printf("mode is %d \n\n",param_mode);
+    uint8_t magic_word[sizeof(param_init_words)];	
+    drv_fls_read(PARAM_FLAG_ADDR,magic_word,sizeof(param_init_words));
+    param_mode = mode_get();
+    //drv_fls_read(PARAM_MODE_ADDR,(uint8_t*)&param_mode,sizeof(uint16_t));
+    if(strcmp((const char*)param_init_words,(const char*)magic_word) != 0)
+    	{
+    		p_cms_param = &cms_param;
+            osal_printf("loading default param,mode is custom\n");
+    		load_default_param_custom(p_cms_param);			
+    		write_def_param();
+    	}
+    else load_param_from_fl();
 }
-
-
 
 void param_get(void)
 {
@@ -394,6 +466,7 @@ void param_get(void)
 	//drv_fls_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
 		
     rt_kprintf("-------------------parameters in ram------------------\n");
+    rt_kprintf("work mode is %d\n",param_mode);
     rt_kprintf("----------------------vam---------------------\n");
 	rt_kprintf("ID(0)=%d%d%d%d\n",p_cms_param->pid[0],p_cms_param->pid[1],p_cms_param->pid[2],p_cms_param->pid[3]);
     rt_kprintf("vam.bsm_hops(1)=%d\n", p_cms_param->vam.bsm_hops);
@@ -441,23 +514,7 @@ void param_get(void)
     rt_kprintf("----------------------end---------------------\n");
 }
 FINSH_FUNCTION_EXPORT(param_get, get system parameters);
-#if 0
-void mode_get(void)
-{
-    rt_kprintf("----------------------mode---------------------\n");
-    rt_kprintf("mode = %d\n", p_cms_param->mode);
 
-}
-FINSH_FUNCTION_EXPORT(mode_get, get mode parameters);
-
-void mode_set(void)
-{
-    rt_kprintf("----------------------mode---------------------\n");
-    rt_kprintf("mode = %d\n", p_cms_param->mode);
-
-}
-FINSH_FUNCTION_EXPORT(mode_set, get mode parameters);
-#endif
 void print_bn(void)
 {
 
@@ -517,16 +574,27 @@ int param_set(uint8_t param, int32_t value)
 
     uint16_t mode;
 
-	uint32_t param_addr;
+	uint8_t param_num;
 
-	
+    cfg_param_t all_param[4];
+
+    
+	drv_fls_read(PARAM_ADDR_CUSTOM,(uint8_t*)&all_param[0],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_HIGHWAY,(uint8_t*)&all_param[1],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_MOUNTAIN,(uint8_t*)&all_param[2],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_CITY,(uint8_t*)&all_param[3],sizeof(cfg_param_t));
+    
+    
+    
     drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&mode,sizeof(uint16_t));
 
-	param_addr = get_param_addr(mode);
+	param_num = get_param_num(mode);
 
-	cfg_param = (cfg_param_t*)rt_malloc(sizeof(cfg_param_t));
+    osal_printf("mode is %04X\n",mode);
 
-	drv_fls_read(param_addr,(uint8_t*)cfg_param,sizeof(vanet_param));
+	cfg_param = &all_param[param_num];
+
+
 /*
 	if(param >31 )
 		{
@@ -690,19 +758,22 @@ int param_set(uint8_t param, int32_t value)
 
 	memcpy((uint8_t*)p_cms_param,(uint8_t*)cfg_param,sizeof(cfg_param_t));
 
+
 	rt_kprintf("param is setting .....please don't power off!\n");
 		
-	drv_fls_erase(FLASH_Sector_11);
+	drv_fls_erase(PARAM_SECTOR);
 	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
-	
-	err = drv_fls_write(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
+	drv_fls_write(PARAM_MODE_ADDR,(uint8_t *)&mode,sizeof(uint16_t));
+    
+	drv_fls_write(PARAM_ADDR_CUSTOM,(uint8_t*)&all_param[0],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_HIGHWAY,(uint8_t*)&all_param[1],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_MOUNTAIN,(uint8_t*)&all_param[2],sizeof(cfg_param_t));
+	err = drv_fls_write(PARAM_ADDR_CITY,(uint8_t*)&all_param[3],sizeof(cfg_param_t));
 
 	if(err == -1)
 		rt_kprintf("parameter writing process error!!!\n");
 	else
 		rt_kprintf("parameter set success!\n");
-
-	rt_free(cfg_param);
 
 	cfg_param = NULL;
 
@@ -716,13 +787,28 @@ FINSH_FUNCTION_EXPORT(param_set, set system parameters);
 
 
 
-void flash_read(void)
+uint8_t flash_read(uint8_t mode)
 {
 	cfg_param_t  *param_temp;
 
+    uint32_t param_addr;
+
+    if(mode == 1)
+        param_addr = PARAM_ADDR_CUSTOM;
+    else if(mode == 2)
+        param_addr = PARAM_ADDR_HIGHWAY;
+    else if(mode == 3)
+        param_addr = PARAM_ADDR_MOUNTAIN;
+    else if(mode == 4)
+        param_addr = PARAM_ADDR_CITY;
+    else{ 
+        osal_printf("parameter error!\n");
+        return 0;
+    }
+
 	param_temp = (cfg_param_t*)rt_malloc(sizeof(cfg_param_t));
 
-	drv_fls_read(PARAM_ADDR,(uint8_t *)param_temp,sizeof(cfg_param_t));
+	drv_fls_read(param_addr,(uint8_t *)param_temp,sizeof(cfg_param_t));
 		
     rt_kprintf("-------------------parameters in  flash------------------\n");	
     rt_kprintf("----------------------vam---------------------\n");	
@@ -777,6 +863,8 @@ void flash_read(void)
 
 	param_temp = NULL;
 
+    return 0;
+
 }
 
 FINSH_FUNCTION_EXPORT(flash_read, debug:reading param);
@@ -784,6 +872,8 @@ FINSH_FUNCTION_EXPORT(flash_read, debug:reading param);
 
 int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int32_t AcceV_z,int32_t AcceAhead_x,int32_t AcceAhead_y,int32_t AcceAhead_z)
 {
+#if 0
+
 	int8_t err;
 
 	cfg_param_t *cfg_param;
@@ -802,7 +892,7 @@ int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int
 
 	memcpy((uint8_t*)p_cms_param,(uint8_t*)cfg_param,sizeof(cfg_param_t));
 	
-	drv_fls_erase(FLASH_Sector_11);
+	drv_fls_erase(PARAM_SECTOR);
 	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
 
 	err = drv_fls_write(PARAM_ADDR,(uint8_t*)cfg_param,sizeof(cfg_param_t));
@@ -815,6 +905,62 @@ int8_t  gsnr_param_set(uint8_t gsnr_cal_step,int32_t AcceV_x,int32_t AcceV_y,int
 	rt_free(cfg_param);
 
 	cfg_param = NULL;
+#endif
+	int err;
+
+	cfg_param_t *cfg_param;
+
+    uint16_t mode;
+
+	uint8_t param_num;
+
+    cfg_param_t all_param[4];
+
+    
+	drv_fls_read(PARAM_ADDR_CUSTOM,(uint8_t*)&all_param[0],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_HIGHWAY,(uint8_t*)&all_param[1],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_MOUNTAIN,(uint8_t*)&all_param[2],sizeof(cfg_param_t));
+	drv_fls_read(PARAM_ADDR_CITY,(uint8_t*)&all_param[3],sizeof(cfg_param_t));
+    
+    
+    
+    drv_fls_read(PARAM_MODE_ADDR,(uint8_t *)&mode,sizeof(uint16_t));
+
+	param_num = get_param_num(mode);
+
+    osal_printf("mode is %04X\n",mode);
+
+	cfg_param = &all_param[param_num];
+
+    cfg_param->gsnr.gsnr_cal_step = gsnr_cal_step;
+    cfg_param->gsnr.AcceV_x = AcceV_x;
+    cfg_param->gsnr.AcceV_y = AcceV_y;
+    cfg_param->gsnr.AcceV_z = AcceV_z;
+    cfg_param->gsnr.AcceAhead_x = AcceAhead_x;
+    cfg_param->gsnr.AcceAhead_y = AcceAhead_y;
+    cfg_param->gsnr.AcceAhead_z = AcceAhead_z;
+
+	memcpy((uint8_t*)p_cms_param,(uint8_t*)cfg_param,sizeof(cfg_param_t));
+
+
+	rt_kprintf("gsnr is setting .....please don't power off!\n");
+		
+	drv_fls_erase(PARAM_SECTOR);
+	drv_fls_write(PARAM_FLAG_ADDR,param_init_words,sizeof(param_init_words));
+	drv_fls_write(PARAM_MODE_ADDR,(uint8_t *)&mode,sizeof(uint16_t));
+	drv_fls_write(PARAM_ADDR_CUSTOM,(uint8_t*)&all_param[0],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_HIGHWAY,(uint8_t*)&all_param[1],sizeof(cfg_param_t));
+	drv_fls_write(PARAM_ADDR_MOUNTAIN,(uint8_t*)&all_param[2],sizeof(cfg_param_t));
+	err = drv_fls_write(PARAM_ADDR_CITY,(uint8_t*)&all_param[3],sizeof(cfg_param_t));
+
+	if(err == -1)
+		rt_kprintf("gsnr param setting failed!!!\n");
+	else
+		rt_kprintf("gsnr param setting success!\n");
+
+
+	cfg_param = NULL;
+
 
 	return 0;
 

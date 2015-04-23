@@ -41,6 +41,7 @@ void led_init(void)
     STM_EVAL_LEDOff(LED_RED);
     STM_EVAL_LEDOff(LED_BLUE);
     STM_EVAL_LEDOff(LED_GREEN);
+
 }
 
 
@@ -71,22 +72,34 @@ void led_blink(Led_TypeDef led)
 void  timer_red_blink_callback( void *parameter )
 {
 
-	led_blink(LED_RED);
+#ifdef HARDWARE_MODULE_WIFI_V2
+    led_off((Led_TypeDef)LED_GREEN);
+    led_off((Led_TypeDef)LED_BLUE);
+#endif
+    led_blink(LED_RED);
 
 }
 
 void  timer_green_blink_callback( void *parameter )
 {
 
-	led_blink(LED_GREEN);
+#ifdef HARDWARE_MODULE_WIFI_V2
+    led_off((Led_TypeDef)LED_RED);
+    led_off((Led_TypeDef)LED_BLUE);
+#endif
+    led_blink(LED_GREEN);
 }
 
 void  timer_blue_blink_callback( void *parameter )
 {
-	led_blink(LED_BLUE);
-
+#ifdef HARDWARE_MODULE_WIFI_V2
+    led_off((Led_TypeDef)LED_GREEN);
+    led_off((Led_TypeDef)LED_RED);
+#endif
+    led_blink(LED_BLUE);
 }
 
+#ifdef HARDWARE_MODULE_WIFI_V1
 void led_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
 
@@ -137,7 +150,60 @@ void led_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 
 }
+#else
+void led_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
+{
 
+
+	switch(p_msg->id){
+
+		case LED_RED:
+			if(p_msg->argc == LED_ON){
+					osal_timer_stop(p_sys->timer_red);
+					led_on((Led_TypeDef)LED_RED);
+                    led_off((Led_TypeDef)LED_GREEN);
+                    led_off((Led_TypeDef)LED_BLUE);
+				}
+			else if(p_msg->argc == LED_OFF){
+					osal_timer_stop(p_sys->timer_red);
+					led_off((Led_TypeDef)p_msg->id);
+				}
+			else if(p_msg->argc == LED_BLINK)
+					osal_timer_start(p_sys->timer_red);
+			break;
+		case LED_GREEN:
+			if(p_msg->argc == LED_ON){
+				
+					osal_timer_stop(p_sys->timer_green);
+					led_on((Led_TypeDef)p_msg->id);
+				}
+			else if(p_msg->argc == LED_OFF){
+					osal_timer_stop(p_sys->timer_green);
+					led_off((Led_TypeDef)p_msg->id);
+				}
+			else if(p_msg->argc == LED_BLINK)
+					osal_timer_start(p_sys->timer_green);
+			break;
+		case LED_BLUE:
+			if(p_msg->argc == LED_ON){
+					osal_timer_stop(p_sys->timer_blue);
+					led_on((Led_TypeDef)p_msg->id);					
+				}
+			else if(p_msg->argc == LED_OFF){
+					osal_timer_stop(p_sys->timer_blue);
+					led_off((Led_TypeDef)p_msg->id);
+				}
+			else if(p_msg->argc == LED_BLINK)
+				    osal_timer_start(p_sys->timer_blue);
+			break;
+		default:
+			break;
+
+	}
+
+
+}
+#endif
 
 static void led_thread_entry(void *parameter)
 {

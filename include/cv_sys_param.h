@@ -28,14 +28,18 @@ typedef struct {
 
 }vanet_param;
 
+#define PARAM_SECTOR         FLASH_Sector_11
 
 #define PARAM_FLAG_ADDR     ((uint32_t)0x80E0000)
+
+#define PARAM_OFFSET        0x200
+
 
 #define PARAM_MODE_ADDR     PARAM_FLAG_ADDR+0x10
 
 #define PARAM_ADDR    		PARAM_MODE_ADDR+0x10
 
-#define PARAM_OFFSET        0x200
+
 
 #define PARAM_ADDR_CUSTOM     (PARAM_ADDR)
 
@@ -49,7 +53,23 @@ typedef struct {
 #define name_to_str(name)  (#name)
 
 
+const char* mode_string[]={
 
+        "custom",
+        "highway",
+        "mountain",
+        "city"
+
+};
+
+
+const uint16_t mode_array[] = {
+
+        CUSTOM_MODE,
+        HIGHWAY_MODE,
+        MOUNTAIN_MODE,
+        CITY_MODE
+};
 
 static const flash_param param_data[] = {
 
