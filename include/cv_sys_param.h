@@ -31,11 +31,20 @@ typedef struct {
 
 #define PARAM_FLAG_ADDR     ((uint32_t)0x80E0000)
 
-#define PARAM_MODE_ADDR     ((uint32_t)0x80E0010)
+#define PARAM_MODE_ADDR     PARAM_FLAG_ADDR+0x10
 
-#define PARAM_ADDR    		((uint32_t)0x80E0020)
+#define PARAM_ADDR    		PARAM_MODE_ADDR+0x10
 
-#define PARAM_OFFSET          0x200
+#define PARAM_OFFSET        0x200
+
+#define PARAM_ADDR_CUSTOM     (PARAM_ADDR)
+
+#define PARAM_ADDR_HIGHWAY    (PARAM_ADDR+PARAM_OFFSET)
+
+#define PARAM_ADDR_MOUNTAIN   (PARAM_ADDR+2*PARAM_OFFSET)
+
+#define PARAM_ADDR_CITY       (PARAM_ADDR+3*PARAM_OFFSET)
+
 
 #define name_to_str(name)  (#name)
 

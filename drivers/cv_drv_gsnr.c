@@ -11,7 +11,7 @@
 ******************************************************************************/
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_WARN
 #define MODULE_NAME "gsnr"
 #include "cv_osal_dbg.h"
 

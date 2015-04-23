@@ -171,9 +171,6 @@ typedef struct _cfg_param{
 	/*********************ID******************/	
     uint8_t pid[RCP_TEMP_ID_LEN];  // ID 
 
-	/*********************MODE******************/	
-    uint32_t mode;
-
     /******************** VAM *********************/
     vam_config_t vam;
 
