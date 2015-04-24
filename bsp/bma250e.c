@@ -13,8 +13,6 @@
 #include "bma250e.h"
 #include "gsensor.h"
 
-#ifdef GSENSOR_BMA250E
-
 /** @defgroup STM32F401_DISCOVERY_BMA250E_Private_Variables
   * @{
   */
@@ -28,131 +26,6 @@ __IO uint32_t  BMA250ETimeout = BMA250E_FLAG_TIMEOUT;
   */
 static uint8_t BMA250E_SendByte(uint8_t byte);
 
-/**
-  * @brief  Set BMA250E Initialization.
-  * @param  BMA250E_InitStruct: pointer to a BMA250E_InitTypeDef structure
-  *         that contains the configuration setting for the BMA250E.
-  * @retval None
-  */
-void BMA250E_Init(BMA250E_InitTypeDef *BMA250E_InitStruct)
-{
-  uint8_t ctrl1 = 0x00, ctrl4 = 0x00;
-
-  /* Configure the low level interface ---------------------------------------*/
-  BMA250E_LowLevel_Init();
-
-  /* Configure MEMS: data rate, power mode, full scale and axes */
-  ctrl1 |= (uint8_t) (BMA250E_InitStruct->Power_Mode | BMA250E_InitStruct->Output_DataRate | \
-                    BMA250E_InitStruct->Axes_Enable | BMA250E_InitStruct->Band_Width);
-
-  ctrl4 |= (uint8_t) (BMA250E_InitStruct->BlockData_Update | BMA250E_InitStruct->Endianness | \
-                    BMA250E_InitStruct->Full_Scale);
-#if 0
-  /* Write value to MEMS CTRL_REG1 regsister */
-  BMA250E_Write(&ctrl1, BMA250E_CTRL_REG1_ADDR, 1);
-
-  /* Write value to MEMS CTRL_REG4 regsister */
-  BMA250E_Write(&ctrl4, BMA250E_CTRL_REG4_ADDR, 1);
-#endif
-}
-
-/**
-  * @brief  Reboot memory content of BMA250E
-  * @param  None
-  * @retval None
-  */
-void BMA250E_RebootCmd(void)
-{
-  uint8_t tmpreg;
-
-  /* Read CTRL_REG5 register */
-  BMA250E_Read(&tmpreg, BMA250E_CTRL_REG5_ADDR, 1);
-
-  /* Enable or Disable the reboot memory */
-  tmpreg |= BMA250E_BOOT_REBOOTMEMORY;
-
-  /* Write value to MEMS CTRL_REG5 regsister */
- // BMA250E_Write(&tmpreg, BMA250E_CTRL_REG5_ADDR, 1);
-}
-
-/**
-  * @brief Set BMA250E Interrupt configuration
-  * @param  BMA250E_InterruptConfig_TypeDef: pointer to a BMA250E_InterruptConfig_TypeDef
-  *         structure that contains the configuration setting for the BMA250E Interrupt.
-  * @retval None
-  */
-void BMA250E_INT1InterruptConfig(BMA250E_InterruptConfigTypeDef *BMA250E_IntConfigStruct)
-{
-#if 0
-  uint8_t ctrl_cfr = 0x00, ctrl3 = 0x00;
-
-  /* Read INT1_CFG register */
-  BMA250E_Read(&ctrl_cfr, BMA250E_INT1_CFG_ADDR, 1);
-
-  /* Read CTRL_REG3 register */
-  BMA250E_Read(&ctrl3, BMA250E_CTRL_REG3_ADDR, 1);
-
-  ctrl_cfr &= 0x80;
-
-  ctrl3 &= 0xDF;
-
-  /* Configure latch Interrupt request and axe interrupts */
-  ctrl_cfr |= (uint8_t)(BMA250E_IntConfigStruct->Latch_Request| \
-                   BMA250E_IntConfigStruct->Interrupt_Axes);
-
-  ctrl3 |= (uint8_t)(BMA250E_IntConfigStruct->Interrupt_ActiveEdge);
-
-  /* Write value to MEMS INT1_CFG register */
-  BMA250E_Write(&ctrl_cfr, BMA250E_INT1_CFG_ADDR, 1);
-
-  /* Write value to MEMS CTRL_REG3 register */
-  BMA250E_Write(&ctrl3, BMA250E_CTRL_REG3_ADDR, 1);
-  #endif
-}
-
-/**
-  * @brief  Enable or disable INT1 interrupt
-  * @param  InterruptState: State of INT1 Interrupt
-  *      This parameter can be:
-  *        @arg BMA250E_INT1INTERRUPT_DISABLE
-  *        @arg BMA250E_INT1INTERRUPT_ENABLE
-  * @retval None
-  */
-void BMA250E_INT1InterruptCmd(uint8_t InterruptState)
-{
-  uint8_t tmpreg;
-
-  /* Read CTRL_REG3 register */
-  BMA250E_Read(&tmpreg, BMA250E_CTRL_REG3_ADDR, 1);
-
-  tmpreg &= 0x7F;
-  tmpreg |= InterruptState;
-
-  /* Write value to MEMS CTRL_REG3 regsister */
-  //BMA250E_Write(&tmpreg, BMA250E_CTRL_REG3_ADDR, 1);
-}
-
-/**
-  * @brief  Enable or disable INT2 interrupt
-  * @param  InterruptState: State of INT1 Interrupt
-  *      This parameter can be:
-  *        @arg BMA250E_INT2INTERRUPT_DISABLE
-  *        @arg BMA250E_INT2INTERRUPT_ENABLE
-  * @retval None
-  */
-void BMA250E_INT2InterruptCmd(uint8_t InterruptState)
-{
-  uint8_t tmpreg;
-
-  /* Read CTRL_REG3 register */
-  BMA250E_Read(&tmpreg, BMA250E_CTRL_REG3_ADDR, 1);
-
-  tmpreg &= 0xF7;
-  tmpreg |= InterruptState;
-
-  /* Write value to MEMS CTRL_REG3 regsister */
-  //BMA250E_Write(&tmpreg, BMA250E_CTRL_REG3_ADDR, 1);
-}
 
 
 /**
@@ -172,7 +45,6 @@ void BMA250E_Write(uint8_t* pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite)
   {
     WriteAddr |= (uint8_t)MULTIPLEBYTE_CMD;
   }
-#if 1 
   /* Set chip select Low at the start of the transmission */
   BMA250E_CS_LOW();
 
@@ -188,13 +60,6 @@ void BMA250E_Write(uint8_t* pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite)
 
   /* Set chip select High at the end of the transmission */
   BMA250E_CS_HIGH();
-#else
-	u16 temp ;
-	u16 receive ;
-	temp = (WriteAddr<<8)|(*pBuffer);
-
-    gsensor_sendata(temp);
-#endif
 }
 
 /**
@@ -214,7 +79,6 @@ void BMA250E_Read(uint8_t* pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead)
   {
     ReadAddr |= (uint8_t)READWRITE_CMD;
   }
-#if 1 
   /* Set chip select Low at the start of the transmission */
   BMA250E_CS_LOW();
 
@@ -232,15 +96,6 @@ void BMA250E_Read(uint8_t* pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead)
 
   /* Set chip select High at the end of the transmission */
   BMA250E_CS_HIGH();
-#else
-	u16 temp ;
-	u16 receive ;
-	temp = (ReadAddr<<8)|(*pBuffer);
-	receive = gsensor_sendata(temp);
-
-    *pBuffer =receive;
-#endif
-
 }
 /**
   * @brief  Initializes the low level interface used to drive the BMA250E
@@ -382,4 +237,130 @@ uint32_t BMA250E_TIMEOUT_UserCallback(void)
 }
 #endif /* USE_DEFAULT_TIMEOUT_CALLBACK */
 
-#endif /* #ifdef GSENSOR_BMA250E */
+
+void gsnr_int_config(FunctionalState state)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    /* Connect EXTI Line to int1 int2 Pin */
+    EXTI_InitTypeDef EXTI_InitStructure;
+
+    SYSCFG_EXTILineConfig(BMA250E_SPI_INT1_EXTI_PORT_SOURCE, BMA250E_SPI_INT1_EXTI_PIN_SOURCE);
+    SYSCFG_EXTILineConfig(BMA250E_SPI_INT2_EXTI_PORT_SOURCE, BMA250E_SPI_INT2_EXTI_PIN_SOURCE);
+
+    EXTI_InitStructure.EXTI_Line = BMA250E_SPI_INT1_EXTI_LINE;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    if(state == ENABLE)
+    	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    else
+    	EXTI_InitStructure.EXTI_LineCmd = DISABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    EXTI_InitStructure.EXTI_Line = BMA250E_SPI_INT2_EXTI_LINE;
+    EXTI_Init(&EXTI_InitStructure);
+
+
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn; 
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
+    NVIC_Init(&NVIC_InitStructure); 
+
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI2_IRQn; 
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; 
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
+    NVIC_Init(&NVIC_InitStructure); 
+
+    /* The pal timer channel interrupt in NVIC is enabled. */
+    NVIC_EnableIRQ(EXTI1_IRQn); 
+    NVIC_EnableIRQ(EXTI2_IRQn);
+
+    NVIC_ClearPendingIRQ((IRQn_Type)EXTI1_IRQn);
+    NVIC_ClearPendingIRQ((IRQn_Type)EXTI2_IRQn);
+    
+}
+
+void EXTI1_IRQHandler(void)
+{
+    /* disable interrupt */
+    //EXTI->IMR &= ~GPIO_Pin_1;
+
+    if(EXTI_GetITStatus(EXTI_Line1) == SET)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line1);
+    }
+}
+
+void EXTI2_IRQHandler(void)
+{
+    /* disable interrupt */
+    //EXTI->IMR &= ~GPIO_Pin_2;
+
+    if(EXTI_GetITStatus(EXTI_Line2) == SET)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line2);
+    }
+    
+}
+
+void gsnr_write_reg(uint8_t reg, uint8_t data)
+{
+    BMA250E_Write(&data, reg, 1);
+}
+
+void gsnr_read_reg(uint8_t reg, uint8_t *data)
+{
+    BMA250E_Read(data, reg, 1);
+}
+
+/* read x/y/z axis  acc data, and convert unit to m/s2  */
+void gsnr_get_acc(float *pdata)
+{
+    uint16_t temp;
+    uint8_t buffer[6] = {0};
+    uint8_t i = 0;
+
+    for(i=0; i<6; i++)
+    {
+        BMA250E_Read(&buffer[i], BMA250E_OUT_X_L_ADDR+i, 1);
+    }
+    
+    for(i=0; i<3; i++)
+    {
+        temp = (((uint16_t)buffer[2*i+1] << 2) & 1020) | ((buffer[2*i]>>6) & 3);
+    	if((temp>>9) == 1)
+    	{
+            /* 2G FULLSCALE uint:3.91mg 
+              BMA250E_Sensitivity_2g = 3.91/1000 * 9.80665. Unit 3.91mg -> m/s2  */
+    		pdata[i] = (0.0 - (0x1FF-(temp&0x1FF))) * BMA250E_Sensitivity_2g;
+    	}
+    	else
+    	{
+    		 pdata[i] = (temp&0x1FF) * BMA250E_Sensitivity_2g;
+    	}
+    }
+}
+
+void gsnr_drv_init()
+{
+  /* Configure the low level interface ---------------------------------------*/
+    BMA250E_LowLevel_Init();
+    /* Configure MEMS: data rate, power mode, full scale and axes */
+    gsnr_write_reg(0x34, 0x00);       //config spi 4 wire mode
+    gsnr_write_reg(0x14, 0xB6);       //software reset
+    gsnr_write_reg(0x0F, 0x03);       //set full scale 2g range
+    gsnr_write_reg(0x10, 0x0C);       //Selection of data filter bandwidth: 125Hz
+
+    gsnr_write_reg(0x24, 0xC3);       //high_hy: 3, low_mode: single-axis mode, low_hy: 3
+    gsnr_write_reg(0x27, 0x03);       //set slope_dur = 3
+    gsnr_write_reg(0x21, 0x00);       //Interrupt mode: non-latched
+    gsnr_write_reg(0x28, 0x60);       //slope_th: the threshold definition for the any-motion interrupt: 0x08
+    gsnr_write_reg(0x19, 0x04);       //map slope interrupt to INT1 pin
+    gsnr_write_reg(0x1B, 0x04);       //map slope interrupt to INT2 pin
+    gsnr_write_reg(0x16, 0x07);       //enabled slope_en_z, slope_en_y, slope_en_x 
+
+    //gsnr_int_config(ENABLE);
+}
+

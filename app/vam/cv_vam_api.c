@@ -356,6 +356,28 @@ void vam_stop_alert()
     rt_timer_stop(p_vam->timer_send_evam);
 }
 
+/*****************************************************************************
+   rsaType: E_VAM_RSA_TYPE  
+   RSU also use local.alert_mask to restore self typeEvent, when send to peer,
+   encode to itiscode.
+*****************************************************************************/
+int32_t vam_active_rsa_(E_VAM_RSA_TYPE rsaType)
+{
+    vam_envar_t *p_vam = p_vam_envar;
+    p_vam->local.alert_mask |= (1<<rsaType); 
+
+    return 0;
+}
+
+int32_t vam_cancel_rsa(E_VAM_RSA_TYPE rsaType)
+{
+    vam_envar_t *p_vam = p_vam_envar;
+    p_vam->local.alert_mask &= ~(1<<rsaType);
+
+    return 0;
+}
+
+
 void vam_gsnr_ebd_detected(uint8_t status)
 {
     vam_envar_t *p_vam = p_vam_envar;

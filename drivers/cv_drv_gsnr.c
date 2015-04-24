@@ -11,32 +11,22 @@
 ******************************************************************************/
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_WARN
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
 #define MODULE_NAME "gsnr"
 #include "cv_osal_dbg.h"
 
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
-#include "led.h"
 #include <math.h>
 #include "gsensor.h"
-#include "nmea.h"
+#include "gps.h"
 
-#ifdef GSENSOR_LSM303DLHC
-#include "lsm303dlhc.h"
-#endif
-
-#ifdef GSENSOR_BMA250E
 #include "bma250e.h"
-#endif
-
-#define G (9.80665)
 
 static gsnr_log_level_t gsnr_log_lvl = GSNR_NOTICE;
 
 GSENSOR_INFO g_info, Acce_Sum, Acce_V, gSensor_Static, Acce_Ahead, Acce_K;
-uint8_t drv_init = 0;
 uint8_t drivint_step = 0;	//为1时表示已计算出静态时xyz三轴的加速度, 2已确定车头方向 
 
 int32_t s_cnt = 0;
@@ -47,12 +37,12 @@ float	SHARP_RIGHT_THRESOLD    =	5.5;
 uint8_t	SHARP_RIGHT_CNT			= 	6;
 float	SHARP_LEFT_THRESOLD		=	-5.5;
 uint8_t	SHARP_LEFT_CNT			= 	6;
-float	SHARP_SLOWDOWN_THRESOLD	=   -5.5; //obd: -5.5  可用shell命令param_set(21, -55)设置
+float	SHARP_SLOWDOWN_THRESOLD	=   -3.0; //obd: -5.5  可用shell命令param_set(21, -30)设置
 uint8_t	SHARP_SLOWDOWN_CNT		=	2;    //obd: 3     可用shell命令param_set(22, 2)设置
 float	SHARP_SPEEDUP_THRESOLD	=	1.8;
 uint8_t	SHARP_SPEEDUP_CNT		=	6;
 
-int32_t	AHEAD_CNT				=	20;  //obd: 30
+uint8_t	AHEAD_CNT				=	20;  //obd: 30
 uint8_t	STATIC_GSENSOR_CNT		=	20;  //obd: 30
 float	AHEAD_SPEED_THRESOD		=	10.0;
 float   VEHICLE_ACCLE_VALE      =   0.1 ;
@@ -72,196 +62,16 @@ static void printAcc(gsnr_log_level_t level, char *des, float x, float y, float 
         sprintf(buf[1], "%.6f", y); 
         sprintf(buf[2], "%.6f", z); 
 
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s(%s, %s, %s)\r\n",\
+        osal_printf("%s(%s, %s, %s)\r\n",\
                            des, buf[0], buf[1], buf[2]);
     }
-}
-
-void gsnr_write(uint8_t reg, uint8_t data)
-{
-#ifdef GSENSOR_BMA250E    
-    BMA250E_Write(&data, reg, 1);
-#endif
-
-#ifdef GSENSOR_LSM303DLHC
-    LSM303DLHC_Write(ACC_I2C_ADDRESS, reg, 1, &data);
-#endif
-}
-
-void gsnr_int_config(FunctionalState state)
-{
-#ifdef GSENSOR_BMA250E
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    /* Connect EXTI Line to int1 int2 Pin */
-    EXTI_InitTypeDef EXTI_InitStructure;
-
-    SYSCFG_EXTILineConfig(BMA250E_SPI_INT1_EXTI_PORT_SOURCE, BMA250E_SPI_INT1_EXTI_PIN_SOURCE);
-    SYSCFG_EXTILineConfig(BMA250E_SPI_INT2_EXTI_PORT_SOURCE, BMA250E_SPI_INT2_EXTI_PIN_SOURCE);
-
-    EXTI_InitStructure.EXTI_Line = BMA250E_SPI_INT1_EXTI_LINE;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-    if(state == ENABLE)
-    	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    else
-    	EXTI_InitStructure.EXTI_LineCmd = DISABLE;
-    EXTI_Init(&EXTI_InitStructure);
-
-    EXTI_InitStructure.EXTI_Line = BMA250E_SPI_INT2_EXTI_LINE;
-    EXTI_Init(&EXTI_InitStructure);
-
-
-    //使能EXTI1_IRQn中断 
-
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn; 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; // 指定抢占式优先级别0 
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; // 指定响应优先级别1 
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
-    NVIC_Init(&NVIC_InitStructure); 
-
-
-    //使能EXTI2_IRQn中断 
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI2_IRQn; 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; // 指定抢占式优先级别0 
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; // 指定响应优先级别1 
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
-    NVIC_Init(&NVIC_InitStructure); 
-
-    /* The pal timer channel interrupt in NVIC is enabled. */
-    NVIC_EnableIRQ(EXTI1_IRQn); 
-    NVIC_EnableIRQ(EXTI2_IRQn);
-
-    NVIC_ClearPendingIRQ((IRQn_Type)EXTI1_IRQn);
-    NVIC_ClearPendingIRQ((IRQn_Type)EXTI2_IRQn);
-#else
-    //使能EXTI9_5中断 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn; 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 指定抢占式优先级别0 
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; // 指定响应优先级别1 
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
-    NVIC_Init(&NVIC_InitStructure); 
-
-
-    //使能EXTI3_IRQn中断 
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI3_IRQn; 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 指定抢占式优先级别0 
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; // 指定响应优先级别1 
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
-    NVIC_Init(&NVIC_InitStructure); 
-
-    
-    NVIC_SetPriority(EXTI9_5_IRQn, 0);
-    /* The pal timer channel interrupt in NVIC is enabled. */
-    NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-
-    // 使能EXTI3_IRQn中断 
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI3_IRQn; 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 指定抢占式优先级别0 
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; // 指定响应优先级别1 
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; 
-    NVIC_Init(&NVIC_InitStructure); 
-    
-    NVIC_SetPriority(EXTI3_IRQn, 0);
-    /* The pal timer channel interrupt in NVIC is enabled. */
-    NVIC_EnableIRQ(EXTI3_IRQn);
-#endif
-    
-}
-
-/* RT-Thread Device Interface */
-static rt_err_t gsnr_drv_init ()
-{
-#ifdef GSENSOR_BMA250E
-    BMA250E_LowLevel_Init();
-    gsnr_write(0x34, 0x00);       //配置SPI的4线工作模式
-    gsnr_write(0x14, 0xB6);       //software reset
-    gsnr_write(0x0F, 0x03);       //选择测量范围：±2g range
-    gsnr_write(0x10, 0x0C);       //Selection of data filter bandwidth：125Hz
-
-    gsnr_write(0x24, 0xC3);       //high_hy: 3, low_mode: single-axis mode, low_hy: 3
-    gsnr_write(0x27, 0x03);       //设置slope_dur为3
-    gsnr_write(0x21, 0x00);       //Interrupt mode: non-latched
-    gsnr_write(0x28, 0x60);       //slope_th: the threshold definition for the any-motion interrupt: 0x08
-    gsnr_write(0x19, 0x04);       //map slope interrupt to INT1 pin
-    gsnr_write(0x1B, 0x04);       //map slope interrupt to INT2 pin
-    gsnr_write(0x16, 0x07);       //enabled slope_en_z, slope_en_y, slope_en_x 
-#endif
-
-#ifdef GSENSOR_LSM303DLHC
-	LSM303DLHCAcc_InitTypeDef LSM303DLHC_InitStruct;
-	LSM303DLHCAcc_FilterConfigTypeDef LSM303DLHC_FilterStruct;
-	
-	/* Configure gsnr LSM303DLHC */
-	LSM303DLHC_InitStruct.Power_Mode = LSM303DLHC_NORMAL_MODE;
-	LSM303DLHC_InitStruct.AccOutput_DataRate = LSM303DLHC_ODR_100_HZ;
-	LSM303DLHC_InitStruct.Axes_Enable = LSM303DLHC_AXES_ENABLE;
-    LSM303DLHC_InitStruct.AccFull_Scale = LSM303DLHC_FULLSCALE_2G;
-	LSM303DLHC_InitStruct.Endianness = LSM303DLHC_BLE_LSB;
-
-	LSM303DLHC_InitStruct.High_Resolution = LSM303DLHC_HR_ENABLE;
-	LSM303DLHC_InitStruct.BlockData_Update = LSM303DLHC_BlockUpdate_Continous;
-	LSM303DLHC_AccInit(&LSM303DLHC_InitStruct);
-
-    LSM303DLHC_AccIT2Config(LSM303DLHC_IT2_INT1, ENABLE);
-    LSM303DLHC_AccIT2Config(LSM303DLHC_IT2_INT2, ENABLE);
-
-    //LSM303DLHC_AccINT2InterruptConfig();
-    uint8_t tmpval = 0xff;
-    LSM303DLHC_Write(ACC_I2C_ADDRESS, LSM303DLHC_INT1_CFG_A, 1, &tmpval);  
-    LSM303DLHC_Write(ACC_I2C_ADDRESS, LSM303DLHC_INT2_CFG_A, 1, &tmpval);  
-#endif
-
-    //gsnr_int_config(ENABLE);
-
-    return RT_EOK;
 }
 
 
 //从Gesensor取出3轴加速度数值，并进行处理。
 void GsensorReadAcc(float* pfData)
 {
-    uint16_t temp;
-    uint8_t buffer[6] = {0};
-    uint8_t i = 0;
-
-#ifdef GSENSOR_LSM303DLHC
-    for(i=0; i<6; i++)
-    {
-        LSM303DLHC_Read(ACC_I2C_ADDRESS, LSM303DLHC_OUT_X_L_A+i, 1, &buffer[i]);
-    }
-    for(i=0; i<3; i++)
-    {
-        temp = ((uint16_t)buffer[2*i+1] << 8) | buffer[2*i];   
-        /* 量程2G, 单位转换成m/s2 */
-        pfData[i]= pnRawData[i] * G * 2 / 32768;
-        
-    }
-#endif
-
-#ifdef GSENSOR_BMA250E
-    for(i=0; i<6; i++)
-    {
-        BMA250E_Read(&buffer[i], BMA250E_OUT_X_L_ADDR+i, 1);
-    }
-    
-    for(i=0; i<3; i++)
-    {
-        temp = (((uint16_t)buffer[2*i+1] << 2) & 1020) | ((buffer[2*i]>>6) & 3);
-    	if((temp>>9) == 1)
-    	{
-            /* 0.038344 = 3.91/1000 * 9.80665. 单位由3.91mg -> m/s2  */
-    		pfData[i] = (0.0 - (0x1FF-(temp&0x1FF)))*0.038344;
-    	}
-    	else
-    	{
-    		 pfData[i] = (temp&0x1FF)*0.038344;
-    	}
-    }
-#endif
+    gsnr_get_acc(pfData);
     printAcc(GSNR_DEBUG, "raw_xyz", pfData[0], pfData[1], pfData[2]);    
 
     g_info.x = pfData[0];
@@ -660,8 +470,7 @@ uint8_t GsensorDataRead(gsnr_config_t *p_gsnr)
 		printAcc(GSNR_NOTICE, "读取车头方向的单位向量: Acce_Ahead", Acce_Ahead.x, Acce_Ahead.y, Acce_Ahead.z);
 		printAcc(GSNR_NOTICE, "车辆左方向的单位向量: Acce_K", Acce_K.x, Acce_K.y, Acce_K.z);
     }
-
-    
+   
 	return flag;
 }
 
@@ -698,86 +507,30 @@ static void gsnr_thread_entry(void *parameter)
 
 void gsnr_init()
 {
-#ifndef RSU_TEST
     osal_task_t *gsnr_thread;
     /* load gsnr param from flash */
 	gsnr_config_t *p_gsnr_param = NULL;		
     p_gsnr_param = &p_cms_param->gsnr;
 
-    if(!drv_init)
-    {
-        gsnr_drv_init();
-        drv_init = 1;
-    }
-    
+    gsnr_drv_init();
+        
     STATIC_ACC_THR = p_gsnr_param->gsnr_cal_thr/10.0f;
     SHARP_SLOWDOWN_THRESOLD = p_gsnr_param->gsnr_ebd_thr/10.0f;
     SHARP_SLOWDOWN_CNT = p_gsnr_param->gsnr_ebd_cnt;
 
+    if(p_gsnr_param->gsnr_cal_step == 3)
+    {
+		GSNR_LOG(GSNR_NOTICE, "Use gps data to caculate acceleration. stop gsnr thread.\r\n");
+        return;
+    }
+
+
     drivint_step = GsensorDataRead(p_gsnr_param);
-        
+       
     gsnr_thread = osal_task_create("t-gsnr",
                                     gsnr_thread_entry, RT_NULL,
                                     RT_MEMS_THREAD_STACK_SIZE, RT_MEMS_THREAD_PRIORITY);
     osal_assert(gsnr_thread != RT_NULL) 
-#endif
 }
 
-
-void EXTI1_IRQHandler(void)
-{
-    /* disable interrupt */
-    //EXTI->IMR &= ~GPIO_Pin_1;
-
-    if(EXTI_GetITStatus(EXTI_Line1) == SET)
-    {
-        EXTI_ClearITPendingBit(EXTI_Line1);
-    }
-    GSNR_LOG(GSNR_DEBUG, "EXTI1_IRQHandler\r\n");
-}
-
-void EXTI2_IRQHandler(void)
-{
-    /* disable interrupt */
-    //EXTI->IMR &= ~GPIO_Pin_2;
-
-    if(EXTI_GetITStatus(EXTI_Line2) == SET)
-    {
-        EXTI_ClearITPendingBit(EXTI_Line2);
-    }
-    
-    GSNR_LOG(GSNR_DEBUG, "EXTI2_IRQHandler\r\n");
-}
-
-void gsnr_read(uint8_t reg, uint8_t num)
-{
-    int i = 0;
-    uint8_t data;
-
-    if(0 == drv_init)
-    {
-        gsnr_drv_init();
-        drv_init = 1;
-    }
-
-    for(i=0; i<num; i++)
-    {
-#ifdef GSENSOR_BMA250E
-        BMA250E_Read(&data, reg+i, 1);
-#endif
-#ifdef GSENSOR_LSM303DLHC
-        LSM303DLHC_Read(ACC_I2C_ADDRESS, reg+i, 1, &data);
-#endif
-        rt_kprintf("Reg:0x%02x Data:0x%02x\r\n", reg+i, data);
-    }
-}
-
-
-/* shell cmd for debug */
-#ifdef RT_USING_FINSH
-#include <finsh.h>
-
-//FINSH_FUNCTION_EXPORT(gsnr_read, read gsnr reg) ;
-//FINSH_FUNCTION_EXPORT(gsnr_write, write gsnr reg) ;
-#endif
 

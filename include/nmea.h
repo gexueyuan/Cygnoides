@@ -4,7 +4,7 @@
 #include <rtthread.h>	
 
 #define NMEA_DEBUG(...)
-//#define NMEA_DEBUG NOP_FuncTion
+
 #ifndef __TRUE
  #define __TRUE         1
 #endif
@@ -41,13 +41,6 @@ typedef struct{
     t_time tt;
 } t_nmea_rmc;
 
-typedef struct{
-    t_nmea_rmc gpsLastBuff;
-
-    uint8_t crtIndex;
-    uint8_t diffsec;
-    t_nmea_rmc gpsBuff[GPS_MAX_SIZE];
-} t_nmea_cfg;
 
 typedef enum{
     GPS_PACK_UNKNOWN = 0,
@@ -57,34 +50,7 @@ typedef enum{
     GPS_PACK_GPRMC,
     GPS_PACK_GPVTG
 } e_nmea_type;
-typedef enum {
-	None		= 0,	//无
-    Rush_Add	= 1,	//急加速 
-    Rush_Stop	= 2,	//急减速
-    Rush_Left	= 3,	//急左
-	Rush_Right	= 4		//急右
-} driving_rush_type;
 
-typedef struct {
-	driving_rush_type type;	//类型
-	float value;				//值
-	t_time time;				//时间点
-	float latitude;
-	float longitude;
-	float speed;
-} driving_rush_value_st;
-
-typedef struct _driving_action_st
-{
-	float speed ;
-	float vehicle_accel_value ;
-	float diff_angle ;
-	uint8_t is_locate ;
-    uint8_t carRun;
-}driving_action_st ;
-
-extern driving_action_st G_Action;
-extern uint8_t IsLocate;
 void nmea_init(void);
 int32_t nmea_get(t_nmea_rmc *recvBuff, int8_t flag);
 

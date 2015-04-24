@@ -186,23 +186,48 @@ __COMPILE_INLINE__ uint16_t decode_vehicle_alert(uint16_t x)
 }
 
 /* BEGIN: Added by wanglei, 2015/1/4. for rsa test */
-__COMPILE_INLINE__ uint16_t encode_itiscode(E_VAM_RSA_TYPE rsa_type)
+__COMPILE_INLINE__ uint16_t encode_itiscode(uint16_t rsa_mask, __packed itis_codes_t *p_des)
 {
     uint16_t r;
-    r = itiscode[rsa_type];
-    return cv_ntohs(r);
+    int bit;
+
+    for(bit=0; bit<9; bit++)
+    {
+        if(rsa_mask & (1<<bit)){
+            if (0 == bit){
+                r = cv_ntohs(itiscode[bit]);
+            }
+            else{
+                p_des[bit-1] = cv_ntohs(itiscode[bit]);
+            }
+        }
+    }
+    
+    return r;
 }
 
-__COMPILE_INLINE__ uint16_t decode_itiscode(itis_codes_t typeEvent)
+__COMPILE_INLINE__ uint16_t decode_itiscode(itis_codes_t typeEvent, __packed itis_codes_t *p_des)
 {
-    uint16_t i, r;
+    uint16_t k, i, r, rsa_mask;
     r = cv_ntohs(typeEvent);
-    for (i=0; i<RSA_TYPE_MAX; i++)
+    goto getbitmask;
+    
+    for(k=0; k<8; k++)
     {
-        if(itiscode[i] == r)
-            break;
+        r = cv_ntohs(p_des[k]);
+getbitmask:
+        if (r)
+        {
+            for (i=0; i<RSA_TYPE_MAX; i++)
+            {
+                if (itiscode[i] == r){
+                   rsa_mask |= 1<<i;
+                   break;
+                }
+            }
+        }
     }
-    return i;
+    return rsa_mask;
 }
 
 int rcp_mda_process(uint8_t msg_hops, 
@@ -321,7 +346,7 @@ int rcp_parse_evam(vam_envar_t *p_vam,
 
 
     //TBD
-    alert_mask = cv_ntohs(p_evam->rsa.typeEvent);
+    alert_mask = decode_itiscode(p_evam->rsa.typeEvent, p_evam->rsa.description);
     //rt_kprintf("recv evam: alert_mask = 0x%04x\r\n", alert_mask);
 
     p_sta = vam_find_sta(p_vam, p_evam->temporary_id);
@@ -369,7 +394,7 @@ int rcp_parse_rsa(vam_envar_t *p_vam,
 
     p_rsa = (rcp_msg_roadside_alert_t *)databuf;
 
-    param.event = decode_itiscode(p_rsa->typeEvent);
+    param.rsa_mask = decode_itiscode(p_rsa->typeEvent, p_rsa->description);
     param.pos.lon = decode_longtitude(p_rsa->position.lon);
     param.pos.lat = decode_longtitude(p_rsa->position.lat);
 
@@ -527,7 +552,7 @@ int32_t rcp_send_evam(vam_envar_t *p_vam)
     p_evam->rsa.position.speed.transmissionState = TRANS_STATE_Forward;
     p_evam->rsa.position.speed.speed = encode_speed(p_local->speed);  
     //TBD
-    p_evam->rsa.typeEvent = encode_itiscode(p_local->alert_mask); 
+    p_evam->rsa.typeEvent = encode_itiscode(p_local->alert_mask, p_evam->rsa.description); 
     
 
     txinfo = WNET_TXBUF_INFO_PTR(txbuf);
@@ -569,7 +594,7 @@ int32_t rcp_send_rsa(vam_envar_t *p_vam)
     p_rsa->msg_id.id = RCP_MSG_ID_RSA;
     p_rsa->msg_count = p_vam->tx_rsa_msg_cnt++;
 
-    p_rsa->typeEvent = encode_itiscode(p_local->alert_mask);
+    p_rsa->typeEvent = encode_itiscode(p_local->alert_mask, p_rsa->description);
         
     p_rsa->position.lon = encode_longtitude(p_local->pos.lon);
     p_rsa->position.lat = encode_latitude(p_local->pos.lat);

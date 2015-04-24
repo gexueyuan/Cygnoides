@@ -1,7 +1,9 @@
 #ifndef	__GPS_H__
 #define	__GPS_H__
 #include <stdint.h>
+#include "nmea.h"
 
+#define RT_GPS_DEVICE_NAME	"uart1"
 
 #define GPSEVENT					0x0001
 
@@ -10,7 +12,6 @@
 
 #define GPS_BUFF_SIZE 256
 #define GPS_PIPE 5
-#define RT_GPS_DEVICE_NAME	"uart1"
 
 extern struct rt_mutex  mutex_gps ;
 
@@ -70,8 +71,38 @@ typedef struct _ubx_cfg_msg
 }gps_ubx_cfg_msg_t;
 
 
-void gps_callback_register(gps_data_callback fp);
+typedef enum {
+	None		= 0,
+	Rush_Add	= 1,
+    Rush_Stop	= 2,
+    Rush_Left	= 3,
+	Rush_Right	= 4	
+} driving_rush_type;
 
+typedef struct {
+	driving_rush_type type;	    /* type */
+	float value;				/* acc value */
+	t_time time;				/* time point */
+	float latitude;
+	float longitude;
+	float speed;
+} driving_rush_value_st;
+
+typedef struct _driving_action_st
+{
+	float speed ;
+	float vehicle_accel_value ;
+	float diff_angle ;
+	uint8_t is_locate ;
+    uint8_t carRun;
+}driving_action_st ;
+
+extern driving_action_st G_Action;
+extern uint8_t IsLocate;
+
+
+void gps_chip_config(int freq);
+void gps_callback_register(gps_data_callback fp);
 void gps_init(void);
 void gps_deinit(void);
 

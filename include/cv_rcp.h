@@ -321,7 +321,7 @@ typedef  __COMPILE_PACK__ struct _msg_roadside_alert{
 
 
 /* MSG_EmergencyVehicleAlert(EVA) */
-typedef struct _msg_emergency_vehicle_alert{
+typedef __COMPILE_PACK__ struct _msg_emergency_vehicle_alert{
     rcp_msgid_t   msg_id;
     uint8_t   temporary_id[4];
     rcp_msg_roadside_alert_t rsa;

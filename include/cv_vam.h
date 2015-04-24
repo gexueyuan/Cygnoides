@@ -233,7 +233,7 @@ typedef struct _vam_envar{
 
 
 typedef struct _vam_rsa_evt_info {
-    uint16_t event;
+    uint16_t rsa_mask;
 	uint8_t	priority;
     heading_slice_t head;
     vam_position_t pos;

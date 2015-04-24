@@ -44,7 +44,7 @@ typedef struct
 {
     uint8_t gsnr_cal_step;   /* gsensor calibrate and init step. default 0 */
     uint8_t gsnr_cal_thr;    /* shake threshold when static calibrating. default 4 */
-    int8_t  gsnr_ebd_thr;     /* ebd thr. default -55 */
+    int8_t  gsnr_ebd_thr;     /* ebd thr. default -30 */
     int8_t  gsnr_ebd_cnt;     /* ebd count. default 2 */
     
     int32_t AcceV_x;
@@ -56,13 +56,7 @@ typedef struct
 }gsnr_config_t;
 
 extern GSENSOR_INFO gSensor_Average, gSensor_Threshold, Acce_Sum, Acce_V;
-extern uint8_t AdjustGsensor;
 
-
-/* read, write gsensor register api */
-void gsnr_read(uint8_t reg, uint8_t num);
-void gsnr_write(uint8_t reg, uint8_t data);
-void gsnr_init(void);
 
 
 //==============================================================================

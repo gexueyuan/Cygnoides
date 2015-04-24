@@ -12,7 +12,8 @@
 
 
 void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len)
-{
+{
+    //osal_printf("%s\n",databuf);
     nmea_parse(databuf, len);
 }
 
