@@ -29,9 +29,9 @@ enum{
 #endif
 
 enum{
-    RED_STATE = 0,
-    GREEN_STATE,
+    GREEN_STATE = 0,
     BLUE_STATE,
+    RED_STATE,
     YELLOW_STATE,
     LIGHT_STATE,
 };
