@@ -29,6 +29,10 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
+void space_null(void)
+{
+}
+
 #define VSA_TIMER_PERIOD         SECOND_TO_TICK(1)
 #define VSA_EBD_SEND_PERIOD      SECOND_TO_TICK(5)
 #define VSA_POS_PERIOD           MS_TO_TICK(100)
@@ -41,7 +45,6 @@ double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
-
 
 /*****************************************************************************
  @funcname: vsa_position_classify
@@ -1270,7 +1273,9 @@ void vsa_base_proc(void *parameter)
     
     while(1){
         osal_sem_take(p_vsa->sem_vsa_proc,RT_WAITING_FOREVER);
-        
+
+		if(!p_vsa->gps_status)
+			continue;
         count_neighour = preprocess_pos();
 
         if(( count_neighour < 0)||(count_neighour > VAM_NEIGHBOUR_MAXNUM)){
@@ -1333,11 +1338,15 @@ void vsa_thread_entry(void *parameter)
 	while(1){
         err = osal_queue_recv(p_vsa->queue_vsa,&p_msg,RT_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
-
+		
+		if(p_vsa->gps_status){
             if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
                 	err = vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC](p_vsa,p_msg);
 
 			osal_free(p_msg);
+			}
+		else
+			continue;
             
        }
         else{
