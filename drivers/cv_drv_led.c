@@ -72,118 +72,83 @@ void led_blink(Led_TypeDef led)
 
 void  timer_blink_callback( void *parameter )
 {
+    sys_envar_t *p_sys = (sys_envar_t *)parameter;
 
-if((*(uint8_t *)parameter) == YELLOW_STATE){
-
-    STM_EVAL_LEDBlink((Led_TypeDef)LED_BLUE);
-    STM_EVAL_LEDBlink((Led_TypeDef)LED_GREEN);
-}    
-else
- led_blink((Led_TypeDef)(*(uint8_t *)parameter));
-
-}
-void  timer_red_blink_callback( void *parameter )
-{
-
-sys_envar_t *p_sys = (sys_envar_t *)parameter;
-
-/*
-#ifdef HARDWARE_MODULE_WIFI_V2
-    led_off((Led_TypeDef)LED_GREEN);
-    led_off((Led_TypeDef)LED_BLUE);
-#endif
-    led_blink(LED_RED);
-*/
     if(p_sys->led_color == YELLOW_STATE){
-    
-        STM_EVAL_LEDBlink((Led_TypeDef)LED_BLUE);
+
         STM_EVAL_LEDBlink((Led_TypeDef)LED_GREEN);
+        STM_EVAL_LEDBlink((Led_TypeDef)LED_RED);
     }    
     else
-     led_blink((Led_TypeDef)(p_sys->led_color));
+        led_blink((Led_TypeDef)(p_sys->led_color));
+
 
 }
-
-void  timer_green_blink_callback( void *parameter )
-{
-
 #ifdef HARDWARE_MODULE_WIFI_V2
-    led_off((Led_TypeDef)LED_RED);
-    led_off((Led_TypeDef)LED_BLUE);
-#endif
-    led_blink(LED_GREEN);
-}
-
-void  timer_blue_blink_callback( void *parameter )
+void led_proc(sys_envar_t *p_sys_t, sys_msg_t *p_msg)
 {
-#ifdef HARDWARE_MODULE_WIFI_V2
-    led_on((Led_TypeDef)LED_GREEN);
-    led_on((Led_TypeDef)LED_RED);
-#endif
-    led_blink(LED_BLUE);
-}
+    sys_envar_t *p_sys = &p_cms_envar->sys;
 
-#ifdef HARDWARE_MODULE_WIFI_V2
-void led_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
-{
-
-
+    osal_status_t error;
 	switch(p_msg->id){
 
 		case RED_STATE:
 			if(p_msg->argc == LED_ON){
-					osal_timer_stop(p_sys->timer_red);
+					osal_timer_stop(p_sys->timer_blink);
 					led_off((Led_TypeDef)LED_RED);
 				}
 			else if(p_msg->argc == LED_OFF){
-					osal_timer_stop(p_sys->timer_red);
+					osal_timer_stop(p_sys->timer_blink);
 					led_on((Led_TypeDef)LED_RED);
 				}
-			else if(p_msg->argc == LED_BLINK)
-                    led_off((Led_TypeDef)LED_BLUE);
-                    led_off((Led_TypeDef)LED_GREEN);
-                    led_off((Led_TypeDef)LED_RED);
-                    osal_timer_start(p_sys->timer_red);
+			else if(p_msg->argc == LED_BLINK){
+                    led_on((Led_TypeDef)LED_BLUE);
+                    led_on((Led_TypeDef)LED_GREEN);
+                    led_on((Led_TypeDef)LED_RED);
+                    osal_timer_start(p_sys->timer_blink);
+                }
 			break;
 		case GREEN_STATE:
 			if(p_msg->argc == LED_ON){
 				
-					osal_timer_stop(p_sys->timer_red);
+					error = rt_timer_stop(p_sys->timer_blink);
 					led_off((Led_TypeDef)LED_GREEN);
 				}
 			else if(p_msg->argc == LED_OFF){
-					osal_timer_stop(p_sys->timer_red);
+					osal_timer_stop(p_sys->timer_blink);
 					led_on((Led_TypeDef)LED_GREEN);
 				}
-			else if(p_msg->argc == LED_BLINK)
+			else if(p_msg->argc == LED_BLINK){
                     led_on((Led_TypeDef)LED_BLUE);
                     led_on((Led_TypeDef)LED_GREEN);
                     led_on((Led_TypeDef)LED_RED);
-                    osal_timer_start(p_sys->timer_red);
+                    osal_timer_start(p_sys->timer_blink);
+                }
 			break;
 		case BLUE_STATE:
 			if(p_msg->argc == LED_ON){
-					osal_timer_stop(p_sys->timer_red);
+					osal_timer_stop(p_sys->timer_blink);
 					led_off((Led_TypeDef)LED_BLUE);					
 				}
 			else if(p_msg->argc == LED_OFF){
-					osal_timer_stop(p_sys->timer_red);
+					osal_timer_stop(p_sys->timer_blink);
 					led_on((Led_TypeDef)LED_BLUE);
 				}
-			else if(p_msg->argc == LED_BLINK)
+			else if(p_msg->argc == LED_BLINK){
                     led_on((Led_TypeDef)LED_BLUE);
                     led_on((Led_TypeDef)LED_GREEN);
                     led_on((Led_TypeDef)LED_RED);
-                    osal_timer_start(p_sys->timer_red);
+                    osal_timer_start(p_sys->timer_blink);
+                }
 			break;
         case YELLOW_STATE:
             if(p_msg->argc == LED_ON){
-                    osal_timer_stop(p_sys->timer_red);
+                    osal_timer_stop(p_sys->timer_blink);
                     led_off((Led_TypeDef)LED_BLUE);
                     led_off((Led_TypeDef)LED_GREEN);
                 }
             else if(p_msg->argc == LED_OFF){
-                    osal_timer_stop(p_sys->timer_red);
+                    osal_timer_stop(p_sys->timer_blink);
                     led_on((Led_TypeDef)LED_BLUE);
                     led_on((Led_TypeDef)LED_GREEN);
                 }
@@ -191,25 +156,25 @@ void led_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                     led_on((Led_TypeDef)LED_BLUE);
                     led_on((Led_TypeDef)LED_GREEN);
                     led_on((Led_TypeDef)LED_RED);
-                    osal_timer_start(p_sys->timer_red);
+                    osal_timer_start(p_sys->timer_blink);
                 }
             break;
         case LIGHT_STATE:
             if(p_msg->argc == LED_ON){
-                    osal_timer_stop(p_sys->timer_red);
+                    osal_timer_stop(p_sys->timer_blink);
                     led_off((Led_TypeDef)LED_BLUE);
                     led_off((Led_TypeDef)LED_GREEN);
                     led_off((Led_TypeDef)LED_RED);
                 }
             else if(p_msg->argc == LED_OFF){
-                    osal_timer_stop(p_sys->timer_red);
+                    osal_timer_stop(p_sys->timer_blink);
                     led_on((Led_TypeDef)LED_BLUE);
                     led_on((Led_TypeDef)LED_GREEN);
                     led_on((Led_TypeDef)LED_RED);
 
                 }
             else if(p_msg->argc == LED_BLINK)
-                osal_timer_start(p_sys->timer_red);
+                osal_timer_start(p_sys->timer_blink);
             break;
 		default:
 			break;
@@ -309,18 +274,9 @@ int rt_led_init(void)
     osal_assert(p_sys->queue_hi_led != NULL);
 
     
-    p_sys->timer_red = osal_timer_create("tm-red",\
-        timer_red_blink_callback,p_sys,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
-    osal_assert(p_sys->timer_red != NULL);
-
-    p_sys->timer_green= osal_timer_create("tm-gren",\
-        timer_green_blink_callback,NULL,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
-    osal_assert(p_sys->timer_red != NULL);
-
-	p_sys->timer_blue = osal_timer_create("tm-blue",\
-	timer_blue_blink_callback,NULL,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
-	osal_assert(p_sys->timer_red != NULL);
-	
+    p_sys->timer_blink = osal_timer_create("tm-led",\
+        timer_blink_callback,p_sys,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
+    osal_assert(p_sys->timer_blink != NULL);	
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");   
 	return 0;
 }

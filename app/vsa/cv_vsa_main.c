@@ -37,7 +37,6 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 
 #define VSA_MSG_PROC    (VSA_MSG_BASE+1)
 
-static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg);
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 /*****************************************************************************
  * implementation of functions                                               *
@@ -228,10 +227,8 @@ int32_t  preprocess_pos(void)
 *****************************************************************************/
 void  timer_preprocess_pos_callback( void *parameter )
 {
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-    
-    vsa_add_event_queue(p_vsa, VSA_MSG_BASE, 0,0,NULL);
-
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;        
+    osal_sem_release(p_vsa->sem_vsa_proc);       
 }
 
 /*****************************************************************************
@@ -273,7 +270,7 @@ void vsa_bsm_status_update(void *parameter)
 
 	if(p_sta)
 		{
-			if(!(p_cms_envar->sys.led_priority&(1<<SYS_MSG_BSM_UPDATE)))
+			if(!(p_cms_envar->sys.led_priority&(1<<HI_OUT_BSM_UPDATE)))
 			sys_add_event_queue(&p_cms_envar->sys,SYS_MSG_BSM_UPDATE, 0, HI_OUT_BSM_UPDATE, NULL);
 		}
 	else
@@ -1262,62 +1259,64 @@ vsa_app_handler vsa_app_handler_tbl[] = {
   //  NULL
 };
 
-static int vsa_base_proc(vsa_envar_t *p_vsa, void *arg)
+void vsa_base_proc(void *parameter)
 {
     int count_neighour;
     int i;
     int vsa_id;
     uint8_t vsa_id_count[VSM_ID_END+1]; 
-
-	count_neighour = preprocess_pos();
-
-
-
-	if(( count_neighour < 0)||(count_neighour > VAM_NEIGHBOUR_MAXNUM)){
-			return -1;
-	    }
+    vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
+     uint32_t tick_adpcm_bg,tick_adpcm_fh;
     
-    if(count_neighour == 0)
-        return 0;
+    while(1){
+        osal_sem_take(p_vsa->sem_vsa_proc,RT_WAITING_FOREVER);
+        
+        count_neighour = preprocess_pos();
 
-    p_vsa->alert_cnt = 0;
-    
-    for(i = 0;i < count_neighour;i++)
-        {
-        
-        if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])    
-            vsa_id = vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
-        
-        if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC]))    
-            vsa_id = vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
-        
-        if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC]))    
-            vsa_id = vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&i);
-        
-        if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC]))    
-            vsa_id = vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&i);
-
-        //vsa_id_count[vsa_id]++;
-        p_vsa->alert_cnt |= 1<<vsa_id;
-      // #if 0
-        if(vsa_id){
-            p_vsa->position_node[i].vsa_position.vsa_id = vsa_id;
-            ccw_add_list(vsa_id,&p_vsa->position_node[i]);
-        }
-        else{ 
-            if(p_vsa->position_node[i].vsa_position.vsa_id){
-                p_vsa->position_node[i].vsa_position.vsa_id = 0;
-                ccw_del_list(vsa_id,&p_vsa->position_node[i]);
+        if(( count_neighour < 0)||(count_neighour > VAM_NEIGHBOUR_MAXNUM)){
+            continue;
             }
-    
+
+        if(count_neighour == 0)
+            continue;
+
+        p_vsa->alert_cnt = 0;
+
+        for(i = 0;i < count_neighour;i++)
+            {
+            
+            if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])    
+                vsa_id = vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
+            
+            if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC]))    
+                vsa_id = vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
+            
+            if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC]))    
+                vsa_id = vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&i);
+            
+            if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC]))    
+                vsa_id = vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&i);
+
+            //vsa_id_count[vsa_id]++;
+            p_vsa->alert_cnt |= 1<<vsa_id;
+          // #if 0
+            if(vsa_id){
+                p_vsa->position_node[i].vsa_position.vsa_id = vsa_id;
+                ccw_add_list(vsa_id,&p_vsa->position_node[i]);
+            }
+            else{ 
+                if(p_vsa->position_node[i].vsa_position.vsa_id){
+                    p_vsa->position_node[i].vsa_position.vsa_id = 0;
+                    ccw_del_list(vsa_id,&p_vsa->position_node[i]);
+                }
+
+            }
+           //#endif
+            
+
         }
-       //#endif
         
-
     }
-
-    
-  	return count_neighour;
 }
 
 void vsa_thread_entry(void *parameter)
@@ -1334,22 +1333,11 @@ void vsa_thread_entry(void *parameter)
 	while(1){
         err = osal_queue_recv(p_vsa->queue_vsa,&p_msg,RT_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
-			if(p_msg->id == VSA_MSG_BASE){
 
-    
-
-               // tick_adpcm_bg = osal_get_systemtime();
-                vsa_base_proc(p_vsa,p_msg);
-
-              //  tick_adpcm_fh = osal_get_systemtime();
-
-              //  OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"time of proc is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
-                
-             }
-            else if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
+            if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
                 	err = vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC](p_vsa,p_msg);
 
-				osal_free(p_msg);
+			osal_free(p_msg);
             
        }
         else{
@@ -1416,7 +1404,7 @@ void vsa_init()
 
         if(p_vsa->vsa_mode&(1<<i)){
             
-            vsa_app_handler_tbl[i] = (void*)NULL;
+            vsa_app_handler_tbl[i] = NULL;
 
         }            
     }
@@ -1439,11 +1427,19 @@ void vsa_init()
     p_vsa->queue_voc = osal_queue_create("q-voc",  VOC_QUEUE_SIZE);
     osal_assert(p_vsa->queue_voc != NULL);
 
-	p_vsa->task_vsa = osal_task_create("t-vsa",
+    p_vsa->sem_vsa_proc = osal_sem_create("sem_vsa_proc",0);
+	osal_assert(p_vsa->sem_vsa_proc != NULL);
+	p_vsa->task_vsa_l = osal_task_create("t-vsa-l",
+                           vsa_base_proc, p_vsa,
+                           RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY);
+    osal_assert(p_vsa->task_vsa_l != NULL);
+    
+	p_vsa->task_vsa_r = osal_task_create("t-vsa-r",
                            vsa_thread_entry, p_vsa,
                            RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY);
-    osal_assert(p_vsa->task_vsa != NULL);
-    
+    osal_assert(p_vsa->task_vsa_r != NULL);
+
+
 
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
                              

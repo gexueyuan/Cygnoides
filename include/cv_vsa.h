@@ -163,7 +163,11 @@ typedef struct _vsa_envar{
     
 
     /* os related */
-    osal_task_t  *task_vsa;
+    osal_task_t  *task_vsa_l;
+    osal_task_t  *task_vsa_r;
+
+    osal_sem_t   *sem_vsa_proc;
+    
     osal_queue_t *queue_vsa;
 
     osal_queue_t *queue_voc;

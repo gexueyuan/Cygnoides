@@ -210,9 +210,9 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){             
-			        //vsa_add_event_queue(p_vsa, VSA_MSG_MANUAL_BC, 0,keycnt,NULL);
-			        //keycnt = ~keycnt;
-                    voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
+			        vsa_add_event_queue(p_vsa, VSA_MSG_MANUAL_BC, 0,keycnt,NULL);
+			        keycnt = ~keycnt;
+                    //voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
              }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
@@ -590,7 +590,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         led_state = BLUE_STATE;//
         led_action = LED_BLINK;
  }
- else if(p_sys->led_priority&(~(1<<HI_OUT_GPS_LOST))){
+ else if(!(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))){
         led_state = GREEN_STATE;//
         led_action = LED_ON;
 

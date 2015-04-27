@@ -217,13 +217,11 @@ typedef struct _sys_envar{
 
     osal_queue_t *queue_hi_led;
 
-    rt_timer_t timer_hi;
-    rt_timer_t timer_voc;
-	rt_timer_t timer_cpuusage;
+    osal_timer_t *timer_hi;
+    osal_timer_t *timer_voc;
+    osal_timer_t *timer_cpuusage;
 
-	osal_timer_t *timer_red;
-	osal_timer_t *timer_green;	
- 	osal_timer_t *timer_blue;   
+    osal_timer_t *timer_blink;   
 }sys_envar_t;
 
 
