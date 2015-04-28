@@ -28,10 +28,14 @@ typedef struct {
 
 }vanet_param;
 
+
+#ifdef USE_BOOT
+#define PARAM_FLAG_ADDR     ((uint32_t)0x800C000)
+#define PARAM_SECTOR         FLASH_Sector_3
+#else
 #define PARAM_SECTOR         FLASH_Sector_11
-
 #define PARAM_FLAG_ADDR     ((uint32_t)0x80E0000)
-
+#endif
 #define PARAM_OFFSET        0x200
 
 

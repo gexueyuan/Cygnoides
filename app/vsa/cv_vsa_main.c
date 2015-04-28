@@ -1273,9 +1273,10 @@ void vsa_base_proc(void *parameter)
     
     while(1){
         osal_sem_take(p_vsa->sem_vsa_proc,RT_WAITING_FOREVER);
-
+#if 0 //gps detect
 		if(!p_vsa->gps_status)
 			continue;
+#endif
         count_neighour = preprocess_pos();
 
         if(( count_neighour < 0)||(count_neighour > VAM_NEIGHBOUR_MAXNUM)){
@@ -1339,15 +1340,10 @@ void vsa_thread_entry(void *parameter)
         err = osal_queue_recv(p_vsa->queue_vsa,&p_msg,RT_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
 		
-		if(p_vsa->gps_status){
             if(vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC] != NULL)
                 	err = vsa_app_handler_tbl[p_msg->id-VSA_MSG_PROC](p_vsa,p_msg);
 
-			osal_free(p_msg);
-			}
-		else
-			continue;
-            
+			osal_free(p_msg);            
        }
         else{
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);          

@@ -28,6 +28,8 @@
 //#define HARDWARE_MODULE_WIFI_V1
 #define HARDWARE_MODULE_WIFI_V2
 
+
+#define USE_BOOT
 /* board configuration */
 // <o> SDCard Driver <1=>SDIO sdcard <0=>SPI MMC card
 // 	<i>Default: 1

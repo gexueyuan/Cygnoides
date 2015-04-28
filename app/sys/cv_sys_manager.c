@@ -28,6 +28,10 @@ OSAL_DEBUG_ENTRY_DEFINE(sysc)
 #include "key.h"
 #include "cv_vsa.h"
 
+void null_space(void)
+{
+}
+
 
 #define HUMAN_ITERFACE_DEFAULT         SECOND_TO_TICK(1)
 
@@ -325,7 +329,7 @@ void timer_out_vsa_process(void* parameter)
 {
 	int  timevalue;
 	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
-	timevalue = HUMAN_ITERFACE_GPS_VOC;
+	timevalue = HUMAN_ITERFACE_VOC;
 	
 #if 0
 	if(p_vsa->alert_pend & (1<<VSA_ID_EBD))	
@@ -698,7 +702,7 @@ void sys_init(void)
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
     p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        HUMAN_ITERFACE_GPS_VOC,RT_TIMER_FLAG_PERIODIC); 					
+        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_PERIODIC); 					
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
 
