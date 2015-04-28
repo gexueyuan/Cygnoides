@@ -78,7 +78,7 @@
           <AfterMake>
             <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name>fromelf --bin !L --output ..\BIN\CMS.BIN</UserProg1Name>
+            <UserProg1Name>.\Cygnoides.bat</UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
@@ -307,7 +307,7 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
+                <StartAddress>0x8020200</StartAddress>
                 <Size>0x60000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
