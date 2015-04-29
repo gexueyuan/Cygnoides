@@ -455,7 +455,7 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                     p_crd->ccw_id = warning_id;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                        "pid(%d%d%d%d) come in %lu list\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                        "pid(%02X %02X %02X %02X) come in %lu list\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
                                         p_crd->pid[3],warning_id);
                 }
             else

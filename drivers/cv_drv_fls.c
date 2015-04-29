@@ -38,7 +38,7 @@ int drv_fls_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 int drv_fls_erase(uint32_t  sector)
 {
     int err = 0;
-    
+    osal_enter_critical();
     /* Enable the flash control register access */
     FLASH_Unlock();
 
@@ -52,7 +52,7 @@ int drv_fls_erase(uint32_t  sector)
 
     /* Disable the flash control register access */
     FLASH_Lock();
-
+    osal_leave_critical();
 	return err;
 }
 

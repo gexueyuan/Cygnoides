@@ -66,5 +66,3 @@ void rt_hw_susb_init(void);
 uint8_t des(int offset);
 
 #endif
-
-// <<< Use Configuration Wizard in Context Menu >>>

@@ -78,8 +78,8 @@ void load_default_param_custom(cfg_param_t *param)
     param->gsnr.AcceAhead_y = 0;
     param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 11;
-    param->wnet.txrate = 6;
+    param->wnet.channel = 13;
+    param->wnet.txrate = 1;
     
 
 }
@@ -126,8 +126,8 @@ void load_default_param_highway(cfg_param_t *param)
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 11;
-    param->wnet.txrate = 6;
+    param->wnet.channel = 13;
+    param->wnet.txrate = 1;
 	
 
 }
@@ -174,8 +174,8 @@ void load_default_param_mountain(cfg_param_t *param)
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 11;
-    param->wnet.txrate = 6;
+    param->wnet.channel = 13;
+    param->wnet.txrate = 1;
 	
 
 }
@@ -221,8 +221,8 @@ void load_default_param_city(cfg_param_t *param)
 	param->gsnr.AcceAhead_y = 0;
 	param->gsnr.AcceAhead_z = 0;
 
-    param->wnet.channel = 11;
-    param->wnet.txrate = 6;
+    param->wnet.channel = 13;
+    param->wnet.txrate = 1;
 	
 
 }
@@ -274,7 +274,7 @@ void load_default_param(cfg_param_t *param)
 	param->gsnr.AcceAhead_z = 0;
 
     param->wnet.channel = 13;
-    param->wnet.txrate = 6;
+    param->wnet.txrate = 1;
 	
 
 }
@@ -783,9 +783,22 @@ int param_set(uint8_t param, int32_t value)
 
 
 FINSH_FUNCTION_EXPORT(param_set, set system parameters);
+int erase_sector4(void)
+{
+    int err = 0;
+    err = drv_fls_erase(FLASH_Sector_4);
 
+    drv_fls_write(0x8010000,param_init_words,sizeof(param_init_words));
+	drv_fls_write(0x8010010,param_init_words,sizeof(param_init_words));
+    
+	drv_fls_write(0x8010020,param_init_words,sizeof(param_init_words));
+	drv_fls_write(0x8010220,param_init_words,sizeof(param_init_words));
+	drv_fls_write(0x8010420,param_init_words,sizeof(param_init_words));
+	err = drv_fls_write(0x8010620,param_init_words,sizeof(param_init_words));
+    return err;
+}
 
-
+FINSH_FUNCTION_EXPORT(erase_sector4, set system parameters);
 
 uint8_t flash_read(uint8_t mode)
 {
