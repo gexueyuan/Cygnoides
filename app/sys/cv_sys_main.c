@@ -23,7 +23,7 @@
 #include "cv_vam.h"
 #include "cv_cms_def.h"
 
-#define FIRMWARE_VERSION "V1.0.000" 
+#define FIRMWARE_VERSION "V2.0.000" 
 #ifdef NDEBUG
 #define FIRMWARE_IDEN "rel" 
 #else

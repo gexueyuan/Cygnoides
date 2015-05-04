@@ -448,8 +448,15 @@ void OTG_FS_IRQHandler(void)
 void OTG_HS_IRQHandler(void)
 #endif
 {
+    /* disable interrupt */
+    osal_enter_critical();
+  
     USBH_OTG_ISR_Handler(&USB_OTG_Core_dev);
-    osal_sem_release(USB_Host_Semphore);
+ 
+	/* enable interrupt */
+    osal_leave_critical();
+
+  	osal_sem_release(USB_Host_Semphore);
 }
 
 

@@ -257,12 +257,14 @@ vam_sta_node_t *vam_find_sta(vam_envar_t *p_vam, uint8_t *temporary_id)
 
 void vam_update_sta(vam_envar_t *p_vam)
 {
-    vam_sta_node_t *p_sta = NULL;
+    vam_sta_node_t *p_sta_node = NULL;
     list_head_t *pos;
     list_head_t *head = &p_vam->neighbour_list;
-    vam_stastatus_t sta;
+    vam_stastatus_t *p_sta[VAM_NEIGHBOUR_MAXNUM];
     static uint8_t gotNeighbour = 0;
     uint8_t isEmpty = 1;
+    int i = 0;
+    int num_peer_alert_timeout = 0;
 
     if (osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
         OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "semaphor return failed\n");
@@ -273,30 +275,40 @@ void vam_update_sta(vam_envar_t *p_vam)
         isEmpty = 0;
         gotNeighbour = 1;
         /* must prefatch the next pointer */
-        p_sta = (vam_sta_node_t *)pos;
+        p_sta_node = (vam_sta_node_t *)pos;
         pos = pos->next;
 
-        if(p_sta->life)
-            p_sta->life--;
-        if(p_sta->alert_life)
-            p_sta->alert_life--;
+        if(p_sta_node->life)
+            p_sta_node->life--;
+        if(p_sta_node->alert_life)
+            p_sta_node->alert_life--;
         
-        if ((p_sta->alert_life == 0) && (p_sta->s.alert_mask) ){
+        if ((p_sta_node->alert_life == 0) && (p_sta_node->s.alert_mask) ){
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour's alert is timeout to canceled.\n");  
-            p_sta->s.alert_mask = 0;
-            memcpy(&sta, &p_sta->s, sizeof(vam_stastatus_t));
-            /* one neighbours's alert msg timeout */
-            if(p_vam->evt_handler[VAM_EVT_PEER_ALARM]){
-                (p_vam->evt_handler[VAM_EVT_PEER_ALARM])(&sta);
-            }  
+            p_sta_node->s.alert_mask = 0;
+            p_sta[num_peer_alert_timeout] = (vam_stastatus_t *)osal_malloc(sizeof(vam_stastatus_t));
+            memcpy(p_sta[num_peer_alert_timeout], &p_sta_node->s, sizeof(vam_stastatus_t));
+            num_peer_alert_timeout++;
         }
 
-        if (p_sta->life == 0 && p_sta->alert_life == 0){
+        if (p_sta_node->life == 0 && p_sta_node->alert_life == 0){
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour is kick out\n");
-            list_move_tail(&p_sta->list, &p_vam->sta_free_list);
+            list_move_tail(&p_sta_node->list, &p_vam->sta_free_list);
         }
     }
     osal_sem_release(p_vam->sem_sta);
+
+    /* one neighbours's alert msg timeout */
+    if(p_vam->evt_handler[VAM_EVT_PEER_ALARM]){
+        while(num_peer_alert_timeout > 0){
+            num_peer_alert_timeout--;
+#if 0
+            osal_printf("%dPID=%02x %02x %02x %02x\r\n", num_peer_alert_timeout, p_sta[num_peer_alert_timeout]->pid[0], 
+                p_sta[num_peer_alert_timeout]->pid[1], p_sta[num_peer_alert_timeout]->pid[2], p_sta[num_peer_alert_timeout]->pid[3]);
+#endif
+            (p_vam->evt_handler[VAM_EVT_PEER_ALARM])(p_sta[num_peer_alert_timeout]);
+        }
+    }
 
     /* neighbour list turn to empty */
     if(gotNeighbour && isEmpty)

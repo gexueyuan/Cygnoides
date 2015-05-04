@@ -145,7 +145,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>7</TargetSelection>
+          <TargetSelection>6</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -361,7 +361,7 @@
             <useXO>0</useXO>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F4XX,STM32F405xx,USE_STDPERIPH_DRIVER,USE_USB_OTG_FS,WANGYIFENG</Define>
+              <Define>STM32F4XX,STM32F405xx,USE_STDPERIPH_DRIVER,USE_USB_OTG_FS,GEXUEYUAN</Define>
               <Undefine></Undefine>
               <IncludePath>.;..\library\STM32F4xx_Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x;..\library\STM32F4xx_Libraries\CMSIS\Include;..\library\STM32F4xx_Libraries\CMSIS\ST\STM32F4xx\Include;..\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\inc;..\library\STM32F4xx_Libraries\STM32_USB_HOST_Library\Core\inc;..\library\STM32F4xx_Libraries\STM32_USB_OTG_Driver\inc;..\applications;..\drivers;..\os\rtthread\components\drivers\include;..\os\rtthread\components\finsh;..\os\rtthread\components\init;..\os\rtthread\components\rtgui\include;..\os\rtthread\include;..\os\rtthread\libcpu\arm\common;..\include;..\os\rtthread\libcpu\arm\cortex-m4;..\drivers\zigbee\coordinator\Include;..\drivers\zigbee\coordinator\TAL\Inc;..\drivers\zigbee\coordinator\TAL\AT86RF231\Inc;..\drivers\zigbee\coordinator\PAL\Inc;..\drivers\zigbee\coordinator\PAL\SAM3\Generic\Inc;..\drivers\zigbee\coordinator\PAL\SAM3\AT91SAM3S4C\Boards;..\drivers\zigbee\coordinator\PAL\SAM3\AT91SAM3S4C\Boards\RZ600_231_SAM3SEK;..\drivers\zigbee\coordinator\PAL\SAM3\Libraries;..\drivers\zigbee\coordinator\PAL\SAM3\Libraries\usb\include;..\drivers\zigbee\coordinator\MAC\Inc;..\drivers\zigbee\coordinator\Resources\Buffer_Management\Inc;..\drivers\zigbee\coordinator\Resources\Queue_Management\Inc;..\drivers\zigbee\coordinator\NWK\Inc;..\drivers\zigbee\coordinator\NWK\atmel_Inc;..\drivers\zigbee\coordinator\Applications;..\drivers\zigbee\coordinator\Applications\Helper_Files\SIO_Support\Inc;..\drivers\zigbee\coordinator\STM32F10x_StdPeriph_Lib_V3.5.0\Project\BSP\OS\uCOS-III</IncludePath>
             </VariousControls>
@@ -490,6 +490,11 @@
               <FileName>cv_wnet_dsmp.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\wnet\cv_wnet_dsmp.c</FilePath>
+            </File>
+            <File>
+              <FileName>cv_cpuusage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\vsa\cv_cpuusage.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -700,6 +705,11 @@
               <FileName>STM32F4xx_Stdperiph_Lib_dbg.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\prj_lib\keil\STM32F4xx_Stdperiph_Lib_dbg.lib</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1460,6 +1470,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\wnet\cv_wnet_dsmp.c</FilePath>
             </File>
+            <File>
+              <FileName>cv_cpuusage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\vsa\cv_cpuusage.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1669,6 +1684,11 @@
               <FileName>STM32F4xx_Stdperiph_Lib_dbg.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\prj_lib\keil\STM32F4xx_Stdperiph_Lib_dbg.lib</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.c</FilePath>
             </File>
           </Files>
         </Group>

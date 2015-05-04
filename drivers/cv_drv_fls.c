@@ -38,10 +38,12 @@ int drv_fls_read(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 int drv_fls_erase(uint32_t  sector)
 {
     int err = 0;
+    /* disable interrupt */
     osal_enter_critical();
     /* Enable the flash control register access */
     FLASH_Unlock();
-
+    /*disable data cache*/
+    FLASH->ACR&=~(1<<10);
     /* Clear pending flags (if any) */  
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | 
                     FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR|FLASH_FLAG_PGSERR); 
@@ -49,9 +51,11 @@ int drv_fls_erase(uint32_t  sector)
     if (FLASH_EraseSector(sector, VoltageRange_3) != FLASH_COMPLETE){
         err = -1;
     }
-
+    /*enable data cache*/
+    FLASH->ACR|=1<<10;
     /* Disable the flash control register access */
     FLASH_Lock();
+    /* ensable interrupt */
     osal_leave_critical();
 	return err;
 }
@@ -61,9 +65,12 @@ int drv_fls_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
 {
     int err = 0;
     
+    /* disable interrupt */
+    osal_enter_critical();
     /* Enable the flash control register access */
     FLASH_Unlock();
-
+    /*disable data cache*/
+    FLASH->ACR&=~(1<<10);
     /* Clear pending flags (if any) */  
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | 
                     FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR|FLASH_FLAG_PGSERR); 
@@ -77,10 +84,12 @@ int drv_fls_write(uint32_t flash_address, uint8_t *p_databuf, uint32_t length)
         p_databuf++;
         length--;
     }
-
+    /*enable data cache*/
+    FLASH->ACR|=1<<10;
     /* Disable the flash control register access */
-    FLASH_Lock();
-
+    FLASH_Lock();    
+    /* ensable interrupt */
+    osal_leave_critical();
 	return err;
 }
 

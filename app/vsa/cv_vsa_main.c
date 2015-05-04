@@ -548,7 +548,7 @@ static int ebd_judge(vsa_envar_t *p_vsa)
     int32_t dis_actual;
     vsa_position_node_t *p_node;
     p_node = vsa_find_pn(p_vsa,p_vsa->remote.pid);
-
+#if 0
     /* put the beginning only in order to output debug infomations */
     dis_actual = p_node->vsa_position.linear_distance;
 
@@ -571,6 +571,7 @@ static int ebd_judge(vsa_envar_t *p_vsa)
     if (dis_actual <= 0){
         return 0;
     }
+    #endif
     return 1;
 
 }
