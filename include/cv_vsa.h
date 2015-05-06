@@ -83,7 +83,7 @@ typedef struct _vsa_info{
 
     float lon_offset;
 
-    uint32_t linear_distance;
+    int32_t linear_distance;
 
     uint32_t safe_distance;
 

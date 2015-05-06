@@ -290,7 +290,7 @@ static void I2S_DeInit(void)
 }
 
 
-
+#ifdef USE_I2SNVIC
 static void I2S_NVIC_Config(void)
 {
 	NVIC_InitTypeDef NVIC_InitStructure;
@@ -301,7 +301,7 @@ static void I2S_NVIC_Config(void)
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 }
-
+#endif
 static void I2S_Mode_Config(uint16_t _usStandard, uint16_t _usWordLen, uint16_t _usAudioFreq, uint16_t _usMode)
 {
 	I2S_InitTypeDef I2S_InitStructure; 
@@ -538,7 +538,6 @@ static void Audio_MAL_DeInit(void)
   */
 static void Audio_MAL_Play(uint32_t Addr, uint32_t Size)
 {  
-    uint32_t Addr_i2s,i; 
     #if 1
   Audio_MAL_Init();
   

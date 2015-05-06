@@ -221,15 +221,19 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			break;
 			
 		case SYS_MSG_KEY_PRESSED:
-			if(p_msg->argc == C_UP_KEY){             
-			        vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,keycnt,NULL);
-			        keycnt = ~keycnt;
-                    //voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
+			if(p_msg->argc == C_UP_KEY){   
+
+                	rt_kprintf("gsnr param is resetting .....\n");
+					param_set(19,0); 
+                   // voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
+                  
+                   // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
+                  
              }
 			else if(p_msg->argc == C_DOWN_KEY)
 				{
-					rt_kprintf("gsnr param is resetting .....\n");
-					param_set(19,0);                  
+			        vsa_add_event_queue(p_vsa, VSA_MSG_MANUAL_BC, 0,keycnt,NULL);
+			        keycnt = ~keycnt;                 
 			}
 			break;
         case SYS_MSG_START_ALERT:
@@ -336,7 +340,6 @@ void timer_human_interface_callback(void* parameter)
 void timer_out_vsa_process(void* parameter)
 {
 	int  timevalue;
-	vsa_envar_t* p_vsa  = (vsa_envar_t*)parameter;
 	timevalue = HUMAN_ITERFACE_VOC;
 	
 #if 0
@@ -375,16 +378,9 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;				
 				
             case HI_OUT_CRD_ALERT:
-                voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);               
-                rt_timer_start(p_cms_envar->sys.timer_hi);
-                #if 0
-				if(!p_sys->voc_flag)
-					{
-                		voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
-						p_sys->voc_flag = 0xff;
-					}
-                rt_timer_start(p_cms_envar->sys.timer_hi);
-                #endif
+                voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CFCW alert start!!\n\n");
+                rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))
 					return;
 				else
@@ -395,16 +391,9 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 			case HI_OUT_CRD_REAR_ALERT:
                 
-                voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
-                rt_timer_start(p_cms_envar->sys.timer_hi);
-                #if 0
-                if(!p_sys->voc_flag)
-					{
-                		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
-						p_sys->voc_flag = 0xff;
-					}
-                rt_timer_start(p_cms_envar->sys.timer_hi);
-                #endif
+                voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);             
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CRCW alert start!!\n\n");
+                rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))
 					return;
 				else
@@ -429,35 +418,44 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 			case HI_OUT_EBD_ALERT:
                 voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);
               	rt_timer_start(p_cms_envar->sys.timer_voc);            
-			   	p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
+			   	//p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
+				if(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))
+					return;
+				else
+					{
+			   			p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
+						OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI EEBL alert!!\n\n");
+					}
                 break;
 
 			case HI_OUT_CRD_CANCEL:
 				if(p_cms_envar->vsa.alert_pend == 0)
-					voc_stop();
-				p_sys->led_priority &= ~(1<<HI_OUT_CRD_ALERT);
+					rt_timer_stop(p_cms_envar->sys.timer_voc);
+				p_sys->led_priority &= ~(1<<HI_OUT_CRD_ALERT);               
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CFCW  alert cancel!!\n\n");
 
 				break;
 
 			case HI_OUT_CRD_REAR_CANCEL:
 				if(p_cms_envar->vsa.alert_pend == 0)
-					voc_stop();
+					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_REAR_ALERT);
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CRCW alert cancel!!\n\n");
 
 				break;	
 
 			case HI_OUT_VBD_CANCEL:
 				if(p_cms_envar->vsa.alert_pend == 0)
-					voc_stop();
+					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_VBD_ALERT);
-                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert  cancel!!\n\n");
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert cancel!!\n\n");
 				break;
 
 			case HI_OUT_EBD_CANCEL://cancel alarm
 				if(p_cms_envar->vsa.alert_pend == 0)
-					voc_stop();
+					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_EBD_ALERT);
-                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI ebd alert  cancel!!\n\n");
+                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI EEBL alert  cancel!!\n\n");
 				break;
 				
 			case HI_OUT_VBD_STATUS:
@@ -710,7 +708,7 @@ void sys_init(void)
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
     p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        HUMAN_ITERFACE_DEFAULT,RT_TIMER_FLAG_PERIODIC); 					
+        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_PERIODIC); 					
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
 
