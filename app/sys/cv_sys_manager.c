@@ -194,6 +194,14 @@ void voc_contrl(uint32_t cmd, uint8_t *p_data, uint32_t length)
     voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,cmd);
 }
 
+void voc_stop(void)
+{
+	osal_timer_stop(p_cms_envar->sys.timer_voc);
+	
+	
+	Pt8211_AUDIO_Stop();
+}
+
 void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
 	uint32_t type = 0; 
@@ -426,28 +434,28 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 			case HI_OUT_CRD_CANCEL:
 				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+					voc_stop();
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_ALERT);
 
 				break;
 
 			case HI_OUT_CRD_REAR_CANCEL:
 				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+					voc_stop();
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_REAR_ALERT);
 
 				break;	
 
 			case HI_OUT_VBD_CANCEL:
 				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+					voc_stop();
 				p_sys->led_priority &= ~(1<<HI_OUT_VBD_ALERT);
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert  cancel!!\n\n");
 				break;
 
 			case HI_OUT_EBD_CANCEL://cancel alarm
 				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+					voc_stop();
 				p_sys->led_priority &= ~(1<<HI_OUT_EBD_ALERT);
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI ebd alert  cancel!!\n\n");
 				break;
@@ -702,7 +710,7 @@ void sys_init(void)
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
     p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_PERIODIC); 					
+        HUMAN_ITERFACE_DEFAULT,RT_TIMER_FLAG_PERIODIC); 					
     RT_ASSERT(p_sys->timer_hi != RT_NULL);
 
 
