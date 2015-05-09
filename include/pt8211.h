@@ -127,6 +127,7 @@ void  Pt8211_AUDIO_PauseResume(uint32_t Cmd);
 
 void  Pt8211_AUDIO_Stop(uint32_t Option);
 
+void sound_en(uint8_t option);
 
 
 /*****************************************************************************

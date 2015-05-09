@@ -1,6 +1,8 @@
 #include <rtthread.h>
 #include <rthw.h>
 #include "components.h"
+//#include "cv_cms_def.h"
+
 #define CPU_USAGE_CALC_TICK    10
 #define CPU_USAGE_LOOP        100
 
@@ -63,20 +65,30 @@ void cpu_usage_get(rt_uint8_t *major, rt_uint8_t *minor)
     *minor = cpu_usage_minor;
 }
 
-void cpu_usage_init()
-{
-    /* set idle thread hook */
-    rt_thread_idle_sethook(cpu_usage_idle_hook);
-}
-
-void cpu_usage_print(void)
+void cpu_usage_print(void* parameter)
 {
 	rt_uint8_t cpuusage_maj,cpuusage_min;
 	
 	cpu_usage_get(&cpuusage_maj,&cpuusage_min);
 
-	rt_kprintf("cpu usage = %d%\n",cpuusage_maj);
+	rt_kprintf("cpu usage = %d.%d%\n",cpuusage_maj,cpuusage_min);
 	
 }
 FINSH_FUNCTION_EXPORT(cpu_usage_print,get cpu usage);
+
+void cpu_usage_init()
+{
+    rt_timer_t tm_cpu_uage;
+
+    /* set idle thread hook */
+    rt_thread_idle_sethook(cpu_usage_idle_hook);
+#if 1
+     tm_cpu_uage = rt_timer_create("tm-cpu",cpu_usage_print,NULL,\
+        ((5)*RT_TICK_PER_SECOND),RT_TIMER_FLAG_PERIODIC); 
+     rt_timer_start(tm_cpu_uage);
+
+#endif
+}
+
+
 

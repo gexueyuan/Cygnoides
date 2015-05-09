@@ -11,11 +11,14 @@ typedef enum
   LED3 = 3,
 }Led_TypeDef;
 
-enum{
+
+typedef enum 
+{
 	LED_ON = 0,
 	LED_OFF,
 	LED_BLINK,
-};
+	LED_BREATH,
+}Led_State;
 
 #define LEDn  3
 #ifdef HARDWARE_MODULE_WIFI_V1
@@ -28,13 +31,15 @@ enum{
 #define LED_BLUE    LED1
 #endif
 
-enum{
-    GREEN_STATE = 0,
-    BLUE_STATE,
-    RED_STATE,
-    YELLOW_STATE,
-    LIGHT_STATE,
-};
+
+typedef enum 
+{
+    GREEN = 0,
+    BLUE,
+    RED,
+    YELLOW,
+    LIGHT,
+}Led_Color;
 
 
 #ifdef HARDWARE_MODULE_WIFI_V1
@@ -75,6 +80,7 @@ void STM_EVAL_LEDOff(Led_TypeDef Led);
 void STM_EVAL_LEDBlink(Led_TypeDef Led);
 
 int rt_led_init(void);
+void led_proc(Led_Color color, Led_State state,uint8_t freq);
 
 
 

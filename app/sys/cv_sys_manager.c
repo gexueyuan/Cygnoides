@@ -199,7 +199,7 @@ void voc_stop(void)
 	osal_timer_stop(p_cms_envar->sys.timer_voc);
 	
 	
-	Pt8211_AUDIO_Stop();
+	Pt8211_AUDIO_Stop(0);
 }
 
 void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
@@ -223,9 +223,9 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){   
 
-                	rt_kprintf("gsnr param is resetting .....\n");
-					param_set(19,0); 
-                   // voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
+                	//rt_kprintf("gsnr param is resetting .....\n");
+					//param_set(19,0); 
+                    voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
                   
                    // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
                   
@@ -361,8 +361,9 @@ void timer_out_vsa_process(void* parameter)
 
 void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
-    uint8_t led_state;
-    uint8_t led_action;
+    Led_Color led_color;
+    Led_State led_state;
+    uint8_t led_freq;
     if (p_msg->id == SYS_MSG_HI_OUT_UPDATE){
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
@@ -581,39 +582,41 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
  if((p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))\
      ||(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))||(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT)))
      {
-         led_state = RED_STATE;//
-         led_action = LED_BLINK;
+         led_color = RED;//
+         led_state = LED_BLINK;
  }
  else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS)))
      {
-         led_state = YELLOW_STATE;//
-         led_action = LED_BLINK;
+         led_color = YELLOW;//
+         led_state = LED_BLINK;
  }
 
  else if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
      {
-        led_state = GREEN_STATE;//
-        led_action = LED_BLINK;
+        led_color = GREEN;//
+        led_state = LED_BLINK;
      }
   else if(p_sys->led_priority&(1<<HI_OUT_BSM_UPDATE))
      {
-        led_state = BLUE_STATE;//
-        led_action = LED_BLINK;
+        led_color = BLUE;//
+        led_state = LED_BLINK;
  }
  else if(!(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))){
-        led_state = GREEN_STATE;//
-        led_action = LED_ON;
+        led_color = GREEN;//
+        led_state = LED_ON;
 
  }
  else {
-        led_state = LIGHT_STATE;//
-        led_action = LED_OFF;
+        led_color = LIGHT;//
+        led_state = LED_OFF;
 
  }
- if((p_sys->led_color != led_state)||(p_sys->led_action != led_action)){
-    p_sys->led_color = led_state;
-    p_sys->led_action = led_action;
-    led_add_event_queue(p_sys,p_sys->led_color,0,p_sys->led_action,NULL);
+ if((p_sys->led_color != led_color)||(p_sys->led_state != led_state)||(p_sys->led_freq != led_freq)){
+    p_sys->led_color = led_color;
+    p_sys->led_state = led_state;
+    p_sys->led_freq = led_freq;
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"led %d is %d\n",led_color,led_state);
+    led_proc(p_sys->led_color, p_sys->led_state,p_sys->led_freq);
     }
  #endif
 }

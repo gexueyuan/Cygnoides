@@ -70,6 +70,19 @@ static void     Audio_MAL_Stop(void);
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
+void sound_en(uint8_t option)
+{
+
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    GPIO_InitStructure.GPIO_Pin =  I2S_EN_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_PuPd  = option;//GPIO_PuPd_DOWN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+}
+
 
 /**
   * @brief  Initializes the Audio Codec audio interface (I2S)
@@ -209,8 +222,7 @@ static void I2S_GPIO_Init(void)
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-  #endif
+#endif
 }
 
 /**

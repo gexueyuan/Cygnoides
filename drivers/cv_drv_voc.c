@@ -157,7 +157,6 @@ adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
 
 void adpcm_play(char* pBuffer, uint32_t Size)
 {
-    adpcm_t audio_pcm;
 
     uint16_t count_play = 0;
 
@@ -231,6 +230,8 @@ void release_semadpcm(void)
     osal_sem_release(sem_adpcm);
 	
     osal_sem_release(sem_finish);
+
+    GPIO_SetBits(I2S_EN_GPIO, I2S_EN_PIN);
 }
 
 void rt_play_thread_entry(void *parameter)
@@ -241,8 +242,9 @@ void rt_play_thread_entry(void *parameter)
     while(1){
         osal_sem_take(sem_play,OSAL_WAITING_FOREVER);
 		osal_sem_take(sem_finish,OSAL_WAITING_FOREVER);
+        GPIO_ResetBits(I2S_EN_GPIO, I2S_EN_PIN);
         Pt8211_AUDIO_Play((uint16_t *)(p_audio_pcm->addr), p_audio_pcm->size);
-
+        //sound_en(GPIO_PuPd_UP);
     }
 
 
