@@ -20,6 +20,22 @@ typedef enum
 	LED_BREATH,
 }Led_State;
 
+typedef enum 
+{
+    GREEN = 0,
+    BLUE,
+    RED,
+    YELLOW,
+    LIGHT,
+}Led_Color;
+
+typedef struct
+{
+	Led_Color color;
+	Led_State state;
+	int16_t   period;
+}led_param_t;
+
 #define LEDn  3
 #ifdef HARDWARE_MODULE_WIFI_V1
 #define LED_RED     LED0
@@ -32,14 +48,6 @@ typedef enum
 #endif
 
 
-typedef enum 
-{
-    GREEN = 0,
-    BLUE,
-    RED,
-    YELLOW,
-    LIGHT,
-}Led_Color;
 
 
 #ifdef HARDWARE_MODULE_WIFI_V1

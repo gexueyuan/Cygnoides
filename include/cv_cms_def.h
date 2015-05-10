@@ -203,7 +203,7 @@ typedef struct _sys_envar{
     uint32_t  led_priority;
     Led_Color led_color;
     Led_State led_state;
-    uint8_t led_freq;
+    uint8_t led_period;
     #ifdef HARDWARE_MODULE_WIFI_V1
     uint16_t led_blink_duration;
     uint16_t led_blink_period;

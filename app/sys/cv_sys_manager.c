@@ -225,8 +225,9 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
                 	//rt_kprintf("gsnr param is resetting .....\n");
 					//param_set(19,0); 
-                    voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
+                    //voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
                   
+					led_proc(RED, LED_BLINK,MS_TO_TICK(100));
                    // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
                   
              }
@@ -363,7 +364,7 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
     Led_Color led_color;
     Led_State led_state;
-    uint8_t led_freq;
+    uint8_t led_priod = 0;
     if (p_msg->id == SYS_MSG_HI_OUT_UPDATE){
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
@@ -611,12 +612,12 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         led_state = LED_OFF;
 
  }
- if((p_sys->led_color != led_color)||(p_sys->led_state != led_state)||(p_sys->led_freq != led_freq)){
+ if((p_sys->led_color != led_color)||(p_sys->led_state != led_state)||(p_sys->led_period != led_priod)){
     p_sys->led_color = led_color;
     p_sys->led_state = led_state;
-    p_sys->led_freq = led_freq;
+    p_sys->led_period = led_priod;
     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"led %d is %d\n",led_color,led_state);
-    led_proc(p_sys->led_color, p_sys->led_state,p_sys->led_freq);
+    //led_proc(p_sys->led_color, p_sys->led_state,p_sys->led_period);
     }
  #endif
 }

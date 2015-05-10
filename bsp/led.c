@@ -4,11 +4,6 @@
 
 void STM_EVAL_LEDInit(Led_TypeDef Led);
 
-uint32_t L3GD20_TIMEOUT_UserCallback(void)
-{
-  return 0;
-}
-
 GPIO_TypeDef*  GPIO_PORT[LEDn] = {LED0_GPIO_PORT, LED1_GPIO_PORT, LED2_GPIO_PORT,
                                };
 const uint16_t GPIO_PIN[LEDn] = {LED0_PIN, LED1_PIN, LED2_PIN,

@@ -27,7 +27,10 @@
  * declaration of variables and functions                                    *
 *****************************************************************************/
 #define LED_PERIOD           MS_TO_TICK(500)
-osal_timer_t *timer_blink;   
+
+osal_timer_t *timer_blink;
+led_param_t led_param;
+
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -72,21 +75,30 @@ void led_blink(Led_TypeDef led)
 
 void  timer_blink_callback( void *parameter )
 {
-    sys_envar_t *p_sys = (sys_envar_t *)parameter;
+    led_param_t *led_tmp = (led_param_t *)parameter;
+	if(led_tmp->state == LED_BLINK){
+	    if(led_tmp->color == YELLOW){
 
-    if(p_sys->led_color == YELLOW){
+	        STM_EVAL_LEDBlink((Led_TypeDef)LED_GREEN);
+	        STM_EVAL_LEDBlink((Led_TypeDef)LED_RED);
+	    }    
+		else	
+	        led_blink((Led_TypeDef)(led_tmp->color));
 
-        STM_EVAL_LEDBlink((Led_TypeDef)LED_GREEN);
-        STM_EVAL_LEDBlink((Led_TypeDef)LED_RED);
-    }    
-    else
-        led_blink((Led_TypeDef)(p_sys->led_color));
-
-
+	}
+	else if(led_tmp->state == LED_BREATH){
+		
+	}
 }
 #ifdef HARDWARE_MODULE_WIFI_V2
-void led_proc(Led_Color color, Led_State state,uint8_t freq)
+void led_proc(Led_Color color, Led_State state,uint8_t period)
 {
+	led_param.color = color;
+	led_param.state = state;
+	if((period != 0)&&(led_param.period != period)){
+		led_param.period = period;
+		osal_timer_change(timer_blink,period);
+		}
 	switch(color){
 
 		case RED:
@@ -241,13 +253,14 @@ void led_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 }
 #endif
+FINSH_FUNCTION_EXPORT(led_proc, led test);
 
 int rt_led_init(void)
 {
     led_init();   
     
     timer_blink = osal_timer_create("tm-led",\
-        timer_blink_callback,NULL,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
+        timer_blink_callback,&led_param,LED_PERIOD,RT_TIMER_FLAG_PERIODIC);
     osal_assert(timer_blink != NULL);	
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");   
 	return 0;
