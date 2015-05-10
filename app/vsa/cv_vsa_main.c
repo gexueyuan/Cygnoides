@@ -40,6 +40,7 @@ void space_null(void)
 #define PI 3.1415926
 
 #define VSA_MSG_PROC    (VSA_MSG_BASE+1)
+#define CCW_DEBOUNCE     5
 
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 /*****************************************************************************
@@ -362,12 +363,30 @@ void vsa_start(void)
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: --->\n", __FUNCTION__);
 
 }
+
+void send_ccw_warning(uint32_t warning_id)
+{
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+	/* danger is detected */	
+		if (p_vsa->alert_pend & (1<<warning_id)){
+		/* do nothing */	
+		}
+		else{
+		/* inform system to start alert */
+			p_vsa->alert_pend |= (1<<warning_id);
+			sys_add_event_queue(&p_cms_envar->sys, \
+								SYS_MSG_START_ALERT, 0, warning_id, NULL);
+		}
+
+
+
+}
 static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 {
     
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 	vsa_crd_node_t *p_crd = NULL,*pos = NULL;
-    rt_bool_t  ccw_flag;
+	rt_bool_t  ccw_flag;
 
     if(warning_id == 0)
         return warning_id;
@@ -377,9 +396,10 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
     
             if(list_empty(&p_vsa->crd_list))
                 {
-                    p_crd = (vsa_crd_node_t*)rt_malloc(sizeof(vsa_crd_node_t));
+                    p_crd = (vsa_crd_node_t*)osal_malloc(sizeof(vsa_crd_node_t));
                     memcpy(p_crd->pid,p_pnt->vsa_position.pid,RCP_TEMP_ID_LEN);
                     p_crd->ccw_id = warning_id;
+					p_crd->ccw_cnt = 1;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
                                         "pid(%d%d%d%d) come in %lu list\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
@@ -390,10 +410,14 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                         if(memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0)
                             {
                                 if(pos->ccw_id == warning_id){//have this id and vsa warning do nor change
-                                    /*do nothing*/
+                                   p_crd->ccw_cnt++;
+								   if(p_crd->ccw_cnt >= CCW_DEBOUNCE){
+								   		p_crd->ccw_cnt = 0;
+								    	send_ccw_warning(warning_id);
+								   	}
                                 }
-                                else{//list have this id ,but warning changed,one id to another id
-                                    pos->ccw_id = warning_id;    
+                                else{//this didn't happen,list have this id ,but warning changed,one id to another id
+                                    //pos->ccw_id = warning_id;    
                                 }
                                 ccw_flag = RT_FALSE;
                                 break;
@@ -403,24 +427,15 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
               }
             if(ccw_flag )
                 {
-                    p_crd = (vsa_crd_node_t*)rt_malloc(sizeof(vsa_crd_node_t));
+                    p_crd = (vsa_crd_node_t*)osal_malloc(sizeof(vsa_crd_node_t));
                     memcpy(p_crd->pid,p_pnt->vsa_position.pid,RCP_TEMP_ID_LEN);
-                    p_crd->ccw_id = warning_id;
+                    p_crd->ccw_id = warning_id;					
+					p_crd->ccw_cnt = 1;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
                                         "pid(%d%d%d%d) come in %lu\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
                                         p_crd->pid[3],warning_id);
                 }   
-        /* danger is detected */    
-            if (p_vsa->alert_pend & (1<<warning_id)){
-            /* do nothing */    
-            }
-            else{
-            /* inform system to start alert */
-                p_vsa->alert_pend |= (1<<warning_id);
-                sys_add_event_queue(&p_cms_envar->sys, \
-                                    SYS_MSG_START_ALERT, 0, warning_id, NULL);
-            }
 
     }
 return 0;

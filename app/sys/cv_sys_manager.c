@@ -223,11 +223,10 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){   
 
-                	//rt_kprintf("gsnr param is resetting .....\n");
-					//param_set(19,0); 
+                	rt_kprintf("gsnr param is resetting .....\n");
+					param_set(19,0); 
                     //voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
                   
-					led_proc(RED, LED_BLINK,MS_TO_TICK(100));
                    // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
                   
              }

@@ -187,6 +187,8 @@ typedef struct _vsa_crd_node{
     /* ccw_id = 1(VSA_ID_CRD) is cfcw,ccw_id = 2(VSA_ID_CRD_REAR) is crcw.*/
     uint8_t ccw_id;
 
+	uint8_t ccw_cnt;
+
     /* private */
     uint16_t life;
     
