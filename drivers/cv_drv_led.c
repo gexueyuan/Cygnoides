@@ -26,7 +26,7 @@
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-#define LED_PERIOD           MS_TO_TICK(500)
+#define LED_PERIOD           MS_TO_TICK(100)
 
 osal_timer_t *timer_blink;
 led_param_t led_param;
@@ -190,7 +190,7 @@ void led_proc(Led_Color color, Led_State state,uint8_t period)
 
                 }
             else if(state == LED_BLINK)
-                osal_timer_start(timer_blink);
+                    osal_timer_start(timer_blink);
             break;
 		default:
 			break;

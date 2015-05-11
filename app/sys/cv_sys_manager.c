@@ -15,7 +15,7 @@
 #include "cv_osal.h"
 
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
 #define MODULE_NAME "sysc"
 #include "cv_osal_dbg.h"
 OSAL_DEBUG_ENTRY_DEFINE(sysc)
@@ -584,39 +584,40 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
      {
          led_color = RED;//
          led_state = LED_BLINK;
+         led_priod = MS_TO_TICK(150);
  }
  else if((p_sys->led_priority&(1<<HI_OUT_EBD_STATUS))||(p_sys->led_priority&(1<<HI_OUT_VBD_STATUS)))
      {
          led_color = YELLOW;//
          led_state = LED_BLINK;
+         led_priod = MS_TO_TICK(150);
  }
 
  else if(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))
      {
-        led_color = GREEN;//
+        led_color = BLUE;//
         led_state = LED_BLINK;
+        led_priod = MS_TO_TICK(1000);
      }
   else if(p_sys->led_priority&(1<<HI_OUT_BSM_UPDATE))
      {
         led_color = BLUE;//
         led_state = LED_BLINK;
+        led_priod = MS_TO_TICK(150);
  }
- else if(!(p_sys->led_priority&(1<<HI_OUT_GPS_LOST))){
-        led_color = GREEN;//
-        led_state = LED_ON;
+ else if(!(p_sys->led_priority&(1<<HI_OUT_BSM_UPDATE))){
+         led_color = BLUE;//
+         led_state = LED_BLINK;
+         led_priod = MS_TO_TICK(500);
 
  }
- else {
-        led_color = LIGHT;//
-        led_state = LED_OFF;
 
- }
  if((p_sys->led_color != led_color)||(p_sys->led_state != led_state)||(p_sys->led_period != led_priod)){
     p_sys->led_color = led_color;
     p_sys->led_state = led_state;
     p_sys->led_period = led_priod;
-    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"led %d is %d\n",led_color,led_state);
-    //led_proc(p_sys->led_color, p_sys->led_state,p_sys->led_period);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"led %d is %d\n",led_color,led_state);
+    led_proc(p_sys->led_color, p_sys->led_state,p_sys->led_period);
     }
  #endif
 }

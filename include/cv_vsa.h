@@ -147,7 +147,6 @@ typedef struct _vsa_envar{
 
     uint32_t alert_mask;
     uint32_t alert_pend;
-    uint32_t alert_cnt;
 
     vam_stastatus_t local;
     vam_stastatus_t remote;

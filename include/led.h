@@ -89,6 +89,9 @@ void STM_EVAL_LEDBlink(Led_TypeDef Led);
 
 int rt_led_init(void);
 void led_proc(Led_Color color, Led_State state,uint8_t freq);
+void led_on(Led_TypeDef led);
+void led_off(Led_TypeDef led);
+
 
 
 

@@ -136,7 +136,7 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
 }
 
 
-int32_t  preprocess_pos(void)
+int32_t  vsa_preprocess_pos(void)
 {
     vam_stastatus_t local_status;  
     vam_stastatus_t remote_status;
@@ -364,7 +364,29 @@ void vsa_start(void)
 
 }
 
-void send_ccw_warning(uint32_t warning_id)
+/*****************************************************************************
+ @funcname: vsa_search_warning
+ @brief   : this fucntion can detect whether the warning exist
+ @param   : uint32_t warning_id  
+ @return  : 
+*****************************************************************************/
+uint32_t vsa_search_warning(uint32_t warning_id)
+{
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    vsa_crd_node_t *pos = NULL;
+
+    if(list_empty(&p_vsa->crd_list))
+        return 0;
+
+    list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list){
+        if(pos->ccw_id == warning_id)
+            break;
+        else
+            return 0;
+        }
+    return 1;
+}
+void vsa_send_ccw_warning(uint32_t warning_id)
 {
 	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 	/* danger is detected */	
@@ -378,9 +400,20 @@ void send_ccw_warning(uint32_t warning_id)
 								SYS_MSG_START_ALERT, 0, warning_id, NULL);
 		}
 
+}
 
+void vsa_cancel_ccw_warning(uint32_t warning_id)
+{
+	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    if ((p_vsa->alert_pend & (1<<warning_id))&&(!vsa_search_warning(warning_id))){
+    /* inform system to stop alert */
+        p_vsa->alert_pend &= ~(1<<warning_id);
+        sys_add_event_queue(&p_cms_envar->sys, \
+                            SYS_MSG_STOP_ALERT, 0, warning_id, NULL);
+    }
 
 }
+
 static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 {
     
@@ -410,14 +443,15 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                         if(memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0)
                             {
                                 if(pos->ccw_id == warning_id){//have this id and vsa warning do nor change
-                                   p_crd->ccw_cnt++;
 								   if(p_crd->ccw_cnt >= CCW_DEBOUNCE){
-								   		p_crd->ccw_cnt = 0;
-								    	send_ccw_warning(warning_id);
+								    	vsa_send_ccw_warning(warning_id);
 								   	}
+                                   else
+                                        p_crd->ccw_cnt++;
                                 }
                                 else{//this didn't happen,list have this id ,but warning changed,one id to another id
-                                    //pos->ccw_id = warning_id;    
+                                    //pos->ccw_id = warning_id;
+                                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"VSA error!!\n\n");
                                 }
                                 ccw_flag = RT_FALSE;
                                 break;
@@ -433,7 +467,7 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 					p_crd->ccw_cnt = 1;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                        "pid(%d%d%d%d) come in %lu\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                        "pid(%02X %02X %02X %02X) come in %lu\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
                                         p_crd->pid[3],warning_id);
                 }   
 
@@ -444,36 +478,27 @@ return 0;
 
 static int ccw_del_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 {
-    
+
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-	vsa_crd_node_t *pos = NULL;
+    vsa_crd_node_t *pos = NULL;
 
-    if(warning_id == 0)
-        return warning_id;
-    
-    if (p_vsa->alert_mask & (1<<warning_id)){
-
-            
-              list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list)                 
-                    {
-                        if(memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0)
-                            {
-                                list_del(&pos->list);
-                                rt_free((vsa_crd_node_t*)list_entry(&pos->list,vsa_crd_node_t,list));
-                                OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                                    "pid(%d%d%d%d) left \n\n",pos->pid[0],pos->pid[1],pos->pid[2],\
-                                                    pos->pid[3]);
-                            }   
-                            
-                    }   
-                              
-            if ((p_vsa->alert_pend & (1<<warning_id))&&(!(p_vsa->alert_cnt & (1<<warning_id)))){
-            /* inform system to stop alert */
-                p_vsa->alert_pend &= ~(1<<warning_id);
-                sys_add_event_queue(&p_cms_envar->sys, \
-                                    SYS_MSG_STOP_ALERT, 0, warning_id, NULL);
-            }
-    }
+      
+    list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list){
+        
+            if(memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0){
+                if(pos->ccw_cnt)
+                    pos->ccw_cnt--;
+                else{
+                    list_del(&pos->list);
+                    osal_free((vsa_crd_node_t*)list_entry(&pos->list,vsa_crd_node_t,list));
+                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
+                                        "pid(%02X %02X %02X %02X) left \n\n",pos->pid[0],pos->pid[1],pos->pid[2],\
+                                        pos->pid[3]);
+                    vsa_cancel_ccw_warning(pos->ccw_id);
+                    }
+                }   
+                
+        }                                 
     return 0;
 }
 
@@ -569,12 +594,12 @@ static int cfcw_judge(vsa_position_node_t *p_node)
 		
         return 0;
     }
-
+/*
     if (p_node->vsa_position.remote_speed <= p_vsa->working_param.danger_detect_speed_threshold){
 		
         return 0;
     }   
-    
+ */   
     if (p_node->vsa_position.flag_dir < 0){
 		
         return 0;
@@ -956,59 +981,55 @@ void vsa_base_proc(void *parameter)
 		if(!p_vsa->gps_status)
 			continue;
 #endif
-        count_neighour = preprocess_pos();
+        count_neighour = vsa_preprocess_pos();
 
         if(( count_neighour < 0)||(count_neighour > VAM_NEIGHBOUR_MAXNUM)){
             continue;
             }
+    /*if bsm lost,after 15s,neighour list is empty,cancel all alert*/
+        if(count_neighour == 0){
+            if (p_vsa->alert_pend & (1<<VSA_ID_CRD)){
+                p_vsa->alert_pend &= ~(1<<VSA_ID_CRD);
+                sys_add_event_queue(&p_cms_envar->sys, \
+                            SYS_MSG_STOP_ALERT, 0, VSA_ID_CRD, NULL);
+        }
+            if (p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR)){
+                p_vsa->alert_pend &= ~(1<<VSA_ID_CRD_REAR);
+                sys_add_event_queue(&p_cms_envar->sys, \
+                            SYS_MSG_STOP_ALERT, 0, VSA_ID_CRD_REAR, NULL);
+        }
 
-        if(count_neighour == 0)
             continue;
-
-        p_vsa->alert_cnt = 0;
+        }
 
         for(i = 0;i < count_neighour;i++)
             {
             
-            if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])    
-                vsa_id = vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
-            
-            if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC]))    
-                vsa_id = vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
-            
-            if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC]))    
-                vsa_id = vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&i);
-            
-            if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC]))    
-                vsa_id = vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&i);
+                if(vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC])    
+                    vsa_id = vsa_app_handler_tbl[VSA_MSG_CFCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
+                
+                if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC]))    
+                    vsa_id = vsa_app_handler_tbl[VSA_MSG_CRCW_ALARM-VSA_MSG_PROC](p_vsa,&i);
+                
+                if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC]))    
+                    vsa_id = vsa_app_handler_tbl[VSA_MSG_OPPOSITE_ALARM-VSA_MSG_PROC](p_vsa,&i);
+                
+                if((!vsa_id)&&(vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC]))    
+                    vsa_id = vsa_app_handler_tbl[VSA_MSG_SIDE_ALARM-VSA_MSG_PROC](p_vsa,&i);
 
-            //vsa_id_count[vsa_id]++;
-            p_vsa->alert_cnt |= 1<<vsa_id;
-          // #if 0
-          //osal_printf("vsa id is %d\n\n",vsa_id);
-            if(vsa_id){
-                if(p_vsa->position_node[i].vsa_position.vsa_id != vsa_id){
-                    
+                if(vsa_id){
                     ccw_add_list(vsa_id,&p_vsa->position_node[i]);
-									
-					p_vsa->position_node[i].vsa_position.vsa_id = vsa_id;
-                    }
-            }
-            else{ 
-                if(p_vsa->position_node[i].vsa_position.vsa_id){
-                    vsa_id = p_vsa->position_node[i].vsa_position.vsa_id;
-                    ccw_del_list(vsa_id,&p_vsa->position_node[i]);                 
-                    p_vsa->position_node[i].vsa_position.vsa_id = 0;
                 }
+                else{ 
+                    ccw_del_list(vsa_id,&p_vsa->position_node[i]);                 
+                    }
 
             }
-           //#endif
             
 
         }
         
     }
-}
 
 void vsa_thread_entry(void *parameter)
 {

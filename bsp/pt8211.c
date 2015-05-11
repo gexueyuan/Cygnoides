@@ -70,17 +70,18 @@ static void     Audio_MAL_Stop(void);
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
+/*****************************************************************************
+ @funcname: sound_en
+ @brief   : enble or disable voc output
+ @param   : uint8_t option  ,0 is disable,1 is enable
+ @return  : 
+*****************************************************************************/
 void sound_en(uint8_t option)
 {
-
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin =  I2S_EN_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_PuPd  = option;//GPIO_PuPd_DOWN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-
+    if(option)
+        GPIO_ResetBits(I2S_EN_GPIO, I2S_EN_PIN);
+    else
+        GPIO_SetBits(I2S_EN_GPIO, I2S_EN_PIN);
 }
 
 
