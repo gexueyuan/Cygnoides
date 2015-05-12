@@ -42,7 +42,7 @@
 #define RT_MEMS_THREAD_PRIORITY		22
 #define RT_HI_THREAD_PRIORITY		25
 #define RT_ADPCM_THREAD_PRIORITY	26
-#define RT_PLAY_THREAD_PRIORITY	    25
+#define RT_PLAY_THREAD_PRIORITY	    24
 #define RT_KEY_THREAD_PRIORITY      18
 
 #define RT_WNETTX_THREAD_PRIORITY   20
@@ -220,7 +220,6 @@ typedef struct _sys_envar{
 
     osal_queue_t *queue_hi_led;
 
-    osal_timer_t *timer_hi;
     osal_timer_t *timer_voc;
     osal_timer_t *timer_cpuusage;
 

@@ -225,7 +225,7 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
                 	rt_kprintf("gsnr param is resetting .....\n");
 					param_set(19,0); 
-                    //voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);
+                    //voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
                   
                    // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
                   
@@ -327,16 +327,6 @@ void sysc_thread_entry(void *parameter)
         }
 	}
 }
-
-
-void timer_human_interface_callback(void* parameter)
-{
-    sys_envar_t *p_sys = (sys_envar_t *)parameter;
-    
-
-    p_sys->voc_flag = 0;
-}
-
 void timer_out_vsa_process(void* parameter)
 {
 	int  timevalue;
@@ -629,8 +619,6 @@ void rt_hi_thread_entry(void *parameter)
     sys_envar_t *p_sys = (sys_envar_t *)parameter;
 	//static uint8_t ledss = 0xff;
 
-    rt_timer_start(p_sys->timer_hi);
-
     while(1){
         err = osal_queue_recv(p_sys->queue_sys_hi, &p_msg, OSAL_WAITING_FOREVER);
         if (err == OSAL_STATUS_SUCCESS){
@@ -706,14 +694,9 @@ void sys_init(void)
     p_sys->queue_sys_hi = osal_queue_create("q-hi", SYS_QUEUE_SIZE);
     osal_assert(p_sys->queue_sys_mng != NULL);
 
-
-    p_sys->timer_hi = rt_timer_create("tm-hi",timer_human_interface_callback,p_sys,\
-        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_ONE_SHOT); 					
-    RT_ASSERT(p_sys->timer_hi != RT_NULL);
-
     p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_PERIODIC); 					
-    RT_ASSERT(p_sys->timer_hi != RT_NULL);
+        HUMAN_ITERFACE_GPS_VOC,RT_TIMER_FLAG_PERIODIC); 					
+    RT_ASSERT(p_sys->timer_voc != RT_NULL);
 
 
     p_sys->task_sys_hi = osal_task_create("t-hi",
