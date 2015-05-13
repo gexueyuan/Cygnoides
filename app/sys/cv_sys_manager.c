@@ -33,7 +33,7 @@ void null_space(void)
 }
 
 
-#define HUMAN_ITERFACE_DEFAULT         SECOND_TO_TICK(1)
+#define HUMAN_ITERFACE_DEFAULT         MS_TO_TICK(500)
 
 #define HUMAN_ITERFACE_VOC         	   SECOND_TO_TICK(3)
 
@@ -330,7 +330,7 @@ void sysc_thread_entry(void *parameter)
 void timer_out_vsa_process(void* parameter)
 {
 	int  timevalue;
-	timevalue = HUMAN_ITERFACE_VOC;
+	timevalue = HUMAN_ITERFACE_DEFAULT;
 	
 #if 0
 	if(p_vsa->alert_pend & (1<<VSA_ID_EBD))	
@@ -344,7 +344,7 @@ void timer_out_vsa_process(void* parameter)
 	else if(p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR))	
 		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);// 
 #endif
-    voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen);
+    voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/6);
 	rt_timer_control(p_cms_envar->sys.timer_voc,RT_TIMER_CTRL_SET_TIME,(void*)&timevalue);
 }
 
@@ -695,7 +695,7 @@ void sys_init(void)
     osal_assert(p_sys->queue_sys_mng != NULL);
 
     p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        HUMAN_ITERFACE_GPS_VOC,RT_TIMER_FLAG_PERIODIC); 					
+        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_PERIODIC); 					
     RT_ASSERT(p_sys->timer_voc != RT_NULL);
 
 

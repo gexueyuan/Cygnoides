@@ -53,6 +53,10 @@ char osal_dbg_log_buffer[OSAL_DBG_LOG_LINES][OSAL_DBG_LOG_WIDTH] __attribute__((
 #define LOG_DEVICE_UART
 #undef  LOG_DEVICE_SDCARD
 
+/* BEGIN: Added by wanglei, 2015/5/12 */
+int g_dbg_print_type = 0;
+/* END:   Added by wanglei, 2015/5/12 */
+
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -203,12 +207,27 @@ void debug(char *module, int level)
         osal_printf("cannot find module \"%s\" !\n", module);
 	}
 }
-FINSH_FUNCTION_EXPORT(debug, 0-off 1-err 2-warn 3-info 4-trace 5-loud)
+FINSH_FUNCTION_EXPORT(debug, 0-off 1-err 2-warn 3-info 4-trace 5-loud);
 
 void dump(uint32_t addr, uint32_t len)
 {
     osal_dbg_dump_data((uint8_t *)addr, len);
 }
-FINSH_FUNCTION_EXPORT(dump, printf the raw data)
+FINSH_FUNCTION_EXPORT(dump, printf the raw data);
+
+
+/* BEGIN: Added by wanglei, 2015/5/12 */
+void dbg_print(int type)
+{
+    if (type < 0 || type > 3){
+        return;
+    }
+    else{
+        g_dbg_print_type = type;
+    }
+}
+FINSH_FUNCTION_EXPORT(dbg_print, 0-disable 1-print wnet rxtx 2-print peer status 3-both);
+/* END:   Added by wanglei, 2015/5/12 */
+
 #endif /* OS_RT_THREAD */
 #endif /* OSAL_GLOBAL_DEBUG */

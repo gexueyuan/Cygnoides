@@ -44,7 +44,7 @@ uint8_t	SHARP_SPEEDUP_CNT		=	6;
 
 uint8_t	AHEAD_CNT				=	20;  //obd: 30
 uint8_t	STATIC_GSENSOR_CNT		=	20;  //obd: 30
-float	AHEAD_SPEED_THRESOD		=	10.0;
+float	AHEAD_SPEED_THRESOD		=	15.0;
 float   VEHICLE_ACCLE_VALE      =   0.1 ;
 float   VEHICLE_ANGLE	        =   5.0 ;
 
@@ -253,13 +253,12 @@ int32_t GetStaticVal(GSENSOR_INFO gsensor_dat)
 int32_t RecDirection(GSENSOR_INFO gsensor_dat)
 {
 	GSENSOR_INFO temp_acce_v;	 //合成向量在垂直方向上的分量
-    G_Action.is_locate = __TRUE;
+    //G_Action.is_locate = __TRUE;
  
 	if((G_Action.speed > AHEAD_SPEED_THRESOD) && (rd_cnt<AHEAD_CNT) && 
 		(G_Action.vehicle_accel_value > VEHICLE_ACCLE_VALE) && 
 		(G_Action.diff_angle < VEHICLE_ANGLE) &&
-		(G_Action.is_locate == __TRUE) &&
-		p_vam_envar->working_param.bsm_hops != 0)
+		(G_Action.is_locate == __TRUE))
 	{
 		Acce_Sum.x += gsensor_dat.x;
 		Acce_Sum.y += gsensor_dat.y;
@@ -269,15 +268,8 @@ int32_t RecDirection(GSENSOR_INFO gsensor_dat)
 		printAcc(GSNR_DEBUG, "RecDirection", Acce_Sum.x,Acce_Sum.y,Acce_Sum.z);
 		rd_cnt++;
 	}
-	else if ((rd_cnt == AHEAD_CNT) || (p_vam_envar->working_param.bsm_hops == 0))
+	else if (rd_cnt == AHEAD_CNT)
 	{
-        if(p_vam_envar->working_param.bsm_hops == 0)
-        {
-            Acce_Sum.x = -60; //电源口方向为+x, 此处设为-， 当成车尾
-            Acce_Sum.y = 1;
-            Acce_Sum.z = 300;
-        }
-
 		Acce_Sum.x /= AHEAD_CNT;
 		Acce_Sum.y /= AHEAD_CNT;
 		Acce_Sum.z /= AHEAD_CNT;
@@ -344,7 +336,7 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
 
 	if(acce_k > SHARP_RIGHT_THRESOLD)	
 	{
-		printAcc(GSNR_NOTICE, "右转xyz", acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_WARNING, "右转xyz", acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_RIGHT_CNT)		  //右转
 		{
@@ -354,7 +346,7 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
 	}
 	else if(acce_k < SHARP_LEFT_THRESOLD)
 	{
-		printAcc(GSNR_NOTICE, "左转xyz",acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_WARNING, "左转xyz",acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_LEFT_CNT)		  //左转
 		{	
@@ -393,8 +385,8 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
     {
         if(0 == key_press)
         {
-    		printAcc(GSNR_NOTICE, "翻转xyz",acce_ahead, acce_k, acce_k_x);
-			sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,1,NULL);
+            printAcc(GSNR_NOTICE, "翻转xyz",acce_ahead, acce_k, acce_k_x);
+            sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,2,NULL);		
             key_press = 1;
         }
     }
@@ -402,8 +394,8 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
     {
         if(key_press == 1)
         {
-    		printAcc(GSNR_NOTICE, "翻转xyz",acce_ahead, acce_k, acce_k_x);
-			sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,1,NULL);
+            printAcc(GSNR_NOTICE, "翻转xyz",acce_ahead, acce_k, acce_k_x);
+            sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,2,NULL);			
             key_press = 0;
         }
     }

@@ -447,7 +447,7 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                 {
                     p_crd = (vsa_crd_node_t*)osal_malloc(sizeof(vsa_crd_node_t));
                     memcpy(p_crd->pid,p_pnt->vsa_position.pid,RCP_TEMP_ID_LEN);
-                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"list empty,create it \n");
+                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"list empty,create it \n");
                     p_crd->ccw_id = warning_id;
 					p_crd->ccw_cnt = 1;
                     list_add(&p_crd->list,&p_vsa->crd_list);
@@ -465,7 +465,7 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 								   	}
                                    else
                                         pos->ccw_cnt++;
-                                   OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"ccw_cnt++ is %d\n",pos->ccw_cnt);
+                                   OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"ccw_cnt++ is %d\n",pos->ccw_cnt);
                                 }
                                 else{//this didn't happen,list have this id ,but warning changed,one id to another id
                                     //pos->ccw_id = warning_id;
@@ -482,7 +482,7 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                     p_crd = (vsa_crd_node_t*)osal_malloc(sizeof(vsa_crd_node_t));
                     memcpy(p_crd->pid,p_pnt->vsa_position.pid,RCP_TEMP_ID_LEN);
                     p_crd->ccw_id = warning_id;	                    
-                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"list exist,add it \n");
+                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"list exist,add it \n");
 					p_crd->ccw_cnt = 1;
                     list_add(&p_crd->list,&p_vsa->crd_list);
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
@@ -506,18 +506,18 @@ static int ccw_del_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
         
             if(memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0){
                 if(pos->ccw_cnt){
-                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"cnt--\n");
+                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"cnt--\n");
                     pos->ccw_cnt--;
                     }
                 else{
                     if(list_empty(&p_vsa->crd_list)){
 
-                        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"list empty error!\n");
+                        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"list empty error!\n");
                         vsa_cancel_ccw_warning(pos->ccw_id);
                     }
-                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"list del beg!\n");
+                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"list del beg!\n");
                     list_del(&pos->list);                    
-                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"list del end!\n");
+                    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"list del end!\n");
                     osal_free((vsa_crd_node_t*)list_entry(&pos->list,vsa_crd_node_t,list));                   
                     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
                                         "pid(%02X %02X %02X %02X) left \n\n",pos->pid[0],pos->pid[1],pos->pid[2],\

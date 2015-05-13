@@ -82,6 +82,8 @@ typedef struct _debug_entry{
 	void (*handler)(int);
 } debug_entry_t;
 
+extern int g_dbg_print_type;
+
 void osal_dbg_dump_data(uint8_t *p, uint32_t len);
 int osal_dbg_set_level(char *module, int level);
 void osal_log(const char *fmt, ...);
