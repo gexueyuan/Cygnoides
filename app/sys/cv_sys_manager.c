@@ -165,8 +165,9 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){   
 
-                	rt_kprintf("gsnr param is resetting .....\n");
-					param_set(19,0); 
+                	//rt_kprintf("gsnr param is resetting .....\n");
+					//param_set(19,0); 
+					sound_alert_start(HI_OUT_CRD_ALERT);
                    // voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
                   
                    // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
@@ -655,6 +656,7 @@ void sys_init(void)
     p_sys->timer_voc = osal_timer_create("tm-voc",sound_alert_process, p_sys,\
         HUMAN_ITERFACE_VOC,TRUE); 					
     osal_assert( p_sys->timer_voc != NULL);
+    osal_timer_start(p_sys->timer_voc);
 #endif
 
     p_sys->task_sys_hi = osal_task_create("t-hi",

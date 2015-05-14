@@ -11,7 +11,7 @@
 ******************************************************************************/
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
 #define MODULE_NAME "voc"
 #include "cv_osal_dbg.h"
 
@@ -147,16 +147,28 @@ void voc_play_complete(void)
     VOC_STATUS_CLR(VOC_STATUS_DEV_BUSY);
     osal_sem_release(sem_buffer_voc);
     osal_sem_release(sem_audio_dev);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"play end\n");
     voc_session.played_length += BUFFER_SIZE;
-    if ((voc_session.played_length >= voc_session.src_length)||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
-        osal_sem_release(sem_play_complete);
+
+    if(voc_session.encode_type == VOC_ENCODE_PCM){
+        if ((voc_session.played_length >= voc_session.src_length)\
+            ||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
+            osal_sem_release(sem_play_complete);
+            }
+    }
+    else if(voc_session.encode_type == VOC_ENCODE_ADPCM){
+            if ((voc_session.played_length >= 8*voc_session.src_length)\
+                ||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
+                osal_sem_release(sem_play_complete);
+            }
+
     }
 }
 
 static int wait_for(osal_sem_t *sem)
 {
     osal_status_t err;
-    #define VOC_WAIT_TIMEOUT 5
+    #define VOC_WAIT_TIMEOUT OSAL_WAITING_FOREVER//5
 
     do {
         err = osal_sem_take(sem,VOC_WAIT_TIMEOUT);
@@ -193,7 +205,8 @@ void adpcm_process(uint8_t *pBuffer, uint32_t Size)
 
         Size -= decode_size;
         pBuffer += decode_size;
-        cursor_decode++;       
+        cursor_decode++;
+        //OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"decode end!!\n");
     }
 }
 
@@ -234,12 +247,14 @@ void adpcm_play(uint8_t *pBuffer, uint32_t Size)
         if (wait_for(sem_adpcm_data) < 0) {
             return;
         }    
-
+        
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"adpcm sem_audio_dev is %d\n",sem_audio_dev->value);
         /* Wait until the audio device is idle. */
         if (wait_for(sem_audio_dev) < 0) {
             return;
-        }    
-
+        }
+        //osal_delay(20);
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"play!!\n");
         audio_output((uint16_t *)buffer_voc[cursor_play%BUFFER_COUNT], BUFFER_SIZE);
         cursor_play++;
     }
@@ -296,10 +311,11 @@ void rt_play_thread_entry(void *parameter)
             osal_sem_take(sem_play_complete,OSAL_WAITING_FOREVER);
 
             /* Recover to initial value */
+            
             osal_sem_set(sem_adpcm_data, 0);
             osal_sem_set(sem_buffer_voc, BUFFER_COUNT);
             osal_sem_set(sem_audio_dev, 1);            
-
+            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"finish sem_audio_dev is %d\n",sem_audio_dev->value);
             VOC_STATUS_CLR(VOC_STATUS_MASK);
 
             if (session->complete_callback) {
