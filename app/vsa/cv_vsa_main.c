@@ -73,7 +73,7 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
     lat3 = lat1;
     lng3 = lng2;
 
-    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
+    distance_2_3 = 1000.0*getDistanceVer2(lat2, lng2, lat3, lng3);
     angle = acos(distance_2_3/distance_1_2)*180/PI;
 
     /* calculate the relative angle against north, clockwise  */
@@ -103,7 +103,7 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
         delta = angle - local->dir;
     }
     else{
-        delta = local->dir - angle;
+        delta = 360.0f-(local->dir - angle);
     }
 
     if((delta >360.0f)||(delta <0.0f)) return POSITION_ERROR;
