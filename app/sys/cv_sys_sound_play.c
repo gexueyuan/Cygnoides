@@ -40,7 +40,7 @@ static uint32_t voice_wr_idx;
 static uint32_t voice_rd_idx;
 static uint32_t phase = 0;
 
- void sound_play_complete(void)
+static void sound_play_complete(void)
 {
     sys_envar_t *p_sys = &p_cms_envar->sys;
 
@@ -150,7 +150,8 @@ void sound_alert_process(void* parameter)
 void play_sound(void)
 {
 
-    voice_play_once(voice[6], sound_play_complete);
+    voice_play_once(6, sound_play_complete);
+    osal_printf("callback address is %p\n",sound_play_complete);
 }
 FINSH_FUNCTION_EXPORT(play_sound, play_sound);
 

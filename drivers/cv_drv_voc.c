@@ -319,7 +319,8 @@ void rt_play_thread_entry(void *parameter)
             VOC_STATUS_CLR(VOC_STATUS_MASK);
 
             if (session->complete_callback) {
-                (*session->complete_callback)();
+                osal_printf("callback address is %p\n",session->complete_callback);
+                (*(voc_handler *)(0x08026e22))();
             }
         }
         else{
