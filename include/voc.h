@@ -9,7 +9,7 @@ typedef struct _voc_session {
     uint8_t *src_data;
     uint32_t src_length;
     uint32_t played_length;
-    voc_handler *complete_callback;
+    voc_handler complete_callback;
 } voc_session_t;
 
 
@@ -40,7 +40,7 @@ typedef struct _voc_session {
 #define VOC_STATUS_TST(s) (voc_status&(s))
 
 
-int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler *complete);
+int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler complete);
 void voc_stop(uint32_t b_wait);
 
 

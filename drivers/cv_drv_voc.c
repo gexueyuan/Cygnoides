@@ -320,7 +320,7 @@ void rt_play_thread_entry(void *parameter)
 
             if (session->complete_callback) {
                 osal_printf("callback address is %p\n",session->complete_callback);
-                (*(voc_handler *)(0x08026e22))();
+                (*session->complete_callback)();
             }
         }
         else{
@@ -366,7 +366,7 @@ void voc_init(void)
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
 }
 
-int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler *complete)
+int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler complete)
 {
     int err = OSAL_STATUS_NOMEM;
     voc_session_t *session = NULL;
@@ -378,7 +378,7 @@ int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler *
         session->src_data = data;
         session->src_length = length&(~3); /* Be sure the length align to 4. */;
         session->played_length = 0;
-        session->complete_callback = NULL;
+        session->complete_callback = complete;//NULL;
 
         err = osal_queue_send(queue_play, session);
     }

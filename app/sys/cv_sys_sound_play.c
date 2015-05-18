@@ -43,17 +43,26 @@ static uint32_t phase = 0;
 static void sound_play_complete(void)
 {
     sys_envar_t *p_sys = &p_cms_envar->sys;
-
+    osal_printf("sound_play_complete\n");
     if (phase != 0) {
         /* Alert has been stopped. */
         osal_timer_change(p_sys->timer_voc, SOUND_PLAY_INTERVAL);
         osal_timer_start(p_sys->timer_voc);
     }
 }
+void test(void)
+{
+   (*((voc_handler *)0x08026e21))();
+    sound_play_complete();
+    osal_printf("test callback!!\n\n");
+    osal_printf("callback address is %p\n",sound_play_complete);
+    
 
+}
+FINSH_FUNCTION_EXPORT(test, test);
 static void notice_di_play_once(void *complete)
 {
-    voc_play(VOC_ENCODE_PCM, (uint8_t *)di_8K_16bits_pcm, di_8K_16bits_pcmLen, (voc_handler *)complete);
+    voc_play(VOC_ENCODE_PCM, (uint8_t *)di_8K_16bits_pcm, di_8K_16bits_pcmLen, (voc_handler)complete);
 }
 
 static void voice_play_once(uint32_t alert_type, void *complete)
@@ -75,7 +84,7 @@ static void voice_play_once(uint32_t alert_type, void *complete)
         break;
     }
 
-    voc_play(VOC_ENCODE_ADPCM, data, length, (voc_handler *)complete);
+    voc_play(VOC_ENCODE_ADPCM, data, length, (voc_handler)complete);
 }
 
 void sound_notice_di(void)
