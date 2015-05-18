@@ -21,17 +21,24 @@
 #include "string.h"
 #include "assert.h"
 #include "cv_cms_def.h"
+#include "voc.h"
 
 
-#define BUFFER_COUNT  2
-#define BUFFER_SIZE   4096
+short buffer_voc[BUFFER_COUNT][BUFFER_SIZE/2]; 
 
-short buffer_voc[BUFFER_COUNT][BUFFER_SIZE]; 
+static uint8_t cursor_decode;
+static uint8_t cursor_play;
+osal_sem_t   *sem_adpcm_start;
+osal_sem_t   *sem_adpcm_data;
+osal_sem_t   *sem_buffer_voc;
+osal_sem_t   *sem_audio_dev;
+osal_sem_t   *sem_play_complete;
+osal_queue_t *queue_play;
 
-static uint8_t cursor = 0;
-adpcm_t play_pcm_data; 
-osal_sem_t   *sem_adpcm;
-osal_sem_t   *sem_play,*sem_finish;
+
+
+static voc_session_t voc_session;
+static uint32_t voc_status;
 
 
 static ADPCMState adpcm_state;
@@ -134,157 +141,269 @@ int adpcm_de(char *code, short *pcm, int count)
     }
     return 0;
 }
-adpcm_t adpcm_de_process(char *src_c,int sourceFileLen,int channel)
+
+void voc_play_complete(void)
 {
-    
-    adpcm_t audio_pcm;
+    VOC_STATUS_CLR(VOC_STATUS_DEV_BUSY);
+    osal_sem_release(sem_buffer_voc);
+    osal_sem_release(sem_audio_dev);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"play end\n");
+    voc_session.played_length += BUFFER_SIZE;
 
-    uint32_t tick_adpcm_bg,tick_adpcm_fh;
-    
+    if(voc_session.encode_type == VOC_ENCODE_PCM){
+        if ((voc_session.played_length >= voc_session.src_length)\
+            ||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
+            osal_sem_release(sem_play_complete);
+            }
+    }
+    else if(voc_session.encode_type == VOC_ENCODE_ADPCM){
+            if ((voc_session.played_length >= 8*voc_session.src_length)\
+                ||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
+                osal_sem_release(sem_play_complete);
+            }
 
-    tick_adpcm_bg = osal_get_systemtime();
-    adpcm_de(src_c,buffer_voc[channel],sourceFileLen);
-    tick_adpcm_fh = osal_get_systemtime();
-
-
-	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"time of decode is %lu\n\n",tick_adpcm_fh - tick_adpcm_bg);
-    audio_pcm.addr = (uint32_t)buffer_voc[channel];
-    audio_pcm.size = 8*sourceFileLen;
-
-
-    return audio_pcm;
+    }
 }
 
-void adpcm_play(char* pBuffer, uint32_t Size)
+static int wait_for(osal_sem_t *sem)
 {
+    osal_status_t err;
+    #define VOC_WAIT_TIMEOUT OSAL_WAITING_FOREVER//5
 
-    uint16_t count_play = 0;
-
-	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"total size of voc is %d\n\n",Size);
-    while(Size > 0){ 
-        
-        osal_sem_take(sem_adpcm,OSAL_WAITING_FOREVER);
-        
-        count_play++;
-        
-        if(Size > BUFFER_SIZE/4){
-            
-            play_pcm_data = adpcm_de_process(pBuffer,BUFFER_SIZE/4,cursor%BUFFER_COUNT);
-            Size -= BUFFER_SIZE/4;
-            pBuffer += BUFFER_SIZE/4;
-        }
-        else{
-            play_pcm_data = adpcm_de_process(pBuffer,Size,cursor%BUFFER_COUNT);
-            Size = 0;
-            pBuffer += Size;
+    do {
+        err = osal_sem_take(sem,VOC_WAIT_TIMEOUT);
+        if (VOC_STATUS_TST(VOC_STATUS_STOP)) {
+        	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"Voc play is aborted.\n\n");
+            return -1;
         }
 
-	   OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,\
-	   		"this %d times decode and play,size = %lu Byte\nchannel is %d\naddress is %x\n\n",\
-	   		count_play,play_pcm_data.size,cursor%BUFFER_COUNT,play_pcm_data.addr);
-	   cursor++;       
-       osal_sem_release(sem_play);
-   }
+    } while(err == OSAL_STATUS_TIMEOUT);
+
+    return 0;
 }
 
+static void audio_output(uint16_t* pBuffer, uint32_t Size)
+{
+    VOC_STATUS_SET(VOC_STATUS_DEV_BUSY);
+    Pt8211_AUDIO_Play(pBuffer, Size);
+}
+
+void adpcm_process(uint8_t *pBuffer, uint32_t Size)
+{
+    uint32_t decode_size;
+
+    while(Size > 0){
+        /* Try to acquire the free decode buffer */
+        if (wait_for(sem_buffer_voc) < 0) {
+            return;
+        }    
+
+        decode_size = (Size > BUFFER_SIZE/8)? (BUFFER_SIZE/8):Size;
+        memset(buffer_voc[cursor_decode%BUFFER_COUNT], 0, BUFFER_SIZE);
+        adpcm_de((char *)pBuffer,buffer_voc[cursor_decode%BUFFER_COUNT],decode_size);
+        osal_sem_release(sem_adpcm_data);
+
+        Size -= decode_size;
+        pBuffer += decode_size;
+        cursor_decode++;
+        //OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"decode end!!\n");
+    }
+}
 
 void rt_adpcm_thread_entry(void *parameter)
 {
     osal_status_t err;
-    adpcm_t *p_audio_adpcm;
-    vsa_envar_t *p_vsa = (vsa_envar_t *)parameter;
+    
     while(1){
-        err = osal_queue_recv(p_vsa->queue_voc,&p_audio_adpcm,RT_WAITING_FOREVER);
-        if( err == OSAL_STATUS_SUCCESS){
-            adpcm_play((char*)p_audio_adpcm->addr,p_audio_adpcm->size);
-            osal_free(p_audio_adpcm);
+        err = osal_sem_take(sem_adpcm_start, OSAL_WAITING_FOREVER);
+        if (err != OSAL_STATUS_SUCCESS) {
+            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"sem_adpcm return error(%d).\n\n", err);
+            break;
         }
-        else{
-            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);         
-            osal_free(p_audio_adpcm);
-        }
+
+        adpcm_process(voc_session.src_data, voc_session.src_length);
+    }
+}
+
+void adpcm_play(uint8_t *pBuffer, uint32_t Size)
+{
+    int32_t loop;
+
+	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"total size of adpcm voice is %d\n\n",Size);
+
+    cursor_decode = 0;
+    cursor_play = 0;
+
+    loop = Size*8/BUFFER_SIZE;
+    if ((Size*8) % BUFFER_SIZE) {
+        loop++;
     }
 
+    /* Start adpcm decode process */
+    osal_sem_release(sem_adpcm_start);
 
-
+    while(loop-- > 0){
+        /* Try to acquire the next data has been decoded */
+        if (wait_for(sem_adpcm_data) < 0) {
+            return;
+        }    
+        
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"adpcm sem_audio_dev is %d\n",sem_audio_dev->value);
+        /* Wait until the audio device is idle. */
+        if (wait_for(sem_audio_dev) < 0) {
+            return;
+        }
+        //osal_delay(20);
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"play!!\n");
+        audio_output((uint16_t *)buffer_voc[cursor_play%BUFFER_COUNT], BUFFER_SIZE);
+        cursor_play++;
+    }
 }
 
-
-void adpcm_init(void)
+void pcm_play(uint8_t *pBuffer, uint32_t Size)
 {
-    osal_task_t  *adpcm_thread;
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-    
+    uint32_t play_size;
 
-    adpcm_thread = osal_task_create("t-adpcm",
-                           rt_adpcm_thread_entry, p_vsa,
-                           RT_VSA_THREAD_STACK_SIZE, RT_ADPCM_THREAD_PRIORITY);
+	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"total size of pcm voice is %d\n\n",Size);
 
-    osal_assert(adpcm_thread != NULL);
+    while(Size > 0){
+        /* Wait until the audio device is idle. */
+        if (wait_for(sem_audio_dev) < 0) {
+            return;
+        }    
 
-
+        play_size = (Size > BUFFER_SIZE)? (BUFFER_SIZE):Size;
+        audio_output((uint16_t *)pBuffer, play_size);
+        pBuffer += play_size;
+        Size -= play_size;
+    }
 }
-void release_semadpcm(void)
-{
 
-    osal_sem_release(sem_adpcm);
-	
-    osal_sem_release(sem_finish);
-
-    sound_en(0);//disable
-}
 
 void rt_play_thread_entry(void *parameter)
 {
-	adpcm_t *p_audio_pcm;
-    p_audio_pcm = &play_pcm_data;
-    
+    osal_status_t err;
+    uint8_t *p_msg;
+    voc_session_t *session = &voc_session;
+
     while(1){
-        osal_sem_take(sem_play,OSAL_WAITING_FOREVER);
-		osal_sem_take(sem_finish,OSAL_WAITING_FOREVER);
-        sound_en(1);//enable
-        Pt8211_AUDIO_Play((uint16_t *)(p_audio_pcm->addr), p_audio_pcm->size);
-        //sound_en(GPIO_PuPd_UP);
+        err = osal_queue_recv(queue_play,&p_msg,RT_WAITING_FOREVER);
+        if( err == OSAL_STATUS_SUCCESS){
+
+            VOC_STATUS_SET(VOC_STATUS_PLAYING); /* Here we should set it again. */
+
+            memcpy(session, p_msg, sizeof(voc_session_t));
+            osal_free(p_msg);
+
+            //Pt8211_AUDIO_DeInit();
+            Pt8211_AUDIO_Init(session->sample_rate);
+
+            switch (session->encode_type) {
+            case VOC_ENCODE_ADPCM:
+                adpcm_play(session->src_data, session->src_length);
+                break;
+
+            default:
+                pcm_play(session->src_data, session->src_length);
+                break;
+            }
+
+            osal_sem_take(sem_play_complete,OSAL_WAITING_FOREVER);
+
+            /* Recover to initial value */
+            
+            osal_sem_set(sem_adpcm_data, 0);
+            osal_sem_set(sem_buffer_voc, BUFFER_COUNT);
+            osal_sem_set(sem_audio_dev, 1);            
+            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"finish sem_audio_dev is %d\n",sem_audio_dev->value);
+            VOC_STATUS_CLR(VOC_STATUS_MASK);
+
+            if (session->complete_callback) {
+                osal_printf("callback address is %p\n",session->complete_callback);
+                (*session->complete_callback)();
+            }
+        }
+        else{
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);         
+        }
     }
-
-
 }
-void voc_play_init(void)
-{
 
-
-    osal_task_t  *play_thread;
-    
-    Pt8211_AUDIO_Init(I2S_AudioFreq_8k);
-    
-    play_thread = osal_task_create("t-play",
-                           rt_play_thread_entry, NULL,
-                           RT_VSA_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
-
-    osal_assert(play_thread != NULL);
-
-
-}
 void voc_init(void)
 {
+    osal_task_t  *thread;
+
+    voc_status = 0;
+
+	sem_adpcm_data = osal_sem_create("sem-addata",0);
+	osal_assert(sem_adpcm_data != NULL);
+
+	sem_buffer_voc = osal_sem_create("sem-bufvoc",BUFFER_COUNT);
+	osal_assert(sem_buffer_voc != NULL);
+
+	sem_audio_dev = osal_sem_create("sem-audev",1);
+	osal_assert(sem_audio_dev != NULL);
+
+	sem_adpcm_start = osal_sem_create("sem-adst",0);
+	osal_assert(sem_adpcm_start != NULL);
+
+	sem_play_complete = osal_sem_create("sem-plcom", 0);
+	osal_assert(sem_play_complete != NULL);
+
+    queue_play = osal_queue_create("q-play",  VOC_QUEUE_SIZE);
+    osal_assert(queue_play != NULL);
+
+    thread = osal_task_create("t-play",
+                           rt_play_thread_entry, NULL,
+                           RT_VSA_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
+    osal_assert(thread != NULL);
+
+    thread = osal_task_create("t-adpcm",
+                           rt_adpcm_thread_entry, NULL,
+                           RT_VSA_THREAD_STACK_SIZE, RT_ADPCM_THREAD_PRIORITY);
+    osal_assert(thread != NULL);
     
-    adpcm_init();
-
-    voc_play_init();
-
-	sem_adpcm = osal_sem_create("sem-adpcm",BUFFER_COUNT);
-	osal_assert(sem_adpcm != NULL);
-
-	sem_play = osal_sem_create("sem-play",0);
-	osal_assert(sem_play != NULL);
-
-	sem_finish = osal_sem_create("sem-finish",1);
-	osal_assert(sem_finish != NULL);
-
-	
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
-
-
 }
 
+int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler complete)
+{
+    int err = OSAL_STATUS_NOMEM;
+    voc_session_t *session = NULL;
+
+    session = osal_malloc(sizeof(voc_session_t));
+    if (session) {
+        session->sample_rate = 8000;
+        session->encode_type = encode_type;
+        session->src_data = data;
+        session->src_length = length&(~3); /* Be sure the length align to 4. */;
+        session->played_length = 0;
+        session->complete_callback = complete;//NULL;
+
+        err = osal_queue_send(queue_play, session);
+    }
+
+    if (err != OSAL_STATUS_SUCCESS) {
+        if (session) {
+            osal_free(session);
+        }
+        return err;
+    }
+
+    VOC_STATUS_SET(VOC_STATUS_PLAYING);
+
+    return OSAL_STATUS_SUCCESS;
+}
+
+void voc_stop(uint32_t b_wait)
+{
+    if (VOC_STATUS_TST(VOC_STATUS_PLAYING)) {
+        VOC_STATUS_SET(VOC_STATUS_STOP);
+        if (b_wait) {
+            while(VOC_STATUS_TST(VOC_STATUS_PLAYING)) {
+                osal_delay(10);
+            }
+        }
+    }
+}
 

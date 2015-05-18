@@ -40,7 +40,7 @@ typedef struct
 
 REC_T g_tRec;
 
-extern void release_semadpcm(void);
+extern void voc_play_complete(void);
 //g_tRec.ucVolume = 39;
 
 /*
@@ -717,7 +717,7 @@ void Audio_MAL_IRQHandler(void)
 	  
 	  DMA_ClearITPendingBit(AUDIO_MAL_DMA_STREAM, DMA_IT_TCIF4);
 
-	  release_semadpcm();
+	  voc_play_complete();
 	//      rt_kprintf("clear flag\n");
 	}
 

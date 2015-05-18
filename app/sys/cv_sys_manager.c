@@ -47,18 +47,11 @@ void null_space(void)
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-extern const unsigned char CFCW_8K_16bits[];
-extern const unsigned int CFCW_8K_16bitsLen;
-extern const unsigned char CRCW_8K_16bits[];
-extern const unsigned int CRCW_8K_16bitsLen;
-extern const unsigned char EEBL_8K_16bits[];
-extern const unsigned int EEBL_8K_16bitsLen;
-extern const unsigned char VBD_8K_16bits[];
-extern const unsigned int VBD_8K_16bitsLen;
-extern const unsigned char init_8K_16bits[];
-extern const unsigned int init_8K_16bitsLen;
-extern const unsigned char test_8K_16bits[];
-extern const unsigned int test_8K_16bitsLen;
+void sound_notice_di(void);
+void sound_alert_start(uint32_t alert_type);
+void sound_alert_stop(void);
+void sound_alert_process(void* parameter);
+void play_sound(void);
 
 
 extern void led_on(Led_TypeDef led);
@@ -125,37 +118,6 @@ osal_status_t hi_add_event_queue(sys_envar_t *p_sys,
     return err;
 }
 
-osal_status_t voc_add_event_queue(vsa_envar_t *p_vsa, 
-                             uint32_t msg_addr, 
-                             uint32_t msg_size, 
-                             uint8_t  msg_channel,
-                             uint8_t  msg_cmd)
-{
-    int err = OSAL_STATUS_NOMEM;
-    adpcm_t *p_msg;
-    p_msg = osal_malloc(sizeof(adpcm_t));
-    if (p_msg){
-        p_msg->addr = msg_addr;
-        p_msg->size = msg_size;
-        p_msg->channel = msg_channel;
-        p_msg->cmd = msg_cmd;
-        err = osal_queue_send(p_vsa->queue_voc,p_msg);
-    }
-
-    if (err != OSAL_STATUS_SUCCESS){
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
-                                   __FUNCTION__, err, msg_cmd);
-        osal_free(p_msg);
-    }
-    return err;
-}
-
-
-
-
-
-
-
 osal_status_t led_add_event_queue(sys_envar_t *p_sys, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
@@ -183,25 +145,6 @@ osal_status_t led_add_event_queue(sys_envar_t *p_sys,
 }
 
 
-void voc_contrl(uint32_t cmd, uint8_t *p_data, uint32_t length)
-{
-	vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-
-    p_vsa->adpcm_data.addr = (uint32_t)p_data;
-    p_vsa->adpcm_data.size = length;
-    p_vsa->adpcm_data.channel = 0;
-    p_vsa->adpcm_data.cmd = cmd;
-    voc_add_event_queue(p_vsa,p_vsa->adpcm_data.addr,p_vsa->adpcm_data.size,0,cmd);
-}
-
-void voc_stop(void)
-{
-	osal_timer_stop(p_cms_envar->sys.timer_voc);
-	
-	
-	Pt8211_AUDIO_Stop(0);
-}
-
 void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
 	uint32_t type = 0; 
@@ -223,9 +166,10 @@ void sys_manage_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 		case SYS_MSG_KEY_PRESSED:
 			if(p_msg->argc == C_UP_KEY){   
 
-                	//rt_kprintf("gsnr param is resetting .....\n");
-					//param_set(19,0); 
-                    voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
+                	rt_kprintf("gsnr param is resetting .....\n");
+					param_set(19,0); 
+					//sound_alert_start(HI_OUT_CRD_ALERT);
+                   // voc_contrl(VOC_PLAY, (uint8_t *)test_8K_16bits, test_8K_16bitsLen);
                   
                    // vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_BC, 0,0,NULL);
                   
@@ -327,28 +271,6 @@ void sysc_thread_entry(void *parameter)
         }
 	}
 }
-void timer_out_vsa_process(void* parameter)
-{
-	int  timevalue;
-	timevalue = HUMAN_ITERFACE_DEFAULT;
-	
-#if 0
-	if(p_vsa->alert_pend & (1<<VSA_ID_EBD))	
-		voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);// vioce,EBD最优先,同时报警选择EBD,VBD次之
-
-	else if(p_vsa->alert_pend & (1<<VSA_ID_VBD))
-		voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);// 
-
-	else if(p_vsa->alert_pend & (1<<VSA_ID_CRD))	
-		voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);// 
-	else if(p_vsa->alert_pend & (1<<VSA_ID_CRD_REAR))	
-		voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);// 
-#endif
-    voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/6);
-	rt_timer_control(p_cms_envar->sys.timer_voc,RT_TIMER_CTRL_SET_TIME,(void*)&timevalue);
-}
-
-
 void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 {
     Led_Color led_color;
@@ -357,8 +279,9 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
     if (p_msg->id == SYS_MSG_HI_OUT_UPDATE){
         switch(p_msg->argc){
 			case HI_OUT_SYS_INIT:
+				sound_notice_di();
 				p_sys->led_priority |= 1<<HI_OUT_GPS_LOST;
-				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/6);
+//				voc_contrl(VOC_PLAY, (uint8_t *)init_8K_16bits, init_8K_16bitsLen/6);
 				break;
 
 			case HI_OUT_BSM_UPDATE:
@@ -369,9 +292,10 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;				
 				
             case HI_OUT_CRD_ALERT:
-                voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
+//                voc_contrl(VOC_PLAY, (uint8_t *)CFCW_8K_16bits, CFCW_8K_16bitsLen);
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CFCW alert start!!\n\n");
-                rt_timer_start(p_cms_envar->sys.timer_voc);
+                sound_alert_start(HI_OUT_CRD_ALERT);
+//                rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_CRD_ALERT))
 					return;
 				else
@@ -381,10 +305,11 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				break;
 
 			case HI_OUT_CRD_REAR_ALERT:
-                
-                voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);             
+//                voc_contrl(VOC_PLAY, (uint8_t *)CRCW_8K_16bits, CRCW_8K_16bitsLen);             
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CRCW alert start!!\n\n");
-                rt_timer_start(p_cms_envar->sys.timer_voc);
+                sound_alert_start(HI_OUT_CRD_REAR_ALERT);
+//                rt_timer_start(p_cms_envar->sys.timer_voc);
+
 				if(p_sys->led_priority&(1<<HI_OUT_CRD_REAR_ALERT))
 					return;
 				else
@@ -395,8 +320,9 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 				
             case HI_OUT_VBD_ALERT:
                 
-                voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);                
-                rt_timer_start(p_cms_envar->sys.timer_voc);
+                sound_alert_start(HI_OUT_VBD_ALERT);
+//               voc_contrl(VOC_PLAY, (uint8_t *)VBD_8K_16bits, VBD_8K_16bitsLen);                
+//                rt_timer_start(p_cms_envar->sys.timer_voc);
 				if(p_sys->led_priority&(1<<HI_OUT_VBD_ALERT))
 					return;
 				else
@@ -407,8 +333,9 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 break;				
 
 			case HI_OUT_EBD_ALERT:
-                voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);
-              	rt_timer_start(p_cms_envar->sys.timer_voc);            
+                sound_alert_start(HI_OUT_EBD_ALERT);
+//                voc_contrl(VOC_PLAY, (uint8_t *)EEBL_8K_16bits, EEBL_8K_16bitsLen);
+//              	rt_timer_start(p_cms_envar->sys.timer_voc);            
 			   	//p_sys->led_priority |= 1<<HI_OUT_EBD_ALERT;
 				if(p_sys->led_priority&(1<<HI_OUT_EBD_ALERT))
 					return;
@@ -420,31 +347,43 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
                 break;
 
 			case HI_OUT_CRD_CANCEL:
-				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0) {
+                    sound_alert_stop();
+				}
+//				if(p_cms_envar->vsa.alert_pend == 0)
+//					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_ALERT);               
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CFCW  alert cancel!!\n\n");
 
 				break;
 
 			case HI_OUT_CRD_REAR_CANCEL:
-				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0) {
+                    sound_alert_stop();
+				}
+//				if(p_cms_envar->vsa.alert_pend == 0)
+//					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_CRD_REAR_ALERT);
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI CRCW alert cancel!!\n\n");
 
 				break;	
 
 			case HI_OUT_VBD_CANCEL:
-				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0) {
+                    sound_alert_stop();
+				}
+//				if(p_cms_envar->vsa.alert_pend == 0)
+//					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_VBD_ALERT);
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI vbd alert cancel!!\n\n");
 				break;
 
 			case HI_OUT_EBD_CANCEL://cancel alarm
-				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0) {
+                    sound_alert_stop();
+				}
+//				if(p_cms_envar->vsa.alert_pend == 0)
+//					rt_timer_stop(p_cms_envar->sys.timer_voc);
 				p_sys->led_priority &= ~(1<<HI_OUT_EBD_ALERT);
                 OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"HI EEBL alert  cancel!!\n\n");
 				break;
@@ -465,8 +404,10 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
 
 				
             case HI_OUT_CANCEL_ALERT:
-				if(p_cms_envar->vsa.alert_pend == 0)
-					rt_timer_stop(p_cms_envar->sys.timer_voc);
+				if(p_cms_envar->vsa.alert_pend == 0) {
+                    sound_alert_stop();
+				}
+				//	rt_timer_stop(p_cms_envar->sys.timer_voc);
 			#if 0	
                 p_sys->led_blink_duration[LED_RED] = 0;
                 p_sys->led_blink_period[LED_RED] = 0;
@@ -694,10 +635,11 @@ void sys_init(void)
     p_sys->queue_sys_hi = osal_queue_create("q-hi", SYS_QUEUE_SIZE);
     osal_assert(p_sys->queue_sys_mng != NULL);
 
-    p_sys->timer_voc= rt_timer_create("tm-voc",timer_out_vsa_process,p_vsa,\
-        HUMAN_ITERFACE_VOC,RT_TIMER_FLAG_PERIODIC); 					
-    RT_ASSERT(p_sys->timer_voc != RT_NULL);
 
+    p_sys->timer_voc = osal_timer_create("tm-voc",sound_alert_process, p_sys,\
+        MS_TO_TICK(500),TRUE); 					
+    osal_assert( p_sys->timer_voc != NULL);
+    osal_timer_start(p_sys->timer_voc);
 
     p_sys->task_sys_hi = osal_task_create("t-hi",
                            rt_hi_thread_entry, p_sys,

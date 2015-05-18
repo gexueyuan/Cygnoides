@@ -172,6 +172,13 @@ static __inline osal_status_t osal_sem_release(osal_sem_t *sem)
     return (error == RT_EOK) ? OSAL_STATUS_SUCCESS: OSAL_STATUS_ERROR_UNDEFINED; 
 }
 
+static __inline osal_status_t osal_sem_set(osal_sem_t *sem, uint32_t count)
+{
+    rt_err_t error;
+    error = rt_sem_control(sem, RT_IPC_CMD_RESET, (void *)count);
+    return (error == RT_EOK) ? OSAL_STATUS_SUCCESS: OSAL_STATUS_ERROR_UNDEFINED; 
+}
+
 /**
  * [Message Queue]
  *   The size of message is always 4 bytes(length of pointer).
