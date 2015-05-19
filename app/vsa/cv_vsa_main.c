@@ -13,7 +13,7 @@
 
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
 #define MODULE_NAME "vsa"
 #include "cv_osal_dbg.h"
 OSAL_DEBUG_ENTRY_DEFINE(vsa)
@@ -280,7 +280,7 @@ void vsa_bsm_status_update(void *parameter)
     vam_stastatus_t *p_sta = (vam_stastatus_t *)parameter;
 
     if (p_sta){
-        if (!(p_cms_envar->sys.led_priority&(1<<HI_OUT_BSM_UPDATE))){
+        if (!(p_cms_envar->sys.status&(1<<HI_OUT_BSM_UPDATE))){
             sys_add_event_queue(&p_cms_envar->sys,SYS_MSG_BSM_UPDATE, 0, HI_OUT_BSM_UPDATE, NULL);
         }
     }
@@ -759,6 +759,18 @@ static int crcw_judge(vsa_position_node_t *p_node)
     return VSA_ID_CRD_REAR;
 }
 
+uint32_t vsa_get_alarm(uint32_t vsa_id)
+{
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    if(vsa_id == VSA_ID_NONE){
+        return p_vsa->alert_pend;
+    }
+    else{
+        return p_vsa->alert_pend & (1<<vsa_id);
+    }
+
+}
+
 
 static int vsa_manual_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
@@ -1054,7 +1066,7 @@ void vsa_thread_entry(void *parameter)
     }
 }
 
-rt_err_t vsa_add_event_queue(vsa_envar_t *p_vsa, 
+osal_status_t vsa_add_event_queue(vsa_envar_t *p_vsa, 
                              uint16_t msg_id, 
                              uint16_t msg_len, 
                              uint32_t msg_argc,

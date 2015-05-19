@@ -200,7 +200,6 @@ typedef struct _sys_envar{
 
     uint32_t hi_timer_cnt;
 
-    uint32_t  led_priority;
     Led_Color led_color;
     Led_State led_state;
     uint8_t led_period;

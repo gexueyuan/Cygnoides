@@ -43,7 +43,6 @@ static uint32_t phase = 0;
 static void sound_play_complete(void)
 {
     sys_envar_t *p_sys = &p_cms_envar->sys;
-    osal_printf("sound_play_complete\n");
     if (phase != 0) {
         /* Alert has been stopped. */
         osal_timer_change(p_sys->timer_voc, SOUND_PLAY_INTERVAL);
