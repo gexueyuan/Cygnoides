@@ -43,6 +43,8 @@ void space_null(void)
 #define CCW_DEBOUNCE     5
 
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
+
+extern void test_comm(void);
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -53,7 +55,8 @@ double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
  @param   : None
  @return  : 
 *****************************************************************************/
-uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatus_t *remote,double distance_1_2)
+uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatus_t *remote,
+	                                  double distance_1_2, double *delta_offset)
 {
 
     double lat1, lng1, lat2, lng2, lat3, lng3;
@@ -113,11 +116,11 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
         delta = 360 - delta;
     }
 **********************/
-
-/*divide posiotion to 8 pieces*/
-
-
-    if ((delta > 15*DIRECTION_DIVIDE)||(delta <= DIRECTION_DIVIDE)){
+    
+    *delta_offset = delta;  
+    
+		/*divide posiotion to 8 pieces*/
+    if((delta > 15*DIRECTION_DIVIDE)||(delta <= DIRECTION_DIVIDE)){
        return AHEAD;
     }
     else if ((delta > DIRECTION_DIVIDE)&&(delta <= 3*DIRECTION_DIVIDE)){
@@ -150,11 +153,11 @@ uint32_t vsa_safe_distance(int32_t position,vam_stastatus_t local,vam_stastatus_
 {
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
 
-    if(position < 0){
+    if (position < 0){
         return (int32_t)p_vsa->working_param.crd_rear_distance;
     }
 
-    if(local.speed > remote.speed){
+    if (local.speed > remote.speed){
        return(int32_t)((local.speed*2.0f - remote.speed)*p_vsa->working_param.crd_saftyfactor*1000.0f/3600.0f);
     }
     else{
@@ -173,9 +176,13 @@ int32_t  vsa_preprocess_pos(void)
     int8_t i = 0;
     uint8_t peer_pid[VAM_NEIGHBOUR_MAXNUM][RCP_TEMP_ID_LEN];
     uint32_t peer_count;
-    static uint32_t count_pos = 0;
 
+    char strbuf[64] = {0};
+    double temp_delta = 0;
 
+    if (0x1 & g_dbg_print_type){
+        test_comm();
+    }
     vam_get_all_peer_pid(peer_pid,VAM_NEIGHBOUR_MAXNUM,&peer_count);
 
     if (peer_count != 0) {
@@ -185,43 +192,43 @@ int32_t  vsa_preprocess_pos(void)
             p_pnt = &p_vsa->position_node[i];
 
 
-        memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
+            memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
 
-        temp_dis = 1000.0*getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
-                    (double)remote_status.pos.lat,(double)remote_status.pos.lon);
+            temp_dis = 1000.0*getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
+                        (double)remote_status.pos.lat,(double)remote_status.pos.lon);
 
-        p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,temp_dis);
+            p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,temp_dis,&temp_delta);
 
-        p_pnt->vsa_position.local_speed = local_status.speed;
+            p_pnt->vsa_position.local_speed = local_status.speed;
 
-        p_pnt->vsa_position.remote_speed = remote_status.speed;
+            p_pnt->vsa_position.remote_speed = remote_status.speed;
 
-        p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;
+            p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;
 
-        p_pnt->vsa_position.lat_offset = fabs(local_status.pos.lat - remote_status.pos.lat);
+            p_pnt->vsa_position.lat_offset = 1000.0*getDistanceVer2(local_status.pos.lat, local_status.pos.lon, 
+                    remote_status.pos.lat, local_status.pos.lon); //fabs(local_status.pos.lat - remote_status.pos.lat);
 
-        p_pnt->vsa_position.lon_offset = fabs(local_status.pos.lat - remote_status.pos.lat);
+            p_pnt->vsa_position.lon_offset = 1000.0*getDistanceVer2(local_status.pos.lat, local_status.pos.lon, 
+                    local_status.pos.lat, remote_status.pos.lon); //fabs(local_status.pos.lat - remote_status.pos.lat);
 
-        p_pnt->vsa_position.linear_distance = vam_get_peer_relative_pos(p_pnt->vsa_position.pid,0);//(uint32_t)temp_dis;
+            p_pnt->vsa_position.linear_distance = vam_get_peer_relative_pos(p_pnt->vsa_position.pid,0);//(uint32_t)temp_dis;
 
-        p_pnt->vsa_position.safe_distance = vsa_safe_distance(p_pnt->vsa_position.linear_distance,local_status,remote_status);
-            
-        p_pnt->vsa_position.dir = remote_status.dir;
+            p_pnt->vsa_position.safe_distance = vsa_safe_distance(p_pnt->vsa_position.linear_distance,local_status,remote_status);
+                
+            p_pnt->vsa_position.dir = remote_status.dir;
 
-        p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&remote_status);
+            p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&remote_status);
 
-        }
-        #if 1
-        if(count_pos++ > 30){
-            for(i = 0;i < peer_count;i++){ 
-                p_pnt = &p_vsa->position_node[i];
-                osal_printf("pid(%02X %02X %02X %02X),vsa_location = %d ldis = %d  safe_dis = %lu\n\n",p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1],\
-                p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
-                p_pnt->vsa_position.vsa_location,p_pnt->vsa_position.linear_distance,p_pnt->vsa_position.safe_distance);
+    						
+            if (0x2 & g_dbg_print_type){
+                memset(strbuf, 0x0, sizeof(strbuf));
+                sprintf(strbuf, "%3.6f, %3.6f, %3.6f", p_pnt->vsa_position.lat_offset, p_pnt->vsa_position.lon_offset, temp_delta);
+                osal_printf("(%02X %02X %02X %02X), %d, %d, %s, %lu\r\n", \
+                    p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1], p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
+                    p_pnt->vsa_position.vsa_location, p_pnt->vsa_position.linear_distance, strbuf, \
+                    p_pnt->vsa_position.safe_distance);
             }
-          count_pos = 0; 
-        }
-         #endif
+	    }
     }
     else
         return 0; 

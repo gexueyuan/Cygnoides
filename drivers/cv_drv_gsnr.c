@@ -336,37 +336,37 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
 
 	if(acce_k > SHARP_RIGHT_THRESOLD)	
 	{
-		printAcc(GSNR_WARNING, "右转xyz", acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_INFO, "右转xyz", acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_RIGHT_CNT)		  //右转
 		{
-			GSNR_LOG(GSNR_WARNING, "发生急右转\r\n\n");
+			GSNR_LOG(GSNR_INFO, "发生急右转\r\n\n");
 			cnt = 0 ;
 		}
 	}
 	else if(acce_k < SHARP_LEFT_THRESOLD)
 	{
-		printAcc(GSNR_WARNING, "左转xyz",acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_INFO, "左转xyz",acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_LEFT_CNT)		  //左转
 		{	
-			GSNR_LOG(GSNR_WARNING, "发生急左转\r\n\n");
+			GSNR_LOG(GSNR_INFO, "发生急左转\r\n\n");
 			cnt = 0 ;
 		}
 	}
 	else if(acce_ahead >= SHARP_SPEEDUP_THRESOLD)
 	{
-		printAcc(GSNR_NOTICE, "加速xyz",acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_INFO, "加速xyz",acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_SPEEDUP_CNT)
 		{
-			GSNR_LOG(GSNR_WARNING, "发生急加速\r\n\n");
+			GSNR_LOG(GSNR_INFO, "发生急加速\r\n\n");
 			cnt = 0 ;
 		}
 	}
 	else if(acce_ahead < SHARP_SLOWDOWN_THRESOLD)
 	{
-		printAcc(GSNR_NOTICE, "减速xyz",acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_WARNING, "减速xyz",acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_SLOWDOWN_CNT)
 		{
@@ -385,7 +385,7 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
     {
         if(0 == key_press)
         {
-            printAcc(GSNR_NOTICE, "翻转xyz",acce_ahead, acce_k, acce_k_x);
+            printAcc(GSNR_INFO, "翻转xyz",acce_ahead, acce_k, acce_k_x);
             sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,2,NULL);		
             key_press = 1;
         }
@@ -394,7 +394,7 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
     {
         if(key_press == 1)
         {
-            printAcc(GSNR_NOTICE, "翻转xyz",acce_ahead, acce_k, acce_k_x);
+            printAcc(GSNR_INFO, "翻转xyz",acce_ahead, acce_k, acce_k_x);
             sys_add_event_queue(p_sys,SYS_MSG_KEY_PRESSED,0,2,NULL);			
             key_press = 0;
         }
