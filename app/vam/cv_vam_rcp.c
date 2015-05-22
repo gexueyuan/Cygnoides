@@ -678,58 +678,34 @@ void test_rsa(int flag)
 FINSH_FUNCTION_EXPORT(test_rsa, debug: test sending rsa);
 
 
-#if 0
-rcp_msg_basic_safty_t test_bsm_rx;
-rcp_rxinfo_t test_rxbd;
-rt_timer_t timer_test_bsm_rx;
-
-rcp_msg_basic_safty_t test_bsm_rx_2;
-rcp_rxinfo_t test_rxbd_2;
-rt_timer_t timer_test_bsm_rx_2;
-
-rcp_msg_basic_safty_t test_bsm_rx_3;
-rcp_rxinfo_t test_rxbd_3;
-rt_timer_t timer_test_bsm_rx_3;
-
+osal_timer_t *timer_test_bsm_rx;
 void timer_test_bsm_rx_callback(void* parameter)
 {
-    vam_rcp_recv(&test_rxbd, (uint8_t *)&test_bsm_rx, sizeof(rcp_msg_basic_safty_t));
-}
-
-void timer_test_bsm_rx_callback_2(void* parameter)
-{
-    vam_rcp_recv(&test_rxbd_2, (uint8_t *)&test_bsm_rx_2, sizeof(rcp_msg_basic_safty_t));
-}
-
-void timer_test_bsm_rx_callback_3(void* parameter)
-{
-    vam_rcp_recv(&test_rxbd_3, (uint8_t *)&test_bsm_rx_3, sizeof(rcp_msg_basic_safty_t));
-}
-
-void test_bsm(void)
-{
-    rcp_msg_basic_safty_t *p_bsm = &test_bsm_rx;
     vam_stastatus_t sta;
-    vam_stastatus_t *p_local = &sta;
+    vam_stastatus_t *p_local;
 
-    #if 1 
-    memset(p_local, 0, sizeof(vam_stastatus_t));
+    rcp_msg_basic_safty_t test_bsm_rx;
+    rcp_msg_basic_safty_t *p_bsm;
+
+    vam_envar_t *p_vam = &p_cms_envar->vam;
+
+    p_local = &sta;
     p_local->pos.lat = 40.0; //39.5427f;
     p_local->pos.lon = 120.0;//116.2317f;
     p_local->dir = 90.0;//
-    #else
-    memcpy(p_local, &p_cms_envar->vam.local, sizeof(vam_stastatus_t));
-    #endif
     p_local->pid[0] = 0x02;
     p_local->pid[1] = 0x04;
     p_local->pid[2] = 0x06;
     p_local->pid[3] = 0x08;
-    
+
+
+    p_bsm = (rcp_msg_basic_safty_t *)&test_bsm_rx;   
     /* construct a fake message */
-    p_bsm->header.msg_id = RCP_MSG_ID_BSM;
+    p_bsm->header.msg_id.hops = 1;
+    p_bsm->header.msg_id.id = RCP_MSG_ID_BSM;
     p_bsm->header.msg_count = 0;
     memcpy(p_bsm->header.temporary_id, p_local->pid, RCP_TEMP_ID_LEN);
-    p_bsm->header.dsecond = rcp_get_system_time();
+    p_bsm->dsecond = rcp_get_system_time();
 
     p_bsm->position.lon = encode_longtitude(p_local->pos.lon);
     p_bsm->position.lat = encode_latitude(p_local->pos.lat);
@@ -742,202 +718,23 @@ void test_bsm(void)
     p_bsm->motion.acce.lat = encode_acce_lat(p_local->acce.lat);
     p_bsm->motion.acce.vert = encode_acce_vert(p_local->acce.vert);
     p_bsm->motion.acce.yaw = encode_acce_yaw(p_local->acce.yaw);
-
-    //dump((uint8_t *)p_bsm, sizeof(rcp_msg_basic_safty_t));
-
-    timer_test_bsm_rx = rt_timer_create("tm-tb",timer_test_bsm_rx_callback,NULL,\
-        MS_TO_TICK(2400),RT_TIMER_FLAG_PERIODIC); 					
-
-    rt_timer_start(timer_test_bsm_rx);
-}
-
-
-void tb2(void)
-{
-    rcp_msg_basic_safty_t *p_bsm = &test_bsm_rx_2;
-    vam_stastatus_t sta;
-    vam_stastatus_t *p_local = &sta;
-
-    #if 1 
-    memset(p_local, 0, sizeof(vam_stastatus_t));
-    p_local->pos.lat = 40.0; //39.5427f;
-    p_local->pos.lon = 120.1;//116.2317f;
-    p_local->dir = 90.0;//
-    #else
-    memcpy(p_local, &p_cms_envar->vam.local, sizeof(vam_stastatus_t));
-    #endif
-    p_local->pid[0] = 0x01;
-    p_local->pid[1] = 0x03;
-    p_local->pid[2] = 0x05;
-    p_local->pid[3] = 0x07;
     
-    /* construct a fake message */
-    p_bsm->header.msg_id = RCP_MSG_ID_BSM;
-    p_bsm->header.msg_count = 0;
-    memcpy(p_bsm->header.temporary_id, p_local->pid, RCP_TEMP_ID_LEN);
-    p_bsm->header.dsecond = rcp_get_system_time();
+    rcp_parse_bsm(p_vam, NULL, (uint8_t *)p_bsm, (sizeof(rcp_msg_basic_safty_t) - sizeof(vehicle_safety_ext_t)));
+}
 
-    p_bsm->position.lon = encode_longtitude(p_local->pos.lon);
-    p_bsm->position.lat = encode_latitude(p_local->pos.lat);
-    p_bsm->position.elev = encode_elevation(p_local->pos.elev);
-    p_bsm->position.accu = encode_accuracy(p_local->pos.accu);
-
-    p_bsm->motion.heading = encode_heading(p_local->dir);
-    p_bsm->motion.speed = encode_speed(p_local->speed);
-    p_bsm->motion.acce.lon = encode_acce_lon(p_local->acce.lon);
-    p_bsm->motion.acce.lat = encode_acce_lat(p_local->acce.lat);
-    p_bsm->motion.acce.vert = encode_acce_vert(p_local->acce.vert);
-    p_bsm->motion.acce.yaw = encode_acce_yaw(p_local->acce.yaw);
-
-    //dump((uint8_t *)p_bsm, sizeof(rcp_msg_basic_safty_t));
-
-    timer_test_bsm_rx_2 = rt_timer_create("tm-tb",timer_test_bsm_rx_callback_2,NULL,\
+void tb1(void)
+{
+    timer_test_bsm_rx = osal_timer_create("tm-tb",timer_test_bsm_rx_callback,NULL,\
         MS_TO_TICK(2400),RT_TIMER_FLAG_PERIODIC); 					
 
-    rt_timer_start(timer_test_bsm_rx_2);
+    osal_timer_start(timer_test_bsm_rx);
 }
 
-void tb3(void)
+void stop_tb1(void)
 {
-    rcp_msg_basic_safty_t *p_bsm = &test_bsm_rx_3;
-    vam_stastatus_t sta;
-    vam_stastatus_t *p_local = &sta;
-
-    #if 1 
-    memset(p_local, 0, sizeof(vam_stastatus_t));
-    p_local->pos.lat = 40.0; //39.5427f;
-    p_local->pos.lon = 120.2;//116.2317f;
-    p_local->dir = 90.0;//
-    #else
-    memcpy(p_local, &p_cms_envar->vam.local, sizeof(vam_stastatus_t));
-    #endif
-    p_local->pid[0] = 0x01;
-    p_local->pid[1] = 0x02;
-    p_local->pid[2] = 0x03;
-    p_local->pid[3] = 0x04;
-    
-    /* construct a fake message */
-    p_bsm->header.msg_id = RCP_MSG_ID_BSM;
-    p_bsm->header.msg_count = 0;
-    memcpy(p_bsm->header.temporary_id, p_local->pid, RCP_TEMP_ID_LEN);
-    p_bsm->header.dsecond = rcp_get_system_time();
-
-    p_bsm->position.lon = encode_longtitude(p_local->pos.lon);
-    p_bsm->position.lat = encode_latitude(p_local->pos.lat);
-    p_bsm->position.elev = encode_elevation(p_local->pos.elev);
-    p_bsm->position.accu = encode_accuracy(p_local->pos.accu);
-
-    p_bsm->motion.heading = encode_heading(p_local->dir);
-    p_bsm->motion.speed = encode_speed(p_local->speed);
-    p_bsm->motion.acce.lon = encode_acce_lon(p_local->acce.lon);
-    p_bsm->motion.acce.lat = encode_acce_lat(p_local->acce.lat);
-    p_bsm->motion.acce.vert = encode_acce_vert(p_local->acce.vert);
-    p_bsm->motion.acce.yaw = encode_acce_yaw(p_local->acce.yaw);
-
-    //dump((uint8_t *)p_bsm, sizeof(rcp_msg_basic_safty_t));
-
-    timer_test_bsm_rx_3 = rt_timer_create("tm-tb",timer_test_bsm_rx_callback_3,NULL,\
-        MS_TO_TICK(2400),RT_TIMER_FLAG_PERIODIC); 					
-
-    rt_timer_start(timer_test_bsm_rx_3);
-}
-
-rcp_msg_emergency_vehicle_alert_t test_vbd_evam;
-rcp_rxinfo_t test_rxbd_vbd;
-rt_timer_t timer_test_evam_vbd;
-
-void timer_test_vbd_rx_callback(void* parameter)
-{
-    vam_rcp_recv(&test_rxbd_vbd, (uint8_t *)&test_vbd_evam, sizeof(rcp_msg_emergency_vehicle_alert_t));
-}
-
-void  start_vbd(void)
-{
-    rcp_msg_emergency_vehicle_alert_t *p_bsm = &test_vbd_evam;
-    vam_stastatus_t sta;
-    vam_stastatus_t *p_local = &sta;
-
-    memset(p_local, 0, sizeof(vam_stastatus_t));
-    p_local->pos.lat = 40.0; //39.5427f;
-    p_local->pos.lon = 120.2;//116.2317f;
-    p_local->dir = 90.0;//
-
-    p_local->pid[0] = 0x03;
-    p_local->pid[1] = 0x03;
-    p_local->pid[2] = 0x03;
-    p_local->pid[3] = 0x03;
-    
-    /* construct a fake message */
-    p_bsm->header.msg_id = RCP_MSG_ID_EVAM;
-    p_bsm->header.msg_count = 0;
-    memcpy(p_bsm->header.temporary_id, p_local->pid, RCP_TEMP_ID_LEN);
-    p_bsm->header.dsecond = rcp_get_system_time();
-
-    p_bsm->position.lon = encode_longtitude(p_local->pos.lon);
-    p_bsm->position.lat = encode_latitude(p_local->pos.lat);
-    p_bsm->position.elev = encode_elevation(p_local->pos.elev);
-    p_bsm->position.accu = encode_accuracy(p_local->pos.accu);
-
-    p_bsm->motion.heading = encode_heading(p_local->dir);
-    p_bsm->motion.speed = encode_speed(p_local->speed);
-    p_bsm->motion.acce.lon = encode_acce_lon(p_local->acce.lon);
-    p_bsm->motion.acce.lat = encode_acce_lat(p_local->acce.lat);
-    p_bsm->motion.acce.vert = encode_acce_vert(p_local->acce.vert);
-    p_bsm->motion.acce.yaw = encode_acce_yaw(p_local->acce.yaw);
-
-
-	p_bsm->alert_mask |=(1<<VAM_ALERT_MASK_EBD);
-	
-    //dump((uint8_t *)p_bsm, sizeof(rcp_msg_basic_safty_t));
-
-    timer_test_evam_vbd = rt_timer_create("tm-vbd",timer_test_vbd_rx_callback,NULL,\
-        MS_TO_TICK(2400),RT_TIMER_FLAG_PERIODIC); 					
-
-    rt_timer_start(timer_test_evam_vbd);
-
-
-}
-
-FINSH_FUNCTION_EXPORT(start_vbd, debug: testing vbd  application);
-
-void stop_test_bsm(void)
-{
-	rt_timer_stop(timer_test_bsm_rx);
-}
-void stop_test_bsm_2(void)
-{
-	rt_timer_stop(timer_test_bsm_rx_2);
+	osal_timer_stop(timer_test_bsm_rx);
 }
 
 
-FINSH_FUNCTION_EXPORT(test_bsm, debug: testing when bsm is received);
-
-FINSH_FUNCTION_EXPORT(stop_test_bsm, debug: testing when bsm stop);
-
-FINSH_FUNCTION_EXPORT(tb2, debug: testing when bsm is received);
-
-FINSH_FUNCTION_EXPORT(stop_test_bsm_2, debug: testing when bsm stop);
-
-FINSH_FUNCTION_EXPORT(tb3, debug: testing when bsm is received);
-void test_data(void)
-{
-    float f1 = 5.22222, f2=-3.82222;
-    int32_t i1, i2;
-    uint32_t u1, u2;
-    uint8_t buf[64] = {0};
-
-    sprintf(buf, "f1=%f, f2=%f \n", f1, f2);
-    rt_kprintf("%s", buf);  
-
-    i1 = (int32_t)f1;
-    i2 = (int32_t)f2;
-    rt_kprintf("i1=%d, i2=%d\n", i1,i2);
-
-    u1 = (uint32_t)i1;
-    u2 = (uint32_t)i2;
-    rt_kprintf("u1=%d, u2=%d\n", u1,u2);
-}
-
-FINSH_FUNCTION_EXPORT(test_data, debug: testing datatype);
-#endif
-
+FINSH_FUNCTION_EXPORT(tb1, test bsm receiving);
+FINSH_FUNCTION_EXPORT(stop_tb1, stop test bsm receiving);

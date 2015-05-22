@@ -180,6 +180,7 @@ int32_t  vsa_preprocess_pos(void)
     char strbuf[64] = {0};
     double temp_delta = 0;
 
+    uint32_t count_pos = 0;
     if (0x1 & g_dbg_print_type){
         test_comm();
     }
@@ -229,6 +230,17 @@ int32_t  vsa_preprocess_pos(void)
                     p_pnt->vsa_position.safe_distance);
             }
 	    }
+#if 0
+        if(count_pos++ > 30){
+            for(i = 0;i < peer_count;i++){ 
+                p_pnt = &p_vsa->position_node[i];
+                osal_printf("pid(%02X %02X %02X %02X),vsa_location = %d ldis = %d  safe_dis = %lu\n\n",p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1],\
+                p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
+                p_pnt->vsa_position.vsa_location,p_pnt->vsa_position.linear_distance,p_pnt->vsa_position.safe_distance);
+            }
+          count_pos = 0; 
+        }
+#endif
     }
     else
         return 0; 
