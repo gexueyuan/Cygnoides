@@ -202,7 +202,8 @@ static __inline osal_status_t osal_queue_send(osal_queue_t *queue, void *msg)
     rt_err_t error;
     
     error = rt_mq_send(queue, &msg, queue->msg_size);
-    return (error == RT_EOK) ? OSAL_STATUS_SUCCESS: OSAL_STATUS_ERROR_UNDEFINED; 
+    return error;
+    //return (error == RT_EOK) ? OSAL_STATUS_SUCCESS: OSAL_STATUS_ERROR_UNDEFINED; 
 }
 
 static __inline osal_status_t osal_queue_recv(osal_queue_t *queue, 

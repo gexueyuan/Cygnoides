@@ -450,9 +450,9 @@ void sys_init(void)
 
 
     p_sys->timer_voc = osal_timer_create("tm-voc",sound_alert_process, p_sys,\
-        MS_TO_TICK(500),TRUE);                     
+        MS_TO_TICK(500),FALSE);                     
     osal_assert( p_sys->timer_voc != NULL);
-    osal_timer_start(p_sys->timer_voc);
+    //osal_timer_start(p_sys->timer_voc);
 
     p_sys->task_sys_hi = osal_task_create("t-hi",
                            rt_hi_thread_entry, p_sys,

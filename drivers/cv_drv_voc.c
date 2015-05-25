@@ -11,7 +11,7 @@
 ******************************************************************************/
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
 #define MODULE_NAME "voc"
 #include "cv_osal_dbg.h"
 
@@ -264,7 +264,7 @@ void pcm_play(uint8_t *pBuffer, uint32_t Size)
 {
     uint32_t play_size;
 
-	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"total size of pcm voice is %d\n\n",Size);
+	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"total size of pcm voice is %d\n",Size);
 
     while(Size > 0){
         /* Wait until the audio device is idle. */
@@ -289,6 +289,8 @@ void rt_play_thread_entry(void *parameter)
     while(1){
         err = osal_queue_recv(queue_play,&p_msg,RT_WAITING_FOREVER);
         if( err == OSAL_STATUS_SUCCESS){
+            
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "message get success!\n");         
 
             VOC_STATUS_SET(VOC_STATUS_PLAYING); /* Here we should set it again. */
 
@@ -297,7 +299,8 @@ void rt_play_thread_entry(void *parameter)
 
             //Pt8211_AUDIO_DeInit();
             Pt8211_AUDIO_Init(session->sample_rate);
-
+            
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "here is choosing decode!\n");         
             switch (session->encode_type) {
             case VOC_ENCODE_ADPCM:
                 adpcm_play(session->src_data, session->src_length);
@@ -378,11 +381,11 @@ int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler c
         session->src_length = length&(~3); /* Be sure the length align to 4. */;
         session->played_length = 0;
         session->complete_callback = complete;//NULL;
-
         err = osal_queue_send(queue_play, session);
     }
 
     if (err != OSAL_STATUS_SUCCESS) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "play queue failed code is %d!\n",err); 
         if (session) {
             osal_free(session);
         }

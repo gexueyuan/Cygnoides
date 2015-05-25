@@ -496,6 +496,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\vsa\cv_cpuusage.c</FilePath>
             </File>
+            <File>
+              <FileName>cv_sys_sound_play.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\sys\cv_sys_sound_play.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1619,6 +1624,11 @@
               <FileName>cv_cpuusage.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\vsa\cv_cpuusage.c</FilePath>
+            </File>
+            <File>
+              <FileName>cv_sys_sound_play.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\sys\cv_sys_sound_play.c</FilePath>
             </File>
           </Files>
         </Group>
