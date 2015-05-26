@@ -155,7 +155,7 @@ static __inline osal_status_t osal_sem_take(osal_sem_t *sem, int32_t wait_time)
     if (error == RT_EOK) {
         status = OSAL_STATUS_SUCCESS;
     }
-    else if (error == RT_ETIMEOUT) {
+    else if (error == -RT_ETIMEOUT) {
         status = OSAL_STATUS_TIMEOUT;
     }
     else {

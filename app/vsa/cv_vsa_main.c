@@ -1162,10 +1162,7 @@ void vsa_init()
         timer_preprocess_pos_callback,NULL,VSA_POS_PERIOD,RT_TIMER_FLAG_PERIODIC);
     osal_assert(p_vsa->timer_position_prepro != NULL);
 
-    p_vsa->queue_voc = osal_queue_create("q-voc",  VOC_QUEUE_SIZE);
-    osal_assert(p_vsa->queue_voc != NULL);
-
-    p_vsa->sem_vsa_proc = osal_sem_create("sem_vsa_proc",0);
+    p_vsa->sem_vsa_proc = osal_sem_create("sem-vsa",0);
     osal_assert(p_vsa->sem_vsa_proc != NULL);
     p_vsa->task_vsa_l = osal_task_create("t-vsa-l",
                            vsa_base_proc, p_vsa,

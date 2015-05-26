@@ -22,6 +22,7 @@
 #include "assert.h"
 #include "cv_cms_def.h"
 #include "voc.h"
+#include "components.h"
 
 
 short buffer_voc[BUFFER_COUNT][BUFFER_SIZE/2]; 
@@ -168,7 +169,7 @@ void voc_play_complete(void)
 static int wait_for(osal_sem_t *sem)
 {
     osal_status_t err;
-    #define VOC_WAIT_TIMEOUT OSAL_WAITING_FOREVER//5
+    #define VOC_WAIT_TIMEOUT   5
 
     do {
         err = osal_sem_take(sem,VOC_WAIT_TIMEOUT);
@@ -382,10 +383,10 @@ int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler c
         session->played_length = 0;
         session->complete_callback = complete;//NULL;
         err = osal_queue_send(queue_play, session);
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "play queue error code is %d!\n",err); 
     }
 
     if (err != OSAL_STATUS_SUCCESS) {
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "play queue failed code is %d!\n",err); 
         if (session) {
             osal_free(session);
         }
@@ -408,4 +409,49 @@ void voc_stop(uint32_t b_wait)
         }
     }
 }
+
+
+void rl_compl(void)
+{
+
+    osal_sem_release(sem_play_complete);
+
+}
+
+FINSH_FUNCTION_EXPORT(rl_compl, release sem);
+
+void rl_adpcm(void)
+{
+
+    osal_sem_release(sem_adpcm_start);
+
+}
+
+FINSH_FUNCTION_EXPORT(rl_adpcm, release sem);
+
+void rl_buffer(void)
+{
+
+    osal_sem_release(sem_buffer_voc);
+
+}
+
+FINSH_FUNCTION_EXPORT(rl_buffer, release sem);
+void rl_dev(void)
+{
+
+    osal_sem_release(sem_audio_dev);
+
+}
+
+FINSH_FUNCTION_EXPORT(rl_dev, release sem);
+void rl_data(void)
+{
+
+    osal_sem_release(sem_adpcm_data);
+
+}
+
+FINSH_FUNCTION_EXPORT(rl_data, release sem);
+
 
