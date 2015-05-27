@@ -11,7 +11,7 @@
 ******************************************************************************/
 #include "cv_osal.h"
 #define OSAL_MODULE_DEBUG
-#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_TRACE
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
 #define MODULE_NAME "voc"
 #include "cv_osal_dbg.h"
 

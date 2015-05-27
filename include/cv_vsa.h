@@ -79,9 +79,9 @@ typedef struct _vsa_info{
 
     float relative_speed;
 
-    float lat_offset;
+    uint32_t v_offset;
 
-    float lon_offset;
+    uint32_t h_offset;
 
     int32_t linear_distance;
 
@@ -118,7 +118,7 @@ typedef struct _vsa_config{
     
 
     uint8_t danger_detect_speed_threshold;  /* unit: km/h */
-    uint16_t danger_alert_period;  /* 50~1000, unit:ms, min accuracy :10ms */
+    uint16_t lane_dis;  /* unit:m, min accuracy :1m*/
     /*
         Close Range Danger function:
     */

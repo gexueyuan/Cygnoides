@@ -97,6 +97,18 @@ int32_t vam_get_local_current_status(vam_stastatus_t *current)
     return 0;
 }
 
+/* return 1-gps is located,  0-gps is lost */
+uint8_t vam_get_gps_status(void)
+{
+    vam_envar_t *p_vam = p_vam_envar;
+    if (p_vam->flag & VAM_FLAG_GPS_FIXED){
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 
 /* 更新本车的状态信息（仅用于当VANET不支持内部解析本地GPS、加速度传感器等功能时） */
 int32_t vam_set_local_status(vam_stastatus_t *local)

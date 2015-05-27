@@ -45,6 +45,8 @@ void space_null(void)
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 
 extern void test_comm(void);
+extern uint8_t vam_get_gps_status(void);
+
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -206,11 +208,10 @@ int32_t  vsa_preprocess_pos(void)
 
             p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;
 
-            p_pnt->vsa_position.lat_offset = 1000.0*getDistanceVer2(local_status.pos.lat, local_status.pos.lon, 
-                    remote_status.pos.lat, local_status.pos.lon); //fabs(local_status.pos.lat - remote_status.pos.lat);
+            p_pnt->vsa_position.v_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*cos(temp_delta*PI/180));
 
-            p_pnt->vsa_position.lon_offset = 1000.0*getDistanceVer2(local_status.pos.lat, local_status.pos.lon, 
-                    local_status.pos.lat, remote_status.pos.lon); //fabs(local_status.pos.lat - remote_status.pos.lat);
+            p_pnt->vsa_position.h_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*sin(temp_delta*PI/180));
+                    
 
             p_pnt->vsa_position.linear_distance = vam_get_peer_relative_pos(p_pnt->vsa_position.pid,0);//(uint32_t)temp_dis;
 
@@ -223,11 +224,11 @@ int32_t  vsa_preprocess_pos(void)
     						
             if (0x2 & g_dbg_print_type){
                 memset(strbuf, 0x0, sizeof(strbuf));
-                sprintf(strbuf, "%3.6f, %3.6f, %3.6f", p_pnt->vsa_position.lat_offset, p_pnt->vsa_position.lon_offset, temp_delta);
-                osal_printf("(%02X %02X %02X %02X), %d, %d, %s, %lu\r\n", \
+                sprintf(strbuf, "%3.6f", temp_delta);
+                osal_printf("(%02X %02X %02X %02X), %d, %d, %d, %d, %s, %lu\r\n", \
                     p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1], p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
-                    p_pnt->vsa_position.vsa_location, p_pnt->vsa_position.linear_distance, strbuf, \
-                    p_pnt->vsa_position.safe_distance);
+                    p_pnt->vsa_position.vsa_location, p_pnt->vsa_position.linear_distance, p_pnt->vsa_position.v_offset,\
+                    p_pnt->vsa_position.h_offset,strbuf,p_pnt->vsa_position.safe_distance);
             }
 	    }
 #if 0
@@ -388,13 +389,19 @@ void vsa_start(void)
     osal_timer_start(p_vsa->timer_position_prepro);
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: --->\n", __FUNCTION__);
 
+    if(vam_get_gps_status()){
+        
+        vsa_gps_status_update((void *)1);
+
+    }
+
 }
 
 /*****************************************************************************
  @funcname: vsa_search_warning
  @brief   : this fucntion can detect whether the warning exist
  @param   : uint32_t warning_id  
- @return  : 
+ @return  : 0-no warning 1-have this warning
 *****************************************************************************/
 uint32_t vsa_search_warning(uint32_t warning_id)
 {
@@ -407,13 +414,10 @@ uint32_t vsa_search_warning(uint32_t warning_id)
 
     list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list){
         if(pos->ccw_id == warning_id){
-            break;
-        }
-        else{
-            return 0;
+            return 1;
         }
     }
-    return 1;
+    return 0;
 }
 void vsa_send_ccw_warning(uint32_t warning_id)
 {
@@ -434,6 +438,11 @@ void vsa_send_ccw_warning(uint32_t warning_id)
 void vsa_cancel_ccw_warning(uint32_t warning_id)
 {
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+    uint32_t alert_pend;
+    uint32_t list_search;
+    alert_pend = p_vsa->alert_pend;
+    list_search = vsa_search_warning(warning_id);
+    osal_printf("pend is %d,research is %d\n\n",alert_pend,list_search);
     if ((p_vsa->alert_pend & (1<<warning_id))&&(!vsa_search_warning(warning_id))){
     /* inform system to stop alert */
         p_vsa->alert_pend &= ~(1<<warning_id);
@@ -464,8 +473,8 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
             p_crd->ccw_cnt = 1;
             list_add(&p_crd->list,&p_vsa->crd_list);
             OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                "pid(%02X %02X %02X %02X) come in %lu list\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
-                                p_crd->pid[3],warning_id);
+                                "pid(%02X %02X %02X %02X) create %lu list,dis=%d\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                p_crd->pid[3],warning_id,p_pnt->vsa_position.linear_distance);
         }
         else{
             list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list){
@@ -499,8 +508,8 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
             p_crd->ccw_cnt = 1;
             list_add(&p_crd->list,&p_vsa->crd_list);
             OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
-                                "pid(%02X %02X %02X %02X) come in %lu\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
-                                p_crd->pid[3],warning_id);
+                                "pid(%02X %02X %02X %02X) join in %lu list,dis=%d\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                p_crd->pid[3],warning_id,p_pnt->vsa_position.linear_distance);
         }   
 
     }
@@ -603,6 +612,12 @@ static int vbd_judge(vsa_envar_t *p_vsa)
         return 0;
     } 
 */
+    /**************horizontal distance compare with lane*******************/
+    if(p_node->vsa_position.h_offset > p_vsa->working_param.lane_dis){
+
+        return 0;    
+    }
+
     if (p_node->vsa_position.flag_dir < 0){
 
         return 0;
@@ -646,6 +661,12 @@ static int cfcw_judge(vsa_position_node_t *p_node)
         
         return 0;
     }
+
+    /**************horizontal distance compare with lane*******************/
+    if(p_node->vsa_position.h_offset > p_vsa->working_param.lane_dis){
+
+        return 0;    
+    }
         
     if (p_node->vsa_position.local_speed <= (p_node->vsa_position.remote_speed +\
         p_vsa->working_param.crd_oppsite_speed)){       
@@ -672,15 +693,12 @@ static int cfcw_judge(vsa_position_node_t *p_node)
         }
 #endif
     
-    if (dis_actual > dis_alert){
-        
-        if (p_vsa->alert_pend & (1<<VSA_ID_CRD)){
-
-        }
-        else {   
-            return 0;
-        }
+    if (dis_actual > dis_alert){ 
+        return 0;
     }
+  //  OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
+                     //   "pid(%02X %02X %02X %02X) dis=%d\n",p_node->vsa_position.pid[0],p_node->vsa_position.pid[1],\
+                     //   p_node->vsa_position.pid[2],p_node->vsa_position.pid[3],p_node->vsa_position.linear_distance);
     return VSA_ID_CRD;
 
 }
@@ -840,7 +858,6 @@ static int vsa_cfcw_alarm_proc(vsa_envar_t *p_vsa, void *arg)
     vsa_position_node_t *pos_pnt = NULL;
     
     count_neighour = *((int*)arg);
-
     pos_pnt = &p_vsa->position_node[count_neighour];
     vsa_id = cfcw_judge(pos_pnt);
 
@@ -1164,6 +1181,7 @@ void vsa_init()
 
     p_vsa->sem_vsa_proc = osal_sem_create("sem-vsa",0);
     osal_assert(p_vsa->sem_vsa_proc != NULL);
+    
     p_vsa->task_vsa_l = osal_task_create("t-vsa-l",
                            vsa_base_proc, p_vsa,
                            RT_VSA_THREAD_STACK_SIZE, RT_VSA_THREAD_PRIORITY);

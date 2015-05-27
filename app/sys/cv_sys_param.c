@@ -55,7 +55,7 @@ void load_default_param_custom(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -103,7 +103,7 @@ void load_default_param_highway(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -151,7 +151,7 @@ void load_default_param_mountain(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -198,7 +198,7 @@ void load_default_param_city(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -250,7 +250,7 @@ void load_default_param(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.danger_alert_period = 50;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -497,7 +497,7 @@ void param_get(void)
 
     rt_kprintf("----------------------vsa---------------------\n");
     rt_kprintf("vsa.danger_detect_speed_threshold(10)=%d (km/h)\n", p_cms_param->vsa.danger_detect_speed_threshold);
-    rt_kprintf("vsa.danger_alert_period(11)=%d (ms)\n", p_cms_param->vsa.danger_alert_period);
+    rt_kprintf("vsa.lane_dis(11)=%d (m)\n", p_cms_param->vsa.lane_dis);
     
     rt_kprintf("vsa.crd_saftyfactor(12)=%d\n", p_cms_param->vsa.crd_saftyfactor);
     rt_kprintf("vsa.crd_oppsite_speed(13)=%d (km/h)\n", p_cms_param->vsa.crd_oppsite_speed);
@@ -673,7 +673,7 @@ int param_set(uint8_t param, int32_t value)
         cfg_param->vsa.danger_detect_speed_threshold = value;
         break;
     case 11:
-        cfg_param->vsa.danger_alert_period = value;
+        cfg_param->vsa.lane_dis = value;
         
         break;            
     case 12:
@@ -838,7 +838,7 @@ uint8_t flash_read(uint8_t mode)
     
     rt_kprintf("----------------------vsa---------------------\n");    
     rt_kprintf("vsa.danger_detect_speed_threshold(10)=%d (km/h)\n", param_temp->vsa.danger_detect_speed_threshold);
-    rt_kprintf("vsa.danger_alert_period(11)=%d (ms)\n", param_temp->vsa.danger_alert_period);
+    rt_kprintf("vsa.lane_dis(11)=%d (m)\n", param_temp->vsa.lane_dis);
     
     rt_kprintf("vsa.crd_saftyfactor(12)=%d\n", param_temp->vsa.crd_saftyfactor);
     rt_kprintf("vsa.crd_oppsite_speed(13)=%d (km/h)\n", param_temp->vsa.crd_oppsite_speed);
