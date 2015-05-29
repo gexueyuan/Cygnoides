@@ -253,7 +253,6 @@ int32_t GetStaticVal(GSENSOR_INFO gsensor_dat)
 int32_t RecDirection(GSENSOR_INFO gsensor_dat)
 {
 	GSENSOR_INFO temp_acce_v;	 //合成向量在垂直方向上的分量
-    //G_Action.is_locate = __TRUE;
  
 	if((G_Action.speed > AHEAD_SPEED_THRESOD) && (rd_cnt<AHEAD_CNT) && 
 		(G_Action.vehicle_accel_value > VEHICLE_ACCLE_VALE) && 
@@ -366,7 +365,7 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
 	}
 	else if(acce_ahead < SHARP_SLOWDOWN_THRESOLD)
 	{
-		printAcc(GSNR_WARNING, "减速xyz",acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_NOTICE, "减速xyz",acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_SLOWDOWN_CNT)
 		{

@@ -13,6 +13,7 @@
 
 void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len)
 {
+
     //osal_printf("%s\n",databuf);
     nmea_parse(databuf, len);
 }
@@ -51,6 +52,7 @@ rt_bool_t lip_rmc_valid_check(t_nmea_rmc *p_rmc, rt_tick_t t)
     }
 
  #endif  
+
     return RT_TRUE;
 }
 

@@ -267,7 +267,7 @@ void lip_update_local(t_nmea_rmc *p_rmc, float *p_accu);
 void lip_update_local_acc(float x, float y, float z);
 
 double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest);
-double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,uint8_t vsa_print_en);
+double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
 double vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest);
 int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest);
 void vsm_start_evam_broadcast(vam_envar_t *p_vam);
@@ -277,7 +277,7 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current);
 int32_t vam_start(void);
 int32_t vam_stop(void);
 int32_t vam_set_event_handler(uint32_t evt, vam_evt_handler callback);
-int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en);
+int32_t vam_get_peer_relative_pos(uint8_t *pid, uint8_t flag);
 int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastatus_t *remote);
 int32_t vam_get_peer_alert_status(uint16_t *alert_mask);
 int32_t vam_active_alert(uint16_t alert);

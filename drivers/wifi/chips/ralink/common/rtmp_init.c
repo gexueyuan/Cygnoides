@@ -1668,23 +1668,25 @@ VOID    UserCfgInit(
 
     pAd->CommonCfg.Channel = p_cfg->channel;
     pAd->CommonCfg.TxRate = p_cfg->txrate;
+    pAd->CommonCfg.Mode =  p_cfg->mode;
 
-    #ifdef WIFI_ATE_MODE
-    pAd->CommonCfg.MacAddr[0] = 0x00;
-    pAd->CommonCfg.MacAddr[1] = 0x00;
-    pAd->CommonCfg.MacAddr[2] = 0x00;
-    pAd->CommonCfg.MacAddr[3] = 0x00;
-    pAd->CommonCfg.MacAddr[4] = 0x00;
-    pAd->CommonCfg.MacAddr[5] = 0x00;
-    #else
-    /* Mac address is bind to the CPU's unique ID */
-    pAd->CommonCfg.MacAddr[0] = 0x00;
-    pAd->CommonCfg.MacAddr[1] = 0x11;
-    pAd->CommonCfg.MacAddr[2] = 0x22;
-    pAd->CommonCfg.MacAddr[3] = des(2);
-    pAd->CommonCfg.MacAddr[4] = des(1);
-    pAd->CommonCfg.MacAddr[5] = des(0);
-    #endif
+    if(p_cfg->mode == WNET_TEST_MODE) {
+        pAd->CommonCfg.MacAddr[0] = 0x00;
+        pAd->CommonCfg.MacAddr[1] = 0x00;
+        pAd->CommonCfg.MacAddr[2] = 0x00;
+        pAd->CommonCfg.MacAddr[3] = 0x00;
+        pAd->CommonCfg.MacAddr[4] = 0x00;
+        pAd->CommonCfg.MacAddr[5] = 0x00;
+    }
+    else {
+        /* Mac address is bind to the CPU's unique ID */
+        pAd->CommonCfg.MacAddr[0] = 0x00;
+        pAd->CommonCfg.MacAddr[1] = 0x11;
+        pAd->CommonCfg.MacAddr[2] = 0x22;
+        pAd->CommonCfg.MacAddr[3] = des(2);
+        pAd->CommonCfg.MacAddr[4] = des(1);
+        pAd->CommonCfg.MacAddr[5] = des(0);
+    }
 }
 /*
     ========================================================================

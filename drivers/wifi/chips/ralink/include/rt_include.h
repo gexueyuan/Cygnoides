@@ -493,6 +493,7 @@ typedef struct _COMMON_CONFIG {
     UCHAR TxRate;
 //    UCHAR TxPower[14];
     UCHAR MacAddr[6];
+    UCHAR Mode;   /* 0: normal 1: qc test mode */
     
 }COMMON_CONFIG, *PCOMMON_CONFIG;
 

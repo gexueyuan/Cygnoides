@@ -37,15 +37,16 @@ extern wnet_txbuf_t *rcp_create_forward_msg(uint8_t left_hops, uint8_t *pdata, u
  * implementation of functions                                               *
 *****************************************************************************/
 
-static uint32_t alg_farest_node(mda_envar_t *p_mda, mda_msg_info_t *src_sta, mda_msg_info_t *pre_sta)
+static int32_t alg_farest_node(mda_envar_t *p_mda, mda_msg_info_t *src_sta, mda_msg_info_t *pre_sta)
 {
     int dis, delay;
-    dis = vam_get_peer_relative_pos(src_sta->temorary_id, 0);
+    dis = vam_get_peer_relative_pos(src_sta->forward_id, 0);
     if (dis > 0){
+        dis = (dis > V2V_COMMUNICATION_RANGE) ? V2V_COMMUNICATION_RANGE : dis;
         delay = (1 - dis / V2V_COMMUNICATION_RANGE) * MDA_FORWARD_DELAY_TIME_UNIT;
     }
     else {
-        delay = MDA_FORWARD_DELAY_TIME_UNIT;
+        delay = -1;
     }
     return delay;
 }
@@ -127,12 +128,13 @@ static void history_handler(mda_envar_t *p_mda)
     }
 }
 
-static void add_forward_list(mda_envar_t *p_mda, wnet_txbuf_t *txbuf, mda_msg_info_t *src_sta, uint32_t forward_delay_time)
+static void add_forward_list(mda_envar_t *p_mda, wnet_txbuf_t *txbuf, mda_msg_info_t *src_sta, int32_t forward_delay_time)
 {
     int err;
     wnet_txbuf_t *ptx;
     mda_forward_t *p_fw, *pos;
-    uint32_t delay_time_total = 0;
+    int32_t delay_time_total = 0, adj = 0;
+    uint8_t inserted = 0; 
 
 
     p_fw = (mda_forward_t *)(WNET_TXBUF_DATA_PTR(txbuf) - sizeof(mda_forward_t));
@@ -150,11 +152,9 @@ static void add_forward_list(mda_envar_t *p_mda, wnet_txbuf_t *txbuf, mda_msg_in
 	     * 这里每个转发节点的延迟时间采用保存增量的方式，这样做的好处是在定时处理时
 	       每次只需检查队列头一个或几个节点 ，而无需遍历整个队列
          */
-        uint32_t adj = 0, inserted = 0; 
         
     	list_for_each_entry(ptx, wnet_txbuf_t, &p_mda->forward_waiting_list, list){
             pos = (mda_forward_t *)(WNET_TXBUF_DATA_PTR(ptx) - sizeof(mda_forward_t));
-
             if (inserted == 0) {
                 delay_time_total += pos->delay_time;
                 if ((delay_time_total) > p_fw->delay_time) {
@@ -162,6 +162,10 @@ static void add_forward_list(mda_envar_t *p_mda, wnet_txbuf_t *txbuf, mda_msg_in
                     adj = p_fw->delay_time - (delay_time_total - pos->delay_time); 
                     __list_add(&txbuf->list, ptx->list.prev, &ptx->list);
                     inserted = 1;
+                }
+                else {
+                    p_fw->delay_time -= delay_time_total;
+                    list_add(&txbuf->list, &ptx->list);
                 }
             }
 
@@ -223,7 +227,7 @@ static void forward_handler(mda_envar_t *p_mda)
 
         p_fw->delay_time -= (1000/RT_TICK_PER_SECOND);
 		if (p_fw->delay_time <= 0) {
-    		list_move(&first->list, &p_mda->forward_waiting_list);
+    		list_del(&first->list);
     		txbuf = first;
 		}
 	}
@@ -301,6 +305,9 @@ void mda_init(void)
     p_mda->sem_rx_history = osal_sem_create("s-mdah", 1);
     osal_assert(p_mda->sem_rx_history != RT_NULL);
 
+    osal_timer_start(p_mda->timer_forward);
+    osal_timer_start(p_mda->timer_rx_history);
+
 	OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n");
 }
 
@@ -323,36 +330,41 @@ int mda_handle(mda_envar_t *p_mda,
 {
     mda_history_t *p_hr;
     wnet_txbuf_t *txbuf;
-    vam_stastatus_t *p_local = &(p_vam_envar->local);
+   
+    mda_forward_t *p_fw;
+    int32_t forward_delay_time = 0;
 
-    if ((src_sta->left_hops < 1) || (0 == memcmp(src_sta->temorary_id, p_local->pid, MDA_TEMP_ID_LEN) )) {
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "No need to forward\n");
-        return -1;
-    }
-
+    src_sta->left_hops -=  1;
+    
     /*
      * Check if the frame has beed received before
      */
     p_hr = find_history_record(p_mda, src_sta);
 
     if (p_hr == NULL) {
-        /** Received a new frame */
-        int forward_delay_time = alg_farest_node(p_mda, src_sta, pre_sta);
-        if (forward_delay_time > 0) {
-            txbuf = rcp_create_forward_msg(src_sta->left_hops-1, msg_data, msg_length);
-            if (txbuf) {
-                OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "failed to create forward message\n");
-                return -1;
-            }
+        if (src_sta->left_hops <= 0) {
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_TRACE, "No need to forward\n");
+            return 0;
+        }
+        else {
+            /** Received a new frame */
+            forward_delay_time = alg_farest_node(p_mda, src_sta, pre_sta);
+            if (forward_delay_time >= 0) {
+                txbuf = rcp_create_forward_msg(src_sta->left_hops, msg_data, msg_length);
+                if (txbuf == NULL) {
+                    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "failed to create forward message\n");
+                    return -1;
+                }
 
-            add_history_record(p_mda, src_sta);
-            add_forward_list(p_mda, txbuf, src_sta, forward_delay_time);
+                add_history_record(p_mda, src_sta);
+                add_forward_list(p_mda, txbuf, src_sta, forward_delay_time);
+            }
         }
     }
     else {
         txbuf = find_forward_list(p_mda, src_sta);
         if (txbuf) {
-            mda_forward_t *p_fw;
+            /* Received the same frame */
             p_fw = (mda_forward_t *)(WNET_TXBUF_DATA_PTR(txbuf) - sizeof(mda_forward_t));
 
             if (src_sta->left_hops < (p_fw->msg.left_hops)) {

@@ -55,7 +55,7 @@ void load_default_param_custom(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -68,7 +68,7 @@ void load_default_param_custom(cfg_param_t *param)
 
     param->gsnr.gsnr_cal_step = 0;
     param->gsnr.gsnr_cal_thr = 4;
-    param->gsnr.gsnr_ebd_thr = -55;
+    param->gsnr.gsnr_ebd_thr = -30;
     param->gsnr.gsnr_ebd_cnt = 2;
     
     param->gsnr.AcceV_x = 0;
@@ -103,7 +103,7 @@ void load_default_param_highway(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -116,7 +116,7 @@ void load_default_param_highway(cfg_param_t *param)
 
     param->gsnr.gsnr_cal_step = 0;
     param->gsnr.gsnr_cal_thr = 4;
-    param->gsnr.gsnr_ebd_thr = -55;
+	param->gsnr.gsnr_ebd_thr = -30;
     param->gsnr.gsnr_ebd_cnt = 2;
     
     param->gsnr.AcceV_x = 0;
@@ -151,7 +151,7 @@ void load_default_param_mountain(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /*  unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -164,7 +164,7 @@ void load_default_param_mountain(cfg_param_t *param)
 
     param->gsnr.gsnr_cal_step = 0;
     param->gsnr.gsnr_cal_thr = 4;
-    param->gsnr.gsnr_ebd_thr = -55;
+	param->gsnr.gsnr_ebd_thr = -30;
     param->gsnr.gsnr_ebd_cnt = 2;
     
     param->gsnr.AcceV_x = 0;
@@ -198,7 +198,7 @@ void load_default_param_city(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -211,7 +211,7 @@ void load_default_param_city(cfg_param_t *param)
 
     param->gsnr.gsnr_cal_step = 0;
     param->gsnr.gsnr_cal_thr = 4;
-    param->gsnr.gsnr_ebd_thr = -55;
+	param->gsnr.gsnr_ebd_thr = -30;
     param->gsnr.gsnr_ebd_cnt = 2;
     
     param->gsnr.AcceV_x = 0;
@@ -250,7 +250,7 @@ void load_default_param(cfg_param_t *param)
 
     /******************** VSA *********************/
     param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
-    param->vsa.lane_dis = 25;  /* 50~1000, unit:ms, min accuracy :10ms */
+    param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
     param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
@@ -263,7 +263,7 @@ void load_default_param(cfg_param_t *param)
 
     param->gsnr.gsnr_cal_step = 0;
     param->gsnr.gsnr_cal_thr = 4;
-    param->gsnr.gsnr_ebd_thr = -55;
+    param->gsnr.gsnr_ebd_thr = -30;
     param->gsnr.gsnr_ebd_cnt = 2;
     
     param->gsnr.AcceV_x = 0;

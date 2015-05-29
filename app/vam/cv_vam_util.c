@@ -198,90 +198,7 @@ const char *_directfromangle(int angle)
     return dir[i];
 }
 
-double vsm_get_relative_pos_immediate(vam_stastatus_t *p_src, uint8_t *payload)
-{
-    double lat1, lng1, lat2, lng2, lat3, lng3;
-    double distance_1_2, distance_2_3;
-    double angle, delta;
-
-		rcp_msg_basic_safty_t *p_bsm;
-    vam_stastatus_t p_dest;
-	
-		p_bsm = (rcp_msg_basic_safty_t *)payload;
-
-		p_dest.timestamp = p_bsm->dsecond;
-
-		p_dest.pos.lon = decode_longtitude(p_bsm->position.lon);
-		p_dest.pos.lat = decode_latitude(p_bsm->position.lat);
-		p_dest.pos.elev = decode_elevation(p_bsm->position.elev);
-		p_dest.pos.accu = decode_accuracy(p_bsm->position.accu);
-
-		p_dest.dir = decode_heading(p_bsm->motion.heading);
-		p_dest.speed = decode_speed(p_bsm->motion.speed);
-		p_dest.acce.lon = decode_acce_lon(p_bsm->motion.acce.lon);
-		p_dest.acce.lat = decode_acce_lat(p_bsm->motion.acce.lat);
-		p_dest.acce.vert = decode_acce_vert(p_bsm->motion.acce.vert);
-		p_dest.acce.yaw = decode_acce_yaw(p_bsm->motion.acce.yaw);	
-	
-	
-    /* reference point */
-    lat1 = p_src->pos.lat;
-    lng1 = p_src->pos.lon;
-
-    /* destination point */
-    lat2 = p_dest.pos.lat;
-    lng2 = p_dest.pos.lon;
-
-    /* temp point */
-    lat3 = lat1;
-    lng3 = lng2;
-
-    distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
-    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
-    angle = acos(distance_2_3/distance_1_2)*180/PI;
-
-    /* calculate the relative angle against north, clockwise  */
-    if (lat2 >= lat1){
-    /* north */
-        if (lng2 >= lng1){
-        /* easts */
-            //equal
-        }
-        else{
-            angle = 360-angle;
-        }
-    }
-    else{
-    /* south */
-        if (lng2 >= lng1){
-        /* easts */
-            angle = 180-angle;
-        }
-        else{
-            angle = 180+angle;
-        }
-    }
-
-    /* calculate the angle detra between local front and remote position  */
-    if (angle > p_src->dir){
-        delta = angle - p_src->dir;
-    }
-    else{
-        delta = p_src->dir - angle;
-    }
-
-    if (delta > 180){
-        delta = 360 - delta;
-    }
-		
-	//zigbeeDelta = delta;
-    //zigbeeDistance = distance_1_2 *= 1000; /* convert from Km to m */
-
-    return (delta <= 45)? distance_1_2:(-distance_1_2);
-}
-
-uint8_t print_flag = 0xff;
-double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,uint8_t vsa_print_en)
+double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 {
     double lat1, lng1, lat2, lng2, lat3, lng3;
     double distance_1_2, distance_2_3;
@@ -337,33 +254,10 @@ double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,uint
         delta = 360 - delta;
     }
 
-    distance_1_2 *= 1000; /* convert from Km to m */
-/*	
-	rt_kprintf("My head:%s(%d), Your pos:%s(%d); Our delta:%d, distance:%d\n", \
-				   _directfromangle((int)p_src->dir), (int)p_src->dir,\
-				   _directfromangle((int)angle), (int)angle,\
-				  (int)delta, (int)distance_1_2);
+    distance_1_2 *= 1000; /* convert from Km to m */            
 
-if((print_flag)&&(vsa_print_en))	
-    rt_kprintf("tick =  %lu, My head:%s(%d),ID:%d%d%d%d, Your pos:%s(%d),ID:%d%d%d%d, Our delta:%d, distance:%d\n",rt_tick_get(), \
-               _directfromangle((int)p_src->dir), (int)p_src->dir,p_src->pid[0],p_src->pid[1],p_src->pid[2],p_src->pid[3],\
-               _directfromangle((int)p_dest->dir), (int)p_dest->dir,p_dest->pid[0],p_dest->pid[1],p_dest->pid[2],p_dest->pid[3],\
-              (int)delta, (int)distance_1_2);
-*/
-    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_LOUD,"My head:%s(%d),ID:%d%d%d%d, Your pos:%s(%d),ID:%d%d%d%d, Our delta:%d, distance:%d\n",\
-               _directfromangle((int)p_src->dir), (int)p_src->dir,p_src->pid[0],p_src->pid[1],p_src->pid[2],p_src->pid[3],\
-               _directfromangle((int)p_dest->dir), (int)p_dest->dir,p_dest->pid[0],p_dest->pid[1],p_dest->pid[2],p_dest->pid[3],\
-              (int)delta, (int)distance_1_2);
-              
-//#endif
     return (delta <= 45)? distance_1_2:(-distance_1_2);
 }
-
-void set_print(void)
-{
-	print_flag = ~print_flag;
-}
-FINSH_FUNCTION_EXPORT(set_print,close or open  information of printing);
 
 double vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest)
 {
@@ -410,7 +304,7 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
              (t+RT_UINT32_MAX - last->time)) / 1000.0;
 
     memcpy(current, last, sizeof(vam_stastatus_t));
-    if(deltaT == 0 || (last->speed < 5))
+    if(deltaT <= 20 || (last->speed < 10))
     {
         return 0;
     }

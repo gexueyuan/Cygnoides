@@ -25,8 +25,8 @@ extern "C"{
  * declaration of variables and functions                                    *
 *****************************************************************************/
 
-#define V2V_COMMUNICATION_RANGE      (500)
-#define MDA_FORWARD_DELAY_TIME_UNIT  (100)
+#define V2V_COMMUNICATION_RANGE      (350.0f)
+#define MDA_FORWARD_DELAY_TIME_UNIT  (70.0f)
 
 #define RX_HISTORY_NUM   16
 #define MAX_HISTORY_LIFE (10)  /* second */
@@ -34,6 +34,7 @@ extern "C"{
 
 typedef struct _mda_sta_info {
     uint8_t temorary_id[MDA_TEMP_ID_LEN];
+    uint8_t forward_id[MDA_TEMP_ID_LEN];
     uint8_t msg_count;
     uint8_t left_hops;
 } mda_msg_info_t;
@@ -42,12 +43,12 @@ typedef struct _mda_history {
     list_head_t list;
 
     mda_msg_info_t msg;
-    uint32_t life_time;
+    int32_t life_time;
 } mda_history_t;
 
 typedef struct _mda_forward {
     mda_msg_info_t msg;
-    uint32_t delay_time;
+    int32_t delay_time;
 } mda_forward_t;
 
 

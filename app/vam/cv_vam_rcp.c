@@ -188,7 +188,7 @@ __COMPILE_INLINE__ uint16_t decode_vehicle_alert(uint16_t x)
 /* BEGIN: Added by wanglei, 2015/1/4. for rsa test */
 __COMPILE_INLINE__ uint16_t encode_itiscode(uint16_t rsa_mask, __packed itis_codes_t *p_des)
 {
-    uint16_t r;
+    uint16_t r = 0;
     int bit;
 
     for(bit=0; bit<9; bit++)
@@ -208,7 +208,9 @@ __COMPILE_INLINE__ uint16_t encode_itiscode(uint16_t rsa_mask, __packed itis_cod
 
 __COMPILE_INLINE__ uint16_t decode_itiscode(itis_codes_t typeEvent, __packed itis_codes_t *p_des)
 {
-    uint16_t k, i, r, rsa_mask;
+    uint16_t k = 0;
+	uint16_t rsa_mask = 0;
+	uint16_t i, r;
     r = cv_ntohs(typeEvent);
     goto getbitmask;
     
@@ -233,6 +235,7 @@ getbitmask:
 int rcp_mda_process(uint8_t msg_hops, 
                       uint8_t msg_count,
                       uint8_t *p_temp_id, 
+                      uint8_t *p_forward_id,
                       uint8_t * data,
                       uint32_t datalen)
 {
@@ -241,9 +244,10 @@ int rcp_mda_process(uint8_t msg_hops,
     int ret;
 
     p_mda = &p_cms_envar->mda;
-    src.left_hops = msg_hops - 1;
+    src.left_hops = msg_hops;
     src.msg_count = msg_count;
     memcpy(src.temorary_id, p_temp_id, RCP_TEMP_ID_LEN);
+    memcpy(src.forward_id, p_forward_id, RCP_TEMP_ID_LEN);
     
     ret = mda_handle(p_mda, &src, NULL, data, datalen);
     return ret;
@@ -275,7 +279,7 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
     }
     
     rcp_mda_process(p_bsm->header.msg_id.hops, p_bsm->header.msg_count, 
-                     p_bsm->header.temporary_id, databuf, datalen);
+                     p_bsm->header.temporary_id, p_bsm->forward_id, databuf, datalen);
 
     p_sta = vam_find_sta(p_vam, p_bsm->header.temporary_id);
 
@@ -342,7 +346,7 @@ int rcp_parse_evam(vam_envar_t *p_vam,
     }
     
     rcp_mda_process(p_evam->msg_id.hops, p_evam->rsa.msg_count, 
-                     p_evam->temporary_id, databuf, datalen);
+                     p_evam->temporary_id, p_evam->forward_id, databuf, datalen);
 
 
     //TBD
@@ -480,11 +484,14 @@ int32_t rcp_send_bsm(vam_envar_t *p_vam)
 
     p_bsm = (rcp_msg_basic_safty_t *)WNET_TXBUF_DATA_PTR(txbuf);
 
-    p_bsm->header.msg_id.hops = p_vam->working_param.bsm_hops;
+    p_bsm->header.msg_id.hops = 1;
     p_bsm->header.msg_id.id = RCP_MSG_ID_BSM;
 
     p_bsm->header.msg_count = p_vam->tx_bsm_msg_cnt++;
     memcpy(p_bsm->header.temporary_id, p_local->pid, RCP_TEMP_ID_LEN);
+    if (p_vam->working_param.bsm_hops > 1){
+        memcpy(p_bsm->forward_id, p_local->pid, RCP_TEMP_ID_LEN);
+    }
     p_bsm->dsecond = rcp_get_system_time();
 
     p_bsm->position.lon = encode_longtitude(p_local->pos.lon);
@@ -501,6 +508,7 @@ int32_t rcp_send_bsm(vam_envar_t *p_vam)
 
     if(p_vam->flag & VAM_FLAG_TX_BSM_ALERT)
     {
+        p_bsm->header.msg_id.hops = p_vam->working_param.bsm_hops;
         /* need to send part2 safetyextenrion */
         p_bsm->safetyExt.events = encode_vehicle_alert(p_vam->local.alert_mask);
     }
@@ -543,6 +551,11 @@ int32_t rcp_send_evam(vam_envar_t *p_vam)
     p_evam->msg_id.hops = p_vam->working_param.evam_hops;
     p_evam->msg_id.id = RCP_MSG_ID_EVAM;
     memcpy(p_evam->temporary_id, p_local->pid, RCP_TEMP_ID_LEN);
+
+    if (p_vam->working_param.evam_hops > 1){
+        memcpy(p_evam->forward_id, p_local->pid, RCP_TEMP_ID_LEN);
+    }
+
 
     p_evam->rsa.msg_count = p_vam->tx_evam_msg_cnt++;
     p_evam->rsa.position.lon = encode_longtitude(p_local->pos.lon);
@@ -618,34 +631,52 @@ int32_t rcp_send_rsa(vam_envar_t *p_vam)
 int rcp_send_forward_msg(wnet_txbuf_t *txbuf)
 {
     wnet_txinfo_t *txinfo;
+    rcp_msgid_t *p_msgid;
+    rcp_msg_basic_safty_t *p_bsm;
+    rcp_msg_emergency_vehicle_alert_t *p_evam;
 
+    vam_envar_t *p_vam = &p_cms_envar->vam;
+    
     txinfo = WNET_TXBUF_INFO_PTR(txbuf);
     memset(txinfo, 0, sizeof(wnet_txinfo_t));
     memcpy(txinfo->dest.dsmp.addr, "\xFF\xFF\xFF\xFF\xFF\xFF", MACADDR_LENGTH);
     txinfo->dest.dsmp.aid = 0x00000020;
     txinfo->protocol = WNET_TRANS_PROT_DSMP;
     txinfo->encryption = WNET_TRANS_ENCRYPT_NONE;
-    txinfo->prority = WNET_TRANS_RRORITY_EMERGENCY;
+    txinfo->prority = WNET_TRANS_RRORITY_NORMAL;//WNET_TRANS_RRORITY_EMERGENCY;
     txinfo->timestamp = osal_get_systemtime();
 
+    /* modify the forward_id of msgdata */
+    p_msgid = (rcp_msgid_t *)(WNET_TXBUF_DATA_PTR(txbuf));
+    if (RCP_MSG_ID_BSM == p_msgid->id){
+        p_bsm = (rcp_msg_basic_safty_t *)WNET_TXBUF_DATA_PTR(txbuf);
+        memcpy(p_bsm->forward_id, p_vam->local.pid, RCP_TEMP_ID_LEN);
+    }
+    else if(RCP_MSG_ID_EVAM == p_msgid->id){
+        p_evam = (rcp_msg_emergency_vehicle_alert_t *)WNET_TXBUF_DATA_PTR(txbuf);
+        memcpy(p_evam->forward_id, p_vam->local.pid, RCP_TEMP_ID_LEN);    
+    }
+    else {
+        return -1;
+    }
+    
     return wnet_send(txinfo, WNET_TXBUF_DATA_PTR(txbuf), txbuf->data_len);
 }
 wnet_txbuf_t *rcp_create_forward_msg(uint8_t left_hops, uint8_t *pdata, uint32_t length)
 {
     rcp_msgid_t *p_msg;
-    wnet_txbuf_t *txbuf;
+    wnet_txbuf_t *txbuf = NULL;
 
     p_msg = (rcp_msgid_t *)pdata;
     p_msg->hops = left_hops;
 
     txbuf = wnet_get_txbuf();
-    if (txbuf == NULL) {
+    if (!txbuf) {
         return NULL;
     }
 
     memcpy(WNET_TXBUF_DATA_PTR(txbuf), pdata, length);
     txbuf->data_len = length;
-
     
     return txbuf;
 }
@@ -675,7 +706,7 @@ void test_rsa(int flag)
         }
     }   
 }
-FINSH_FUNCTION_EXPORT(test_rsa, debug: test sending rsa);
+FINSH_FUNCTION_EXPORT(test_rsa, test sending rsa);
 
 
 osal_timer_t *timer_test_bsm_rx;

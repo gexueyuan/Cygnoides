@@ -166,6 +166,11 @@ int32_t nmea_rmc_time(char *pStrS, char *pStrE, t_time *tt)
     TmpBuff[1] = *(pStrS + 5);
     tt->sec = (uint8_t) atoi((char *)TmpBuff);
 
+    TmpBuff[0] = *(pStrS + 7);
+    TmpBuff[1] = *(pStrS + 8);
+    TmpBuff[2] = *(pStrS + 9);
+    tt->diffsec = atoi((char *)TmpBuff);
+
     return 0;
 }
 
@@ -387,23 +392,17 @@ void nmea_parse(uint8_t *buff, uint32_t len)
                  (pStrE = strchr(pStrS + 1, ',')) != NULL &&\
                  nmea_rmc_date(pStrS + 1, pStrE, &tt) == 0)
             {
-				//char buf[100]={0};
 				nmeaRmc.isTrue = 1;
 				nmeaRmc.latitude = latitude;
 				nmeaRmc.longitude = longitude;
 				nmeaRmc.speed = speed;
                 nmeaRmc.heading = heading;
 				memcpy(&(nmeaRmc.tt), &tt, sizeof(tt));
-//				nmeaRmc.updateTime = get_current_time();
-				//sprintf(buf,"NMEA->Lat:%f Lon:%f Speed:%f Heading:%f\n", latitude, longitude, speed, heading);
-                //rt_kprintf(buf);
 
                 lip_update_local(&nmeaRmc, NULL);
                 nmea_add(&nmeaRmc);
                 //UTC Ê±¼ä
-//                if (time_check() == __FALSE) {
-//                    time_set(tt);
-//                }
+                //osal_printf("UTC: %d-%d-%d %d:%d:%d.%d\r\n", tt.year, tt.mon, tt.day, tt.hour, tt.min, tt.sec, tt.diffsec);
             }
             else return;
         }

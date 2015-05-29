@@ -294,6 +294,7 @@ typedef __COMPILE_PACK__ struct _VehicleSize {
 /* MSG_BasicSafetyMessage(BSM) */
 typedef __COMPILE_PACK__ struct _rcp_msg_basic_safty{
     rcp_msg_head_t header;
+    uint8_t   forward_id[4];  /* 转发节点pid */
     uint16_t  dsecond;
     rcp_position_t position;
     rcp_motion_t motion;
@@ -324,6 +325,7 @@ typedef  __COMPILE_PACK__ struct _msg_roadside_alert{
 typedef __COMPILE_PACK__ struct _msg_emergency_vehicle_alert{
     rcp_msgid_t   msg_id;
     uint8_t   temporary_id[4];
+    uint8_t   forward_id[4];   /* 转发节点pid */
     rcp_msg_roadside_alert_t rsa;
     uint8_t	  responseType;   /* OPTIONAL */
     uint8_t	  details;        /* OPTIONAL */

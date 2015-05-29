@@ -191,7 +191,8 @@ int32_t  vsa_preprocess_pos(void)
     if (peer_count != 0) {
         vam_get_local_current_status(&local_status);
         for (i = 0;i < peer_count;i++) {
-            vam_get_peer_current_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/       
+            vam_get_peer_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/  
+            
             p_pnt = &p_vsa->position_node[i];
 
 
@@ -206,14 +207,13 @@ int32_t  vsa_preprocess_pos(void)
 
             p_pnt->vsa_position.remote_speed = remote_status.speed;
 
-            p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;
+            p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;                
+
+            p_pnt->vsa_position.linear_distance = (int32_t)vsm_get_relative_pos(&local_status,&remote_status);//vam_get_peer_relative_pos(p_pnt->vsa_position.pid,0);//(uint32_t)temp_dis;
 
             p_pnt->vsa_position.v_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*cos(temp_delta*PI/180));
 
             p_pnt->vsa_position.h_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*sin(temp_delta*PI/180));
-                    
-
-            p_pnt->vsa_position.linear_distance = vam_get_peer_relative_pos(p_pnt->vsa_position.pid,0);//(uint32_t)temp_dis;
 
             p_pnt->vsa_position.safe_distance = vsa_safe_distance(p_pnt->vsa_position.linear_distance,local_status,remote_status);
                 

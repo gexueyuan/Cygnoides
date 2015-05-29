@@ -536,6 +536,11 @@
               <FileType>1</FileType>
               <FilePath>..\drivers\cv_drv_key.c</FilePath>
             </File>
+            <File>
+              <FileName>cv_drv_qc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\cv_drv_qc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1664,6 +1669,11 @@
               <FileName>cv_drv_key.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\drivers\cv_drv_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>cv_drv_qc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drivers\cv_drv_qc.c</FilePath>
             </File>
           </Files>
         </Group>

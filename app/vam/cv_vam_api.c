@@ -196,29 +196,29 @@ int32_t vam_get_peer_current_status(uint8_t *pid, vam_stastatus_t *local)
 }
 
 
-int32_t vam_get_peer_relative_pos(uint8_t *pid,uint8_t vsa_print_en)
+/* 
+flag: 0-don't estimate current gps position;  
+      1-estimate local current gps position; 
+      2-estimate gps position;
+*/
+int32_t vam_get_peer_relative_pos(uint8_t *pid, uint8_t flag)
 {
     vam_stastatus_t sta;
+    vam_stastatus_t local;
+    if (flag == 0){
+        vam_get_local_status(&local);      
+        vam_get_peer_status(pid, &sta);
+    }
+    else if(flag == 1){
+        vam_get_local_current_status(&local);      
+        vam_get_peer_status(pid, &sta);
+    }
+    else if(flag == 2){
+        vam_get_local_current_status(&local);      
+        vam_get_peer_current_status(pid, &sta);
+    }
 
-#if 0
-    vam_envar_t *p_vam = p_vam_envar;
-    vam_sta_node_t *p_sta = NULL;
-	  osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
-
-	  list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-        if (memcmp(p_sta->s.pid, pid, RCP_TEMP_ID_LEN)==0){
-            memcpy(&sta, &p_sta->s, sizeof(vam_stastatus_t));
-            break;
-        }
-	}
-    osal_sem_release(p_vam->sem_sta);
-    return (int32_t)vsm_get_relative_pos(&p_vam->local,&sta,vsa_print_en);
-#else
-    vam_stastatus_t current;
-    vam_get_local_current_status(&current);
-    vam_get_peer_current_status(pid, &sta);
-    return (int32_t)vsm_get_relative_pos(&current, &sta, vsa_print_en);
-#endif
+    return (int32_t)vsm_get_relative_pos(&local, &sta);
 }
 
 
@@ -252,7 +252,7 @@ int32_t vam_get_peer_relative_dir(uint8_t *pid)
     return r;
 }
 #endif
-#if 1
+
 int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastatus_t *remote)
 {
     int32_t delta, r;
@@ -268,7 +268,6 @@ int32_t vam_get_peer_relative_dir(const vam_stastatus_t *local,const vam_stastat
 
     return r;
 }
-#endif
 
 int32_t vam_get_peer_relative_speed(uint8_t *pid)
 {
@@ -338,10 +337,11 @@ int32_t vam_active_alert(uint16_t alert)
     p_vam->local.alert_mask |= alert; 
     if(!(p_vam->flag & VAM_FLAG_TX_BSM_ALERT))
     {
-        //vsm_start_evam_broadcast(p_vam);
-        /* change bsm sending period. ÔÝÊ¹ÓÃÔ­evam.period */
         p_vam->flag |= VAM_FLAG_TX_BSM_ALERT;       
-        vsm_update_bsm_bcast_timer(p_vam);
+        /* BEGIN: Deleted by wanglei,  No need to update bsm period 2015/5/25 */
+        /* change bsm sending period to evam period */
+        //vsm_update_bsm_bcast_timer(p_vam);
+        /* END: Deleted by wanglei, 2015/5/25 */
     }
         
     return 0;

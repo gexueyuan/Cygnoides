@@ -21,7 +21,7 @@ void gps_callback_register(gps_data_callback fp)
 
 
 /* set host uart1 baudrate  */
-static void gps_set_host_baudrate(int baud)
+void gps_set_host_baudrate(int baud)
 {
     rt_device_t dev;
     struct serial_configure config;
@@ -59,16 +59,19 @@ static void gps_read_data(rt_device_t dev)
 				__GPSBuff.PpBuf[__GPSBuff.Pipe].Len %= GPS_BUFF_SIZE;
 				__GPSBuff.PpBuf[__GPSBuff.Pipe].Flag = 0;
 
-                {
-                    sys_msg_t *p_msg;
-                    p_msg = osal_malloc(sizeof(sys_msg_t));
-                    if (p_msg) {
-                        p_msg->id = VAM_MSG_GPSDATA;
-                        p_msg->len = __GPSBuff.PpBuf[__GPSBuff.Pipe].Len;
-                        p_msg->argv = &__GPSBuff.PpBuf[__GPSBuff.Pipe].Buf;
-                        vam_add_event_queue_2(&p_cms_envar->vam, p_msg);
-                    }
-                }
+                        {   
+                            if(p_cms_envar->vam.queue_vam ){
+                            
+                                sys_msg_t *p_msg;
+                                p_msg = osal_malloc(sizeof(sys_msg_t));
+                                if (p_msg) {
+                                    p_msg->id = VAM_MSG_GPSDATA;
+                                    p_msg->len = __GPSBuff.PpBuf[__GPSBuff.Pipe].Len;
+                                    p_msg->argv = &__GPSBuff.PpBuf[__GPSBuff.Pipe].Buf;
+                                    vam_add_event_queue_2(&p_cms_envar->vam, p_msg);
+                                }
+                            }
+                        }
 
 				__GPSBuff.Pipe++;
 				__GPSBuff.Pipe %= GPS_PIPE;

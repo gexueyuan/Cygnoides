@@ -184,22 +184,27 @@ VOID    RTUSBBulkReceive(
     UCHAR *pData, 
     INT Length)
 {
-    #ifdef WIFI_ATE_MODE
-    ate_rx_frame((PRTMP_ADAPTER)pAd, pData, Length);
-    #else
-    STARxDoneInterruptHandle((PRTMP_ADAPTER)pAd, pData, Length);
-    usb_bulkin(((PRTMP_ADAPTER)pAd)->pUsb_Dev);
-    #endif
+    PRTMP_ADAPTER  pAdap = (PRTMP_ADAPTER) pAd;
+    if(pAdap->CommonCfg.Mode) {
+        ate_rx_frame((PRTMP_ADAPTER)pAd, pData, Length);
+    }
+    else {
+        STARxDoneInterruptHandle((PRTMP_ADAPTER)pAd, pData, Length);
+        usb_bulkin(((PRTMP_ADAPTER)pAd)->pUsb_Dev);
+    }
 }
 
 VOID    RTUSBBulkSendDone(
     IN    PVOID    pAd)
 {
-    #ifdef WIFI_ATE_MODE
-    ate_tx_complete();
-    #else
-    wnet_send_complete();
-    #endif
+    PRTMP_ADAPTER  pAdap = (PRTMP_ADAPTER) pAd;
+
+    if(pAdap->CommonCfg.Mode) {
+        ate_tx_complete();
+    }
+    else {
+        wnet_send_complete();
+    }
 }
 
 /*
@@ -325,11 +330,6 @@ int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
     PHEADER_802_11    pHeader_802_11;
     PUCHAR pPayload;
 
-    #ifdef WIFI_ATE_MODE
-    if (txinfo) {
-        return 0;
-    }
-    #endif
 
     if (!pAd->init_complete) {
         return -1;

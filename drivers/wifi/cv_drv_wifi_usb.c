@@ -609,7 +609,9 @@ static void _dev_probe_entry(void *parameter)
     /*
         Inform to the system
     */
-    sys_add_event_queue(&p_cms_envar->sys, SYS_MSG_INITED, 0, 0, 0);
+    if(p_cms_envar->sys.queue_sys_mng) {
+        sys_add_event_queue(&p_cms_envar->sys, SYS_MSG_INITED, 0, 0, 0);
+    }
 }
 
 static USBH_Status _dev_probe ( USB_OTG_CORE_HANDLE *pdev, void * phost)

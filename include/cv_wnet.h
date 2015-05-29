@@ -20,6 +20,8 @@ extern "C"{
 #endif
 #endif /* __cplusplus */
 
+#define WNET_TEST_MODE         (1)
+
 #define LLC_ETHERTYPE_IPv4    0x0800
 #define LLC_ETHERTYPE_IPv6    0x86DD
 #define LLC_ETHERTYPE_WSMPv1  0x88DC
@@ -89,7 +91,7 @@ typedef struct _wnet_rxinfo {
 #define TXBUF_LENGTH     512
 #define RXBUF_LENGTH     512
 
-#define TXBUF_NUM        10
+#define TXBUF_NUM        20
 #define RXBUF_NUM        10
 
 #define TXBUF_FLAG_NONE        0x0000
@@ -152,6 +154,7 @@ typedef struct _wnet_llc_header {
 typedef struct _wnet_config {
     uint8_t channel;
     uint8_t txrate;
+    uint8_t mode;  /* 0:normal, 1:qc test */
 } wnet_config_t;
 
 

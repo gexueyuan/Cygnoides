@@ -22,6 +22,7 @@
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
+#include "cv_drv_qc.h"
 
 #define FIRMWARE_VERSION "V2.0.000" 
 #ifdef NDEBUG
@@ -57,8 +58,6 @@ void global_init(void)
 
 void rt_init_thread_entry(void *parameter)
 {
-    osal_dbg_init();
-
     global_init();
     param_init();
     //cpu_usage_init();
@@ -81,12 +80,21 @@ void rt_init_thread_entry(void *parameter)
     //quit...
 }
 
+void qc_init_entry(void *parameter)
+{
+    global_init();
+    param_init();
+    qc_run_init();
+}
+
 int rt_application_init(void)
 {
     rt_thread_t tid;
+    active_qc_way_e   active_qc_way;
 
     rt_components_init();
     rt_platform_init();
+    osal_dbg_init();
 
     osal_printf("\n\n");
     osal_printf("CID : %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", 
@@ -94,10 +102,27 @@ int rt_application_init(void)
     osal_printf("CLK : %dMHz\n", SystemCoreClock/1000000);
     osal_printf("Firm: %s[%s,%s %s]\n\n", FIRMWARE_VERSION, FIRMWARE_IDEN, __TIME__, __DATE__);
 
-    tid = osal_task_create("init", rt_init_thread_entry, RT_NULL,
-                           RT_INIT_THREAD_STACK_SIZE, RT_INIT_THREAD_PRIORITY);
-    osal_assert(tid != NULL);
-
+    active_qc_way = active_qc_check();
+    if(ACTIVE_QC_NULL != active_qc_way) {
+        /* run qc thread */
+        tid = osal_task_create("qc", qc_init_entry, RT_NULL,
+                                QC_INIT_THREAD_STACK_SIZE, QC_INIT_THREAD_PRIORITY);
+        osal_assert(tid != NULL);
+    }
+    else {
+        /* run app thread */
+        tid = osal_task_create("init", rt_init_thread_entry, RT_NULL,
+                                        RT_INIT_THREAD_STACK_SIZE, RT_INIT_THREAD_PRIORITY);
+        osal_assert(tid != NULL);
+    }
     return 0;
 }
+
+
+void get_version(void)
+{
+  osal_printf("\nFirm: %s[%s,%s %s]\n\n", FIRMWARE_VERSION, FIRMWARE_IDEN, __TIME__, __DATE__);
+}
+FINSH_FUNCTION_EXPORT(get_version, get firmware version);
+
 

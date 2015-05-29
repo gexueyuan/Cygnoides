@@ -55,7 +55,7 @@ static uint16_t _cal_peroid_from_speed(float speed, uint8_t bsm_boardcast_saftyf
 
 void vsm_start_bsm_broadcast(vam_envar_t *p_vam)
 {
-    uint16_t period;
+    uint16_t period = 0;
     
     if(p_vam->working_param.bsm_boardcast_mode == BSM_BC_MODE_AUTO){
         //calcute peroid from speed
@@ -78,7 +78,7 @@ void vsm_stop_bsm_broadcast(vam_envar_t *p_vam)
 
 void vsm_pause_bsm_broadcast(vam_envar_t *p_vam)
 {
-    uint16_t period;
+    uint16_t period = 0;
     rt_tick_t ticks;
 
     if (!(p_vam->flag & VAM_FLAG_TX_BSM_PAUSE))
@@ -167,7 +167,7 @@ void timer_gps_life_callback(void* parameter)
 
 void vsm_start_evam_broadcast(vam_envar_t *p_vam)
 {
-    uint16_t period;
+    uint16_t period = 0;
     rt_tick_t ticks;
     if(p_vam->working_param.evam_broadcast_type == BSM_BC_MODE_AUTO){
         period = _cal_peroid_from_speed(p_vam->local.speed, p_vam->working_param.bsm_boardcast_saftyfactor);
@@ -263,7 +263,6 @@ void vam_update_sta(vam_envar_t *p_vam)
     vam_stastatus_t *p_sta[VAM_NEIGHBOUR_MAXNUM];
     static uint8_t gotNeighbour = 0;
     uint8_t isEmpty = 1;
-    int i = 0;
     int num_peer_alert_timeout = 0;
 
     if (osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
