@@ -223,6 +223,7 @@ static void I2S_GPIO_Init(void)
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
+    sound_en(0);//shut down amplifer
 #endif
 }
 
@@ -718,6 +719,9 @@ void Audio_MAL_IRQHandler(void)
 	  DMA_ClearITPendingBit(AUDIO_MAL_DMA_STREAM, DMA_IT_TCIF4);
 
 	  voc_play_complete();
+
+      
+      sound_en(0);//GPIO_SetBits(GPIOC, GPIO_Pin_6); /* Enable the amplifier */
 	//      rt_kprintf("clear flag\n");
 	}
 
@@ -814,7 +818,7 @@ void  Pt8211_AUDIO_DeInit(void)
 uint32_t Pt8211_AUDIO_Play(uint16_t* pBuffer, uint32_t Size)
 {
 
-  GPIO_ResetBits(GPIOC, GPIO_Pin_6); /* Enable the amplifier */
+  sound_en(1);//GPIO_ResetBits(GPIOC, GPIO_Pin_6); /* Enable the amplifier */
 
   /* Set the total number of data to be played (count in half-word) */
   AudioTotalSize = Size/2;

@@ -44,7 +44,7 @@
 /* for test roadside alert */
 #define VAM_FLAG_TX_RSA       (0x0100)
 
-#define VAM_NEIGHBOUR_MAXNUM   (4)  //
+#define VAM_NEIGHBOUR_MAXNUM   (10)  //
 #define VAM_NEIGHBOUR_MAXLIFE  (15)  //unit: second
 
 

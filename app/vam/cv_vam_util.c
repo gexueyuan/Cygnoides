@@ -197,6 +197,30 @@ const char *_directfromangle(int angle)
 
     return dir[i];
 }
+double vsm_get_angle(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
+{
+    double lat1, lng1, lat2, lng2, lat3, lng3;
+    double distance_1_2, distance_2_3;
+    double angle;
+
+    /* reference point */
+    lat1 = p_src->pos.lat;
+    lng1 = p_src->pos.lon;
+
+    /* destination point */
+    lat2 = p_dest->pos.lat;
+    lng2 = p_dest->pos.lon;
+
+    /* temp point */
+    lat3 = lat1;
+    lng3 = lng2;
+
+    distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
+    distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
+    return angle = acos(distance_2_3/distance_1_2)*180/PI;
+
+}
+
 
 double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 {
