@@ -22,6 +22,7 @@
 #include "assert.h"
 #include "cv_cms_def.h"
 #include "voc.h"
+#include "components.h"
 
 
 short buffer_voc[BUFFER_COUNT][BUFFER_SIZE/2]; 
@@ -145,7 +146,6 @@ int adpcm_de(char *code, short *pcm, int count)
 void voc_play_complete(void)
 {
     VOC_STATUS_CLR(VOC_STATUS_DEV_BUSY);
-    osal_enter_critical();
     osal_sem_release(sem_buffer_voc);
     osal_sem_release(sem_audio_dev);
     OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"play end\n");
@@ -164,7 +164,6 @@ void voc_play_complete(void)
             }
 
     }
-    osal_leave_critical(); \
 }
 
 static int wait_for(osal_sem_t *sem)
@@ -310,8 +309,8 @@ void rt_play_thread_entry(void *parameter)
                 pcm_play(session->src_data, session->src_length);
                 break;
             }
-
-            osal_sem_take(sem_play_complete,OSAL_WAITING_FOREVER);
+            if(VOC_STATUS_TST(VOC_STATUS_DEV_BUSY))
+                osal_sem_take(sem_play_complete,OSAL_WAITING_FOREVER);
 
             /* Recover to initial value */
             
@@ -407,4 +406,11 @@ void voc_stop(uint32_t b_wait)
         }
     }
 }
+
+void rl_compl(void)
+{
+    osal_sem_release(sem_play_complete);    
+}
+
+FINSH_FUNCTION_EXPORT(rl_compl,release sem);
 

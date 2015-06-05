@@ -43,6 +43,8 @@ void space_null(void)
 #define CCW_DEBOUNCE     5
 
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
+static int vbd_judge(vsa_envar_t *p_vsa);
+
 
 extern void test_comm(void);
 extern uint8_t vam_get_gps_status(void);
@@ -329,7 +331,7 @@ void vsa_receive_alarm_update(void *parameter)
     vam_get_peer_alert_status(&peer_alert);
     memcpy(&p_vsa->remote, p_sta, sizeof(vam_stastatus_t));
 
-    if (peer_alert&VAM_ALERT_MASK_VBD){
+    if ((peer_alert&VAM_ALERT_MASK_VBD)&&(vbd_judge(p_vsa))){
         if (!(p_vsa->alert_pend & (1<<VSA_ID_VBD))){
             vsa_add_event_queue(p_vsa, VSA_MSG_ACC_RC, 1,VAM_ALERT_MASK_VBD,NULL);
         }
@@ -442,7 +444,7 @@ void vsa_cancel_ccw_warning(uint32_t warning_id)
     uint32_t list_search;
     alert_pend = p_vsa->alert_pend;
     list_search = vsa_search_warning(warning_id);
-    osal_printf("pend is %d,research is %d\n\n",alert_pend,list_search);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"pend is %d,research is %d\n\n",alert_pend,list_search);
     if ((p_vsa->alert_pend & (1<<warning_id))&&(!vsa_search_warning(warning_id))){
     /* inform system to stop alert */
         p_vsa->alert_pend &= ~(1<<warning_id);
@@ -834,15 +836,13 @@ static int vsa_manual_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 
 static int vsa_eebl_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
 {
-    if ((p_vsa->local.speed >= p_vsa->working_param.danger_detect_speed_threshold)){
         vam_active_alert(VAM_ALERT_MASK_EBD);
         rt_timer_stop(p_vsa->timer_ebd_send);
         rt_timer_start(p_vsa->timer_ebd_send);
         OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Detect Emergency braking \n\n");
         sys_add_event_queue(&p_cms_envar->sys, \
                                     SYS_MSG_ALARM_ACTIVE, 0, VSA_ID_EBD, NULL);
-    }
-    return 0;
+        return 0;
 
 }
 static int vsa_auto_broadcast_proc(vsa_envar_t *p_vsa, void *arg)
@@ -907,7 +907,7 @@ static int vsa_accident_recieve_proc(vsa_envar_t *p_vsa, void *arg)
     switch(p_msg->argc){
 
     case VAM_ALERT_MASK_VBD:
-        if ((vbd_judge(p_vsa))&&(p_msg->len)){
+        if (p_msg->len){
             p_vsa->alert_pend |= (1<<VSA_ID_VBD);
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Vehicle Breakdown Alert!!! Id:%02X%02X%02X%02X\n",\
             p_vsa->remote.pid[0],p_vsa->remote.pid[1],p_vsa->remote.pid[2],p_vsa->remote.pid[3]);
