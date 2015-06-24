@@ -60,7 +60,7 @@ void rt_init_thread_entry(void *parameter)
 {
     global_init();
     param_init();
-    //cpu_usage_init();
+    cpu_usage_init();
     gps_init();
   	nmea_init();
     rt_led_init();

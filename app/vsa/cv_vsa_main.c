@@ -44,7 +44,7 @@ void space_null(void)
 
 double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
 static int vbd_judge(vsa_envar_t *p_vsa);
-
+static int ebd_judge(vsa_envar_t *p_vsa);
 
 extern void test_comm(void);
 extern uint8_t vam_get_gps_status(void);
@@ -60,11 +60,10 @@ extern uint8_t vam_get_gps_status(void);
  @return  : 
 *****************************************************************************/
 uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatus_t *remote,
-	                                  double distance_1_2, double *delta_offset)
+	                                  vam_pos_data *pos_data, double *delta_offset)
 {
 
-    double lat1, lng1, lat2, lng2, lat3, lng3;
-    double distance_2_3;
+    double lat1, lng1, lat2, lng2;
     double angle, delta;
 
     /* reference point */
@@ -75,12 +74,8 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
     lat2 = remote->pos.lat;
     lng2 = remote->pos.lon;
 
-    /* temp point */
-    lat3 = lat1;
-    lng3 = lng2;
 
-    distance_2_3 = 1000.0*getDistanceVer2(lat2, lng2, lat3, lng3);
-    angle = acos(distance_2_3/distance_1_2)*180/PI;
+    angle = pos_data->angle;
 
     /* calculate the relative angle against north, clockwise  */
     if (lat2 >= lat1){
@@ -176,7 +171,7 @@ int32_t  vsa_preprocess_pos(void)
     vam_stastatus_t remote_status;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
     vsa_position_node_t *p_pnt = NULL;
-    double temp_dis;
+    vam_pos_data temp_data;
     int8_t i = 0;
     uint8_t peer_pid[VAM_NEIGHBOUR_MAXNUM][RCP_TEMP_ID_LEN];
     uint32_t peer_count;
@@ -184,7 +179,7 @@ int32_t  vsa_preprocess_pos(void)
     char strbuf[64] = {0};
     double temp_delta = 0;
 
-    uint32_t count_pos = 0;
+    //uint32_t count_pos = 0;
     if (0x1 & g_dbg_print_type){
         test_comm();
     }
@@ -200,10 +195,9 @@ int32_t  vsa_preprocess_pos(void)
 
             memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
 
-            temp_dis = 1000.0*getDistanceVer2((double)local_status.pos.lat,(double)local_status.pos.lon,
-                        (double)remote_status.pos.lat,(double)remote_status.pos.lon);
+            temp_data = vsm_get_data(&local_status,&remote_status);
 
-            p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,temp_dis,&temp_delta);
+            p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,&temp_data,&temp_delta);
 
             p_pnt->vsa_position.local_speed = local_status.speed;
 
@@ -211,7 +205,7 @@ int32_t  vsa_preprocess_pos(void)
 
             p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;                
 
-            p_pnt->vsa_position.linear_distance = (int32_t)vsm_get_relative_pos(&local_status,&remote_status);//vam_get_peer_relative_pos(p_pnt->vsa_position.pid,0);//(uint32_t)temp_dis;
+            p_pnt->vsa_position.linear_distance = (int32_t)vsm_get_pos(&local_status,&remote_status,&temp_data);//
 
             p_pnt->vsa_position.v_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*cos(temp_delta*PI/180));
 
@@ -233,17 +227,6 @@ int32_t  vsa_preprocess_pos(void)
                     p_pnt->vsa_position.h_offset,strbuf,p_pnt->vsa_position.safe_distance);
             }
 	    }
-#if 0
-        if(count_pos++ > 30){
-            for(i = 0;i < peer_count;i++){ 
-                p_pnt = &p_vsa->position_node[i];
-                osal_printf("pid(%02X %02X %02X %02X),vsa_location = %d ldis = %d  safe_dis = %lu\n\n",p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1],\
-                p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
-                p_pnt->vsa_position.vsa_location,p_pnt->vsa_position.linear_distance,p_pnt->vsa_position.safe_distance);
-            }
-          count_pos = 0; 
-        }
-#endif
     }
     else
         return 0; 
@@ -342,7 +325,7 @@ void vsa_receive_alarm_update(void *parameter)
         }
     }
 
-    if (peer_alert&VAM_ALERT_MASK_EBD){
+    if ((peer_alert&VAM_ALERT_MASK_EBD)&&(ebd_judge(p_vsa))){
         if (!(p_vsa->alert_pend & (1<<VSA_ID_EBD))){
             vsa_add_event_queue(p_vsa, VSA_MSG_EEBL_RC, 1,VAM_ALERT_MASK_EBD,NULL);
         }
@@ -370,6 +353,9 @@ void vsa_receive_rsa_update(void *parameter)
 {
     vam_rsa_evt_info_t *param = (vam_rsa_evt_info_t*)parameter;
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    if(param->rsa_mask)
+        vsa_add_event_queue(p_vsa, VSA_MSG_XXX_RC, 0,0,NULL);
 
 }
 
@@ -482,7 +468,10 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
             list_for_each_entry(pos,vsa_crd_node_t,&p_vsa->crd_list,list){
                 if (memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0){
                     if(pos->ccw_id == warning_id){//have this id and vsa warning do nor change
-                        if(pos->ccw_cnt >= CCW_DEBOUNCE){
+                        if(pos->ccw_cnt >= CCW_DEBOUNCE){                          
+                            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
+                                                "pid(%02X %02X %02X %02X) warning id=%d  dis=%d\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
+                                                p_crd->pid[3],warning_id,p_pnt->vsa_position.linear_distance);
                             vsa_send_ccw_warning(warning_id);
                         }
                         else{
@@ -943,7 +932,7 @@ static int vsa_eebl_recieve_proc(vsa_envar_t *p_vsa, void *arg)
     switch(p_msg->argc){
 
     case VAM_ALERT_MASK_EBD:
-        if((ebd_judge(p_vsa))&&(p_msg->len)){
+        if(p_msg->len){
             p_vsa->alert_pend |= (1<<VSA_ID_EBD);
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "Emergency Vehicle  Alert start!!! Id:%02X%02X%02X%02X\n",\
             p_vsa->remote.pid[0],p_vsa->remote.pid[1],p_vsa->remote.pid[2],p_vsa->remote.pid[3]);

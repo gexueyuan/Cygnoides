@@ -70,7 +70,7 @@ static mda_history_t *find_history_record(mda_envar_t *p_mda, mda_msg_info_t *sr
 {
     int err;
     int i;
-    mda_history_t *pos, *result = NULL;
+    mda_history_t *pos = NULL, *result = NULL;
 
     err = osal_sem_take(p_mda->sem_rx_history, OSAL_WAITING_FOREVER);
     osal_assert(err == OSAL_STATUS_SUCCESS);
@@ -96,7 +96,7 @@ static mda_history_t *add_history_record(mda_envar_t *p_mda, mda_msg_info_t *src
     int err;
     int i;
     uint32_t oldest = MAX_HISTORY_LIFE + 1;
-    mda_history_t *pos, *new;
+    mda_history_t *pos = NULL, *new = NULL;
 
     err = osal_sem_take(p_mda->sem_rx_history, OSAL_WAITING_FOREVER);
     osal_assert(err == OSAL_STATUS_SUCCESS);

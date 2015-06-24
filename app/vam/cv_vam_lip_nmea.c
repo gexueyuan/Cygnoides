@@ -26,7 +26,7 @@ int32_t nmea_rmc_lat(char *pStrS, char *pStrE, double *latitude);
 int32_t nmea_rmc_lon(char *pStrS, char *pStrE, double *longitude);
 
 void nmea_init(void) {
-	rt_mutex_init(&mutex_gps,"mutex_gps", RT_IPC_FLAG_FIFO) ;
+    p_mutex_gps = osal_mutex_create("mutex_gps");
 }
 
 void nmea_add(t_nmea_rmc *param) 
@@ -47,7 +47,7 @@ void nmea_add(t_nmea_rmc *param)
     uint32_t t1;
 
 
-    rt_mutex_take(&mutex_gps,RT_WAITING_FOREVER);
+    osal_mutex_take(p_mutex_gps, OSAL_WAITING_FOREVER);
 
     t1 = osal_get_systemtime();
 
@@ -144,7 +144,7 @@ void nmea_add(t_nmea_rmc *param)
     old_heading = param->heading;
     t0 = t1;
 
-    rt_mutex_release(&mutex_gps);
+    osal_mutex_release(p_mutex_gps);
 }
 
 int32_t nmea_rmc_time(char *pStrS, char *pStrE, t_time *tt)

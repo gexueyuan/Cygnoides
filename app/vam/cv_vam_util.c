@@ -144,7 +144,7 @@ double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest)
     {
         char str[64];
         sprintf(str,"%f", d);
-        rt_kprintf("distance:%s\n", str);
+        osal_printf("distance:%s\n", str);
     }
     #endif
 
@@ -197,11 +197,12 @@ const char *_directfromangle(int angle)
 
     return dir[i];
 }
-double vsm_get_angle(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
+vam_pos_data vsm_get_data(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 {
     double lat1, lng1, lat2, lng2, lat3, lng3;
     double distance_1_2, distance_2_3;
     double angle;
+    vam_pos_data  pos_data;
 
     /* reference point */
     lat1 = p_src->pos.lat;
@@ -217,10 +218,72 @@ double vsm_get_angle(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 
     distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
     distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
-    return angle = acos(distance_2_3/distance_1_2)*180/PI;
+    angle = acos(distance_2_3/distance_1_2)*180/PI;
+
+    pos_data.distance_1_2 = distance_1_2;
+    pos_data.distance_2_3 = distance_2_3;
+    pos_data.angle = angle;
+
+    return pos_data;
 
 }
 
+double vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data *pos_data)
+{
+    double lat1, lng1, lat2, lng2;
+    double distance_1_2;
+    double angle, delta;
+
+    /* reference point */
+    lat1 = p_src->pos.lat;
+    lng1 = p_src->pos.lon;
+
+    /* destination point */
+    lat2 = p_dest->pos.lat;
+    lng2 = p_dest->pos.lon;
+
+
+    distance_1_2 = pos_data->distance_1_2;
+    angle = pos_data->angle;
+
+    /* calculate the relative angle against north, clockwise  */
+    if (lat2 >= lat1){
+    /* north */
+        if (lng2 >= lng1){
+        /* easts */
+            //equal
+        }
+        else{
+            angle = 360-angle;
+        }
+    }
+    else{
+    /* south */
+        if (lng2 >= lng1){
+        /* easts */
+            angle = 180-angle;
+        }
+        else{
+            angle = 180+angle;
+        }
+    }
+
+    /* calculate the angle detra between local front and remote position  */
+    if (angle > p_src->dir){
+        delta = angle - p_src->dir;
+    }
+    else{
+        delta = p_src->dir - angle;
+    }
+
+    if (delta > 180){
+        delta = 360 - delta;
+    }
+
+    distance_1_2 *= 1000; /* convert from Km to m */            
+
+    return (delta <= 45)? distance_1_2:(-distance_1_2);
+}
 
 double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 {
@@ -351,15 +414,14 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
     lon2 = lon1 + atan2(sin(dir)*sin(dR)*cos(lat1), cos(dR)-sin(lat1)*sin(lat2));
 
     current->time = t;
-    current->dir = dir * 180.0 / PI;
-    current->speed = v*3.6;
+
     current->pos.lon = lon2 * 180.0 / PI;
     current->pos.lat = lat2 * 180.0 / PI;
 #if 0
     char buf[100];
     sprintf(buf, "(lon=%f,lat=%f),h=%f,d=%f,s=%f,v=%f", current->pos.lon, current->pos.lat, current->dir, 
                                       vsm_get_relative_pos(last, current, 0), s, v);
-    rt_kprintf("c%d%s\r\n", t, buf);
+    osal_printf("c%d%s\r\n", t, buf);
 #endif
     return 0;
 }

@@ -19,7 +19,7 @@ void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len)
 }
 
 
-rt_bool_t lip_rmc_valid_check(t_nmea_rmc *p_rmc, rt_tick_t t)
+int lip_rmc_valid_check(t_nmea_rmc *p_rmc, uint32_t t)
 {
 #if 0 //TBD. 定位后才需要检查合法性
     vam_envar_t *p_vam = &p_cms_envar->vam;
@@ -42,7 +42,7 @@ rt_bool_t lip_rmc_valid_check(t_nmea_rmc *p_rmc, rt_tick_t t)
     s2 = v1*delta_t;
     char buf[100];
     sprintf(buf, "%d(lon=%f,lat=%f),h=%f,d=%f,s=%f,v=%f", t, temp.lon, temp.lat, p_rmc->heading, s1, s2, v1);
-    rt_kprintf("g%s\r\n", buf);
+    osal_printf("g%s\r\n", buf);
 #endif
     
     if(p_rmc->heading > 360.0 || (VAM_ABS(v1-v2)/delta_t > 9) || ((VAM_ABS(s1)/t) > 100))
@@ -53,12 +53,12 @@ rt_bool_t lip_rmc_valid_check(t_nmea_rmc *p_rmc, rt_tick_t t)
 
  #endif  
 
-    return RT_TRUE;
+    return 1;
 }
 
 void lip_update_local(t_nmea_rmc *p_rmc, float *p_accu)
 {
-    rt_bool_t res = 0;
+    int res = 0;
 	static uint8_t getGps = 0;
     vam_envar_t *p_vam = &p_cms_envar->vam;
     vam_stastatus_t last;

@@ -13,7 +13,7 @@
 #define GPS_BUFF_SIZE 256
 #define GPS_PIPE 5
 
-extern struct rt_mutex  mutex_gps ;
+extern osal_mutex_t * p_mutex_gps;
 
 typedef struct {
 	uint8_t Flag;

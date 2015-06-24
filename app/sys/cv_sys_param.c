@@ -54,13 +54,13 @@ void load_default_param_custom(cfg_param_t *param)
     param->vam.evam_broadcast_peroid = 50;
 
     /******************** VSA *********************/
-    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_detect_speed_threshold = 60;  /* unit: km/h */
     param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
-    param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
-    param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
-    param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+    param->vsa.crd_oppsite_speed = 20;/* <=255:30km/h*/
+    param->vsa.crd_oppsite_rear_speed = 15;/* <=255:30km/h*/
+    param->vsa.crd_rear_distance = 60;/*<=255:20m*/
     
     param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
     param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
@@ -102,13 +102,13 @@ void load_default_param_highway(cfg_param_t *param)
     param->vam.evam_broadcast_peroid = 50;
 
     /******************** VSA *********************/
-    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_detect_speed_threshold = 60;  /* unit: km/h */
     param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
-    param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
-    param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
-    param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+    param->vsa.crd_oppsite_speed = 20;/* <=255:30km/h*/
+    param->vsa.crd_oppsite_rear_speed = 15;/* <=255:30km/h*/
+    param->vsa.crd_rear_distance = 60;/*<=255:20m*/
     
     param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
     param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
@@ -150,13 +150,13 @@ void load_default_param_mountain(cfg_param_t *param)
     param->vam.evam_broadcast_peroid = 50;
 
     /******************** VSA *********************/
-    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_detect_speed_threshold = 60;  /* unit: km/h */
     param->vsa.lane_dis = 25;  /*  unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
-    param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
-    param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
-    param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+    param->vsa.crd_oppsite_speed = 20;/* <=255:30km/h*/
+    param->vsa.crd_oppsite_rear_speed = 15;/* <=255:30km/h*/
+    param->vsa.crd_rear_distance = 60;/*<=255:20m*/
     
     param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
     param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
@@ -197,13 +197,13 @@ void load_default_param_city(cfg_param_t *param)
     param->vam.evam_broadcast_peroid = 50;
 
     /******************** VSA *********************/
-    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_detect_speed_threshold = 60;  /* unit: km/h */
     param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
-    param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
-    param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
-    param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+    param->vsa.crd_oppsite_speed = 20;/* <=255:30km/h*/
+    param->vsa.crd_oppsite_rear_speed = 15;/* <=255:30km/h*/
+    param->vsa.crd_rear_distance = 60;/*<=255:20m*/
     
     param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
     param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */
@@ -249,13 +249,13 @@ void load_default_param(cfg_param_t *param)
     param->vam.evam_broadcast_peroid = 50;
 
     /******************** VSA *********************/
-    param->vsa.danger_detect_speed_threshold = 30;  /* unit: km/h */
+    param->vsa.danger_detect_speed_threshold = 60;  /* unit: km/h */
     param->vsa.lane_dis = 25;  /* unit:m, min accuracy :1m */
     
     param->vsa.crd_saftyfactor = 4;  /* 1~10 */
-    param->vsa.crd_oppsite_speed = 0;/* <=255:30km/h*/
-    param->vsa.crd_oppsite_rear_speed = 10;/* <=255:30km/h*/
-    param->vsa.crd_rear_distance = 20;/*<=255:20m*/
+    param->vsa.crd_oppsite_speed = 20;/* <=255:30km/h*/
+    param->vsa.crd_oppsite_rear_speed = 15;/* <=255:30km/h*/
+    param->vsa.crd_rear_distance = 60;/*<=255:20m*/
     
     param->vsa.ebd_mode = 1;  /* 0 - disable, 1 - enable */
     param->vsa.ebd_acceleration_threshold = 3; /* unit:m/s2 */

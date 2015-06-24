@@ -240,6 +240,14 @@ typedef struct _vam_rsa_evt_info {
 } vam_rsa_evt_info_t;
 
 
+typedef struct _vam_pos_data{
+
+    double distance_1_2;
+    double distance_2_3;
+    double angle;
+
+}vam_pos_data;
+
 /*****************************************************************************
  * declaration of global variables and functions                             *
 *****************************************************************************/
@@ -267,6 +275,8 @@ void lip_update_local(t_nmea_rmc *p_rmc, float *p_accu);
 void lip_update_local_acc(float x, float y, float z);
 
 double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest);
+vam_pos_data vsm_get_data(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
+double vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data *pos_data);
 double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
 double vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest);
 int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest);

@@ -304,8 +304,11 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
         p_sta->s.acce.yaw = decode_acce_yaw(p_bsm->motion.acce.yaw);
 
         //dump_pos(&p_sta->s);
+
         /* for test  */
-        rcp_dbg_distance = vsm_get_distance(&p_vam->local.pos, &p_sta->s.pos); 
+        if (1 == g_dbg_print_type){
+            rcp_dbg_distance = vsm_get_distance(&p_vam->local.pos, &p_sta->s.pos); 
+        }
 
         if (p_vam->evt_handler[VAM_EVT_PEER_UPDATE]){
             (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);
@@ -472,7 +475,7 @@ int32_t rcp_send_bsm(vam_envar_t *p_vam)
     wnet_txbuf_t *txbuf;
     wnet_txinfo_t *txinfo;
     vam_stastatus_t current;
-	int len = sizeof(rcp_msg_basic_safty_t);
+    int len = sizeof(rcp_msg_basic_safty_t);
 	
     txbuf = wnet_get_txbuf();
     if (txbuf == NULL) {

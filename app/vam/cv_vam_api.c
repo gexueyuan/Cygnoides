@@ -338,10 +338,6 @@ int32_t vam_active_alert(uint16_t alert)
     if(!(p_vam->flag & VAM_FLAG_TX_BSM_ALERT))
     {
         p_vam->flag |= VAM_FLAG_TX_BSM_ALERT;       
-        /* BEGIN: Deleted by wanglei,  No need to update bsm period 2015/5/25 */
-        /* change bsm sending period to evam period */
-        //vsm_update_bsm_bcast_timer(p_vam);
-        /* END: Deleted by wanglei, 2015/5/25 */
     }
         
     return 0;
@@ -365,7 +361,7 @@ void vam_stop_alert()
 {
     vam_envar_t *p_vam = p_vam_envar;
     p_vam->flag &= ~VAM_FLAG_TX_EVAM;
-    rt_timer_stop(p_vam->timer_send_evam);
+    osal_timer_stop(p_vam->timer_send_evam);
 }
 
 /*****************************************************************************

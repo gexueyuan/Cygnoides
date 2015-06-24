@@ -114,7 +114,7 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
 
 void vam_thread_entry(void *parameter)
 {
-    rt_err_t err;
+    int err;
     sys_msg_t *p_msg;
     vam_envar_t *p_vam = (vam_envar_t *)parameter;
 
@@ -122,7 +122,7 @@ void vam_thread_entry(void *parameter)
 
 	while(1){
         err = osal_queue_recv(p_vam->queue_vam, &p_msg, RT_WAITING_FOREVER);
-        if (err == RT_EOK){
+        if (err == OSAL_STATUS_SUCCESS){
             vam_main_proc(p_vam, p_msg);
             osal_free(p_msg);
         }

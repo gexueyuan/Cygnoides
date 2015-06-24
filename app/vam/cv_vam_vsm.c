@@ -24,8 +24,7 @@
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
-//rt_timer_t timer_send_bsm;
-//vam_envar_t *p_vam;
+
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -79,7 +78,7 @@ void vsm_stop_bsm_broadcast(vam_envar_t *p_vam)
 void vsm_pause_bsm_broadcast(vam_envar_t *p_vam)
 {
     uint16_t period = 0;
-    rt_tick_t ticks;
+    uint32_t ticks;
 
     if (!(p_vam->flag & VAM_FLAG_TX_BSM_PAUSE))
     {
@@ -96,13 +95,17 @@ void timer_send_bsm_callback(void* parameter)
     vam_envar_t *p_vam = (vam_envar_t *)parameter;
 
     static uint8_t count = VAM_NO_ALERT_EVAM_TX_TIMES;
-    if (p_vam->flag&VAM_FLAG_TX_BSM_ALERT && p_vam->local.alert_mask == 0){
-        /* 发送VAM_NO_ALERT_EVAM_TX_TIMES次后停止发送EVAM消息数据 */
-        if(0 == count--){
-            p_vam->flag &= ~VAM_FLAG_TX_BSM_ALERT;
-            /* change bsm timer time */
-            vsm_update_bsm_bcast_timer(p_vam);
-        }        
+    if (p_vam->flag&VAM_FLAG_TX_BSM_ALERT){
+        /* 所有alter已取消 */
+        if (p_vam->local.alert_mask == 0){
+            /* 发送VAM_NO_ALERT_EVAM_TX_TIMES次后停止发送bsm alter消息数据 */
+            if (0 == count--){
+                p_vam->flag &= ~VAM_FLAG_TX_BSM_ALERT;
+            }
+        }
+        else{
+            count = VAM_NO_ALERT_EVAM_TX_TIMES;
+        }
     }
 
     if ((p_vam->flag&VAM_FLAG_TX_BSM)&&(!(p_vam->flag&VAM_FLAG_TX_BSM_PAUSE))){
@@ -122,24 +125,14 @@ void vsm_update_bsm_bcast_timer(vam_envar_t *p_vam)
     if(p_vam->working_param.bsm_boardcast_mode == BSM_BC_MODE_AUTO)
     {
         period = _cal_peroid_from_speed(p_vam->local.speed, p_vam->working_param.bsm_boardcast_saftyfactor);
-    }
-    else
-    {
-        if(p_vam->flag & VAM_FLAG_TX_BSM_ALERT)
+        timeout = MS_TO_TICK(period);
+        if(p_vam->bsm_send_period_ticks != timeout)
         {
-            period = p_vam->working_param.evam_broadcast_peroid;
-        }
-        else
-        {
-            period = p_vam->working_param.bsm_boardcast_period;
+            osal_timer_change(p_vam->timer_send_bsm, timeout);
+            p_vam->bsm_send_period_ticks = timeout;
         }
     }
-    timeout = MS_TO_TICK(period);
-    if(p_vam->bsm_send_period_ticks != timeout)
-    {
-        osal_timer_change(p_vam->timer_send_bsm, timeout);
-        p_vam->bsm_send_period_ticks = timeout;
-    }
+
 }
 
 void timer_bsm_pause_callback(void* parameter)
@@ -168,7 +161,7 @@ void timer_gps_life_callback(void* parameter)
 void vsm_start_evam_broadcast(vam_envar_t *p_vam)
 {
     uint16_t period = 0;
-    rt_tick_t ticks;
+    uint32_t ticks;
     if(p_vam->working_param.evam_broadcast_type == BSM_BC_MODE_AUTO){
         period = _cal_peroid_from_speed(p_vam->local.speed, p_vam->working_param.bsm_boardcast_saftyfactor);
     }

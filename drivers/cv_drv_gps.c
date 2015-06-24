@@ -12,7 +12,8 @@ gps_data_callback gps_recv_cb = NULL;
 uint8_t _GPSBuffer[GPS_BUFF_SIZE];
 uint8_t get_gps = 0 ;
 
-struct rt_mutex  mutex_gps ;
+osal_mutex_t* p_mutex_gps;
+
 
 void gps_callback_register(gps_data_callback fp)
 {
