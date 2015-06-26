@@ -122,9 +122,9 @@ double getDistanceVer2(double lat1, double lng1, double lat2, double lng2)
 
    double radLat2 = RAD(lat2);
 
-   double a = radLat1 - radLat2;
+   double a = lat1 - lat2;//radLat1 - radLat2;
 
-   double b = RAD(lng1) - RAD(lng2);
+   double b = lng1 - lng2;//RAD(lng1) - RAD(lng2);
 
    double s = 2 * asin(sqrt(pow(sin(a/2),2) + cos(radLat1)*cos(radLat2)*pow(sin(b/2),2)));
 
@@ -397,8 +397,8 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
     }
     
     /* deltaT != 0, the calculate the "current" value */
-    lon1 = RAD((double)last->pos.lon);
-    lat1 = RAD((double)last->pos.lat);
+    lon1 = (double)last->pos.lon;//RAD((double)last->pos.lon);
+    lat1 = (double)last->pos.lat;//RAD((double)last->pos.lat);
     dir = RAD((double)last->dir);
     
     /* uniform rectilinear motion */ 
@@ -415,8 +415,8 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
 
     current->time = t;
 
-    current->pos.lon = lon2 * 180.0 / PI;
-    current->pos.lat = lat2 * 180.0 / PI;
+    current->pos.lon = lon2 ;//* 180.0 / PI;
+    current->pos.lat = lat2 ;//* 180.0 / PI;
 #if 0
     char buf[100];
     sprintf(buf, "(lon=%f,lat=%f),h=%f,d=%f,s=%f,v=%f", current->pos.lon, current->pos.lat, current->dir, 

@@ -148,6 +148,13 @@ uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatu
     }
 }
 
+/*****************************************************************************
+ @funcname: vsa_safe_distance
+ @brief   : calculate the safe diatance
+ @param   : position:ahead or behind
+ @return  : safe distance with the remote point  
+*****************************************************************************/
+
 uint32_t vsa_safe_distance(int32_t position,vam_stastatus_t local,vam_stastatus_t remote)
 {
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
@@ -165,6 +172,14 @@ uint32_t vsa_safe_distance(int32_t position,vam_stastatus_t local,vam_stastatus_
 
 
 }
+
+/*****************************************************************************
+ @funcname: vsa_preprocess_pos
+ @brief   : process  information of points in the neighbour list in a period
+ @param   : void
+ @return  : void 
+*****************************************************************************/
+
 int32_t  vsa_preprocess_pos(void)
 {
     vam_stastatus_t local_status;  
@@ -187,10 +202,10 @@ int32_t  vsa_preprocess_pos(void)
 
     if (peer_count != 0) {
         vam_get_local_current_status(&local_status);
-        for (i = 0;i < peer_count;i++) {
-            vam_get_peer_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/  
+        for (i = 0;i < 10;i++) {
+            vam_get_peer_status(peer_pid[0],&remote_status); /*!!查询不到的风险!!*/  
             
-            p_pnt = &p_vsa->position_node[i];
+            p_pnt = &p_vsa->position_node[0];
 
 
             memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
@@ -386,6 +401,20 @@ void vsa_start(void)
 }
 
 /*****************************************************************************
+ @funcname: vsa_set_period
+ @brief   : set the period of vsa process
+ @param   : None
+ @return  : 
+*****************************************************************************/
+void  vsa_set_period(uint32_t tick)
+{
+    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
+
+    osal_timer_change(p_vsa->timer_position_prepro, MS_TO_TICK(tick));
+}
+
+
+/*****************************************************************************
  @funcname: vsa_search_warning
  @brief   : this fucntion can detect whether the warning exist
  @param   : uint32_t warning_id  
@@ -407,6 +436,14 @@ uint32_t vsa_search_warning(uint32_t warning_id)
     }
     return 0;
 }
+
+/*****************************************************************************
+ @funcname: vsa_send_ccw_warning
+ @brief   : send ccw warning to sys module
+ @param   : uint32_t warning_id  
+ @return  : 
+*****************************************************************************/
+
 void vsa_send_ccw_warning(uint32_t warning_id)
 {
     vsa_envar_t *p_vsa = &p_cms_envar->vsa;
@@ -422,6 +459,14 @@ void vsa_send_ccw_warning(uint32_t warning_id)
     }
 
 }
+
+
+/*****************************************************************************
+ @funcname: vsa_cancel_ccw_warning
+ @brief   : cancel ccw warning to sys module
+ @param   : uint32_t warning_id  
+ @return  : 
+*****************************************************************************/
 
 void vsa_cancel_ccw_warning(uint32_t warning_id)
 {
@@ -439,6 +484,13 @@ void vsa_cancel_ccw_warning(uint32_t warning_id)
     }
 
 }
+
+/*****************************************************************************
+ @funcname: ccw_add_list
+ @brief   : judge  if add the node into ccwlist
+ @param   : uint32_t warning_id  ,p_pnt: collection of node's  position infromation
+ @return  : 
+*****************************************************************************/
 
 static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
 {

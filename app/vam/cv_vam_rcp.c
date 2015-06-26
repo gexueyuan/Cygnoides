@@ -306,7 +306,8 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
         //dump_pos(&p_sta->s);
 
         /* for test  */
-        if (1 == g_dbg_print_type){
+       // if (1 == g_dbg_print_type)
+				{
             rcp_dbg_distance = vsm_get_distance(&p_vam->local.pos, &p_sta->s.pos); 
         }
 
