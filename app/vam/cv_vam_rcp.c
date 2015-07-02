@@ -32,7 +32,7 @@ itis_codes_t itiscode[RSA_TYPE_MAX+1] =
     VAM_RSA_TYPE_2_ITISCODE
 };
 
-double rcp_dbg_distance = 0;
+float rcp_dbg_distance = 0;
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -87,14 +87,14 @@ __COMPILE_INLINE__ float decode_speed(uint16_t x)
 
 __COMPILE_INLINE__ uint16_t encode_heading(float x)
 {
-    double r;
+    float r;
     r = x*80.0f;
     return cv_ntohs((uint16_t)r);
 }
 
 __COMPILE_INLINE__ float decode_heading(uint16_t x)
 {
-    double r;
+    float r;
     r = cv_ntohs(x)/80.0;
     return (float)r;
 }
@@ -306,7 +306,7 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
         //dump_pos(&p_sta->s);
 
         /* for test  */
-       // if (1 == g_dbg_print_type)
+        if (1 == g_dbg_print_type)
 				{
             rcp_dbg_distance = vsm_get_distance(&p_vam->local.pos, &p_sta->s.pos); 
         }

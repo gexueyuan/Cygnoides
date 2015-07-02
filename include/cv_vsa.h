@@ -95,6 +95,8 @@ typedef struct _vsa_info{
 
     uint8_t vsa_id;
 
+    uint8_t period;
+
 }vsa_info_t;
 
 

@@ -25,6 +25,7 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 #include "cv_vsa.h"
 #include "key.h"
 #include "math.h"
+#include "arm_math.h"
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -37,12 +38,12 @@ void space_null(void)
 #define VSA_EBD_SEND_PERIOD      SECOND_TO_TICK(5)
 #define VSA_POS_PERIOD           MS_TO_TICK(100)
 #define DIRECTION_DIVIDE         22.5f
-#define PI 3.1415926
+//#define PI 3.1415926f
 
 #define VSA_MSG_PROC    (VSA_MSG_BASE+1)
 #define CCW_DEBOUNCE     5
 
-double getDistanceVer2(double lat1, double lng1, double lat2, double lng2);
+float getDistanceVer2(float lat1, float lng1, float lat2, float lng2);
 static int vbd_judge(vsa_envar_t *p_vsa);
 static int ebd_judge(vsa_envar_t *p_vsa);
 
@@ -60,11 +61,11 @@ extern uint8_t vam_get_gps_status(void);
  @return  : 
 *****************************************************************************/
 uint32_t  vsa_position_classify(const vam_stastatus_t *local, const vam_stastatus_t *remote,
-	                                  vam_pos_data *pos_data, double *delta_offset)
+	                                  vam_pos_data *pos_data, float *delta_offset)
 {
 
-    double lat1, lng1, lat2, lng2;
-    double angle, delta;
+    float lat1, lng1, lat2, lng2;
+    float angle, delta;
 
     /* reference point */
     lat1 = local->pos.lat;
@@ -173,6 +174,39 @@ uint32_t vsa_safe_distance(int32_t position,vam_stastatus_t local,vam_stastatus_
 
 }
 
+
+/*****************************************************************************
+ @funcname: vsa_set_period
+ @brief   : set the period of vsa process
+ @param   : None
+ @return  : 
+*****************************************************************************/
+void  vsa_set_period(vsa_info_t* vsa_node,vam_stastatus_t* remote)
+{
+    vsa_info_t* node_info;
+
+    uint32_t ldistance;
+    
+    node_info = vsa_node;
+
+    ldistance = abs(node_info->linear_distance);
+
+    remote->cnt = 0;
+#if 0
+    if(node_info->relative_speed <= 5.0f)
+        remote->cnt ++;
+    if(node_info->local_speed <= 50.0f)
+        remote->cnt ++;
+    if(ldistance >= 500)
+        remote->cnt ++;
+
+    if((node_info->relative_speed <= 5.0f)&&(node_info->local_speed <= 20.0f)&&(ldistance >= 500))    
+        remote->cnt = 10;
+   // osal_printf("cnt is %d\n",remote->cnt);
+#endif
+}
+
+
 /*****************************************************************************
  @funcname: vsa_preprocess_pos
  @brief   : process  information of points in the neighbour list in a period
@@ -192,7 +226,7 @@ int32_t  vsa_preprocess_pos(void)
     uint32_t peer_count;
 
     char strbuf[64] = {0};
-    double temp_delta = 0;
+    float temp_delta = 0;
 
     //uint32_t count_pos = 0;
     if (0x1 & g_dbg_print_type){
@@ -202,45 +236,56 @@ int32_t  vsa_preprocess_pos(void)
 
     if (peer_count != 0) {
         vam_get_local_current_status(&local_status);
-        for (i = 0;i < 10;i++) {
-            vam_get_peer_status(peer_pid[0],&remote_status); /*!!查询不到的风险!!*/  
+        for (i = 0;i < peer_count;i++) {
+            vam_get_peer_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/  
             
-            p_pnt = &p_vsa->position_node[0];
-
+            p_pnt = &p_vsa->position_node[i];
 
             memcpy(p_pnt->vsa_position.pid,remote_status.pid,RCP_TEMP_ID_LEN);
 
-            temp_data = vsm_get_data(&local_status,&remote_status);
+            if(remote_status.cnt == 0){
 
-            p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,&temp_data,&temp_delta);
+                temp_data = vsm_get_data(&local_status,&remote_status);
 
-            p_pnt->vsa_position.local_speed = local_status.speed;
+                p_pnt->vsa_position.vsa_location = vsa_position_classify(&local_status,&remote_status,&temp_data,&temp_delta);
 
-            p_pnt->vsa_position.remote_speed = remote_status.speed;
+                p_pnt->vsa_position.local_speed = local_status.speed;
 
-            p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;                
+                p_pnt->vsa_position.remote_speed = remote_status.speed;
 
-            p_pnt->vsa_position.linear_distance = (int32_t)vsm_get_pos(&local_status,&remote_status,&temp_data);//
+                p_pnt->vsa_position.relative_speed = local_status.speed - remote_status.speed;                
 
-            p_pnt->vsa_position.v_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*cos(temp_delta*PI/180));
+                p_pnt->vsa_position.linear_distance = (int32_t)vsm_get_pos(&local_status,&remote_status,&temp_data);//
 
-            p_pnt->vsa_position.h_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*sin(temp_delta*PI/180));
+                p_pnt->vsa_position.v_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*arm_cos_f32(temp_delta*PI/180.0f));
 
-            p_pnt->vsa_position.safe_distance = vsa_safe_distance(p_pnt->vsa_position.linear_distance,local_status,remote_status);
+                p_pnt->vsa_position.h_offset = (uint32_t)(p_pnt->vsa_position.linear_distance*arm_sin_f32(temp_delta*PI/180.0f));
+
+                p_pnt->vsa_position.safe_distance = vsa_safe_distance(p_pnt->vsa_position.linear_distance,local_status,remote_status);
+                    
+                p_pnt->vsa_position.dir = remote_status.dir;
+
+                p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&remote_status);
+
+                vsa_set_period(&(p_pnt->vsa_position),&remote_status);
                 
-            p_pnt->vsa_position.dir = remote_status.dir;
-
-            p_pnt->vsa_position.flag_dir = vam_get_peer_relative_dir(&local_status,&remote_status);
-
-    						
-            if (0x2 & g_dbg_print_type){
-                memset(strbuf, 0x0, sizeof(strbuf));
-                sprintf(strbuf, "%3.6f", temp_delta);
-                osal_printf("(%02X %02X %02X %02X), %d, %d, %d, %d, %s, %lu\r\n", \
-                    p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1], p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
-                    p_pnt->vsa_position.vsa_location, p_pnt->vsa_position.linear_distance, p_pnt->vsa_position.v_offset,\
-                    p_pnt->vsa_position.h_offset,strbuf,p_pnt->vsa_position.safe_distance);
+                if (0x2 & g_dbg_print_type){
+                    memset(strbuf, 0x0, sizeof(strbuf));
+                    sprintf(strbuf, "%3.6f", temp_delta);
+                    osal_printf("(%02X %02X %02X %02X), %d, %d, %d, %d, %s, %lu\r\n", \
+                        p_pnt->vsa_position.pid[0],p_pnt->vsa_position.pid[1], p_pnt->vsa_position.pid[2],p_pnt->vsa_position.pid[3],\
+                        p_pnt->vsa_position.vsa_location, p_pnt->vsa_position.linear_distance, p_pnt->vsa_position.v_offset,\
+                        p_pnt->vsa_position.h_offset,strbuf,p_pnt->vsa_position.safe_distance);
             }
+                
+            }
+            else{
+
+                remote_status.cnt--;               
+            }
+            vam_set_peer_cnt(remote_status.pid,remote_status.cnt);                
+    						
+
 	    }
     }
     else
@@ -399,20 +444,6 @@ void vsa_start(void)
     }
 
 }
-
-/*****************************************************************************
- @funcname: vsa_set_period
- @brief   : set the period of vsa process
- @param   : None
- @return  : 
-*****************************************************************************/
-void  vsa_set_period(uint32_t tick)
-{
-    vsa_envar_t *p_vsa = &p_cms_envar->vsa;
-
-    osal_timer_change(p_vsa->timer_position_prepro, MS_TO_TICK(tick));
-}
-
 
 /*****************************************************************************
  @funcname: vsa_search_warning

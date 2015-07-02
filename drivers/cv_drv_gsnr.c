@@ -23,6 +23,7 @@
 #include "gps.h"
 
 #include "bma250e.h"
+#include "arm_math.h"
 
 static gsnr_log_level_t gsnr_log_lvl = GSNR_NOTICE;
 
@@ -107,10 +108,11 @@ float MaxA(float x, float y, float z)
 *************************************************/
 float VectorSum(GSENSOR_INFO gsensor_date)
 {
-	float temp_a = 0.0;
+	float temp_a = 0.0f;
 
-	temp_a = sqrt((gsensor_date.x * gsensor_date.x) + (gsensor_date.y * gsensor_date.y) + (gsensor_date.z * gsensor_date.z));
+//	temp_a = sqrt((gsensor_date.x * gsensor_date.x) + (gsensor_date.y * gsensor_date.y) + (gsensor_date.z * gsensor_date.z));
 
+    arm_sqrt_f32((gsensor_date.x * gsensor_date.x) + (gsensor_date.y * gsensor_date.y) + (gsensor_date.z * gsensor_date.z),&temp_a);
 	return temp_a;
 }
 
@@ -161,7 +163,7 @@ GSENSOR_INFO VectorCrossMul(GSENSOR_INFO gsensor_dateA, GSENSOR_INFO gsensor_dat
 float CalAng(GSENSOR_INFO dataA, GSENSOR_INFO dataB)
 {
 	float ang = 0.0;
-	ang = acos(VectorDotMul(dataA, dataB) / (VectorSum(dataA) * VectorSum(dataB))); 
+	ang = acosf(VectorDotMul(dataA, dataB) / (VectorSum(dataA) * VectorSum(dataB))); 
 
 	return ang;	
 }

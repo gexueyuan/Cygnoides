@@ -128,7 +128,8 @@ typedef struct _vam_stastatus{
     float  speed;
     vam_acce_t  acce;
     uint16_t alert_mask;  //bit0-VBD, bit1-EBD;  1-active, 0-cancel; Õ¨evam÷–alert_mask
-    uint32_t time;  /* This location point corresponding time */
+    uint32_t time;  /* This location point corresponding time */     
+    uint8_t  cnt;
 }vam_stastatus_t;
 
 typedef struct _vam_sta_node{
@@ -242,9 +243,9 @@ typedef struct _vam_rsa_evt_info {
 
 typedef struct _vam_pos_data{
 
-    double distance_1_2;
-    double distance_2_3;
-    double angle;
+    float distance_1_2;
+    float distance_2_3;
+    float angle;
 
 }vam_pos_data;
 
@@ -274,11 +275,11 @@ void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len);
 void lip_update_local(t_nmea_rmc *p_rmc, float *p_accu);
 void lip_update_local_acc(float x, float y, float z);
 
-double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest);
+float vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest);
 vam_pos_data vsm_get_data(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
-double vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data *pos_data);
-double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
-double vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest);
+float vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data *pos_data);
+float vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest);
+float vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest);
 int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest);
 void vsm_start_evam_broadcast(vam_envar_t *p_vam);
 int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current);
@@ -300,6 +301,7 @@ int32_t vam_get_local_status(vam_stastatus_t *local);
 int32_t vam_get_local_current_status(vam_stastatus_t *local);
 
 int32_t vam_get_peer_status(uint8_t *pid, vam_stastatus_t *local);
+int32_t vam_set_peer_cnt(uint8_t *pid, uint8_t cnt);
 int32_t vam_get_peer_current_status(uint8_t *pid, vam_stastatus_t *local);
 
 int vam_rcp_recv(wnet_rxinfo_t *rxinfo, uint8_t *databuf, uint32_t datalen);

@@ -34,10 +34,10 @@ typedef struct _t_time
 typedef struct{
     uint8_t isTrue;
     t_time updateTime;
-    double speed;
-    double latitude;
-    double longitude;
-    double  heading;
+    float speed;
+    float latitude;
+    float longitude;
+    float  heading;
     t_time tt;
 } t_nmea_rmc;
 

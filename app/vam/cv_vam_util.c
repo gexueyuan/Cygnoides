@@ -21,6 +21,7 @@
 #include "cv_vam.h"
 #include "cv_cms_def.h"
 #include "nmea.h"
+#include "arm_math.h"
 
 
 
@@ -28,9 +29,9 @@
  * declaration of variables and functions                                    *
 *****************************************************************************/
 
-#define EARTH_RADIUS  6371.004
-#define PI 3.1415926
-#define RAD(d) ((d)*PI/180.0)
+#define EARTH_RADIUS  6371.004f
+//#define PI 3.1415926f
+#define RAD(d) ((d)*PI/180.0f)
 
 
 #define _COMPILE_INLINE__
@@ -93,19 +94,19 @@ __COMPILE_INLINE__ float decode_acce_yaw(uint8_t x);
 *****************************************************************************/
 
 #if 0
-static double getDistanceVer1(double lat1, double lng1, double lat2, double lng2)
+static float getDistanceVer1(float lat1, float lng1, float lat2, float lng2)
 
 {
 
-   double radLat1 = rad(lat1);
+   float radLat1 = rad(lat1);
 
-   double radLat2 = rad(lat2);
+   float radLat2 = rad(lat2);
 
-   double radLng1 = rad(lng1);
+   float radLng1 = rad(lng1);
 
-   double radLng2 = rad(lng2);
+   float radLng2 = rad(lng2);
 
-   double s = acos(sin(radLat1)*sin(radLat2)+cos(radLat1)*cos(radLat2)*cos(radLng1-radLng2));
+   float s = acos(sin(radLat1)*sin(radLat2)+cos(radLat1)*cos(radLat2)*cos(radLng1-radLng2));
 
    s = s * EARTH_RADIUS;
 
@@ -113,30 +114,62 @@ static double getDistanceVer1(double lat1, double lng1, double lat2, double lng2
 
 }
 #endif
-
-double getDistanceVer2(double lat1, double lng1, double lat2, double lng2)
-
+void print_f(float* data_f)
 {
+    char strbuf[64] = {0};
+    memset(strbuf, 0x0, sizeof(strbuf));
+    sprintf(strbuf, "%3.8f", *data_f);
+    osal_printf("dis2 is %s\n",strbuf);
 
-   double radLat1 = RAD(lat1);
-
-   double radLat2 = RAD(lat2);
-
-   double a = lat1 - lat2;//radLat1 - radLat2;
-
-   double b = lng1 - lng2;//RAD(lng1) - RAD(lng2);
-
-   double s = 2 * asin(sqrt(pow(sin(a/2),2) + cos(radLat1)*cos(radLat2)*pow(sin(b/2),2)));
-
-   s = s * EARTH_RADIUS;
-
-   return s;
 
 }
 
-double vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest)
+
+float getDistanceVer2(float lat1, float lng1, float lat2, float lng2)
+
 {
-    double d = 1000.0;
+    float pSrc;
+    float pResult1;
+    float pResult2;
+
+    float pOut;
+
+    float s;
+   //float radLat1 = RAD(lat1);
+
+   //float radLat2 = RAD(lat2);
+
+    float a = lat1 - lat2;//radLat1 - radLat2;
+
+    float b = lng1 - lng2;//RAD(lng1) - RAD(lng2);
+
+    pSrc = arm_sin_f32(a/2);//sin(a/2);//
+    arm_mult_f32(&pSrc,&pSrc,&pResult1,1);
+    //arm_power_f32(&pSrc,1,&pResult1);
+
+
+    pSrc = arm_sin_f32(b/2);//sin(b/2);//    
+    arm_mult_f32(&pSrc,&pSrc,&pResult2,1);
+    
+    //arm_power_f32(&pSrc,1,&pResult2);
+
+    arm_sqrt_f32((pResult1 + arm_cos_f32(lat1)*arm_cos_f32(lat2)*pResult2),&pOut);
+
+    //pOut = sqrt((pResult1 + arm_cos_f32(lat1)*arm_cos_f32(lat2)*pResult2));
+
+    s = 2 * asinf(pOut);
+
+    //s = 2 * asin(sqrt(pow(arm_sin_f32(a/2),2) + arm_cos_f32(lat1)*arm_cos_f32(lat2)*pow(arm_sin_f32(b/2),2)));
+    //s = 2 * asin(sqrt(pResult1 + arm_cos_f32(lat1)*arm_cos_f32(lat2)*pResult2));
+    //s = 2 * asin(sqrt(pow(sin(a/2),2) + cos(lat1)*cos(lat2)*pow(sin(b/2),2)));
+    s = s * EARTH_RADIUS;
+    return s;
+
+}
+
+float vsm_get_distance(vam_position_t *p_src, vam_position_t *p_dest)
+{
+    float d = 1000.0;
 
     d *= getDistanceVer2(p_src->lat, p_src->lon, p_dest->lat, p_dest->lon);
 
@@ -199,11 +232,11 @@ const char *_directfromangle(int angle)
 }
 vam_pos_data vsm_get_data(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 {
-    double lat1, lng1, lat2, lng2, lat3, lng3;
-    double distance_1_2, distance_2_3;
-    double angle;
+    float lat1, lng1, lat2, lng2, lat3, lng3;
+    float distance_1_2, distance_2_3;
+    float angle;
     vam_pos_data  pos_data;
-
+    
     /* reference point */
     lat1 = p_src->pos.lat;
     lng1 = p_src->pos.lon;
@@ -218,8 +251,8 @@ vam_pos_data vsm_get_data(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 
     distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
     distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
-    angle = acos(distance_2_3/distance_1_2)*180/PI;
-
+    angle = acosf(distance_2_3/distance_1_2)*180/PI;
+    
     pos_data.distance_1_2 = distance_1_2;
     pos_data.distance_2_3 = distance_2_3;
     pos_data.angle = angle;
@@ -228,11 +261,11 @@ vam_pos_data vsm_get_data(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 
 }
 
-double vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data *pos_data)
+float vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data *pos_data)
 {
-    double lat1, lng1, lat2, lng2;
-    double distance_1_2;
-    double angle, delta;
+    float lat1, lng1, lat2, lng2;
+    float distance_1_2;
+    float angle, delta;
 
     /* reference point */
     lat1 = p_src->pos.lat;
@@ -285,11 +318,11 @@ double vsm_get_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest,vam_pos_data 
     return (delta <= 45)? distance_1_2:(-distance_1_2);
 }
 
-double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
+float vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 {
-    double lat1, lng1, lat2, lng2, lat3, lng3;
-    double distance_1_2, distance_2_3;
-    double angle, delta;
+    float lat1, lng1, lat2, lng2, lat3, lng3;
+    float distance_1_2, distance_2_3;
+    float angle, delta;
 
     /* reference point */
     lat1 = p_src->pos.lat;
@@ -305,7 +338,7 @@ double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
 
     distance_1_2 = getDistanceVer2(lat1, lng1, lat2, lng2);
     distance_2_3 = getDistanceVer2(lat2, lng2, lat3, lng3);
-    angle = acos(distance_2_3/distance_1_2)*180/PI;
+    angle = acosf(distance_2_3/distance_1_2)*180/PI;
 
     /* calculate the relative angle against north, clockwise  */
     if (lat2 >= lat1){
@@ -346,9 +379,9 @@ double vsm_get_relative_pos(vam_stastatus_t *p_src, vam_stastatus_t *p_dest)
     return (delta <= 45)? distance_1_2:(-distance_1_2);
 }
 
-double vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest)
+float vsm_get_relative_dir(const vam_stastatus_t *p_src, const  vam_stastatus_t *p_dest)
 {
-    double delta;
+    float delta;
 
     /* calculate the angle detra between local front and remote position  */
     if (p_dest->dir > p_src->dir){
@@ -377,9 +410,9 @@ int8_t vsm_get_rear_dir(vam_stastatus_t *p_dest)
 /* calculate the real time current value */
 int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
 {
-    double deltaT = 0.0;
-    double v, s, dR;
-    double dir, lon1, lat1, lon2, lat2; /* Radians */
+    float deltaT = 0.0;
+    float v, s, dR;
+    float dir, lon1, lat1, lon2, lat2; /* Radians */
   	uint32_t t = osal_get_systemtime();
     
 	if(!last || !current)
@@ -388,7 +421,7 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
     }
 
     deltaT = ((t>=last->time) ? (t-last->time) : \
-             (t+RT_UINT32_MAX - last->time)) / 1000.0;
+             (t+RT_UINT32_MAX - last->time)) / 1000.0f;
 
     memcpy(current, last, sizeof(vam_stastatus_t));
     if(deltaT <= 20 || (last->speed < 10))
@@ -397,9 +430,9 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
     }
     
     /* deltaT != 0, the calculate the "current" value */
-    lon1 = (double)last->pos.lon;//RAD((double)last->pos.lon);
-    lat1 = (double)last->pos.lat;//RAD((double)last->pos.lat);
-    dir = RAD((double)last->dir);
+    lon1 = (float)last->pos.lon;//RAD((float)last->pos.lon);
+    lat1 = (float)last->pos.lat;//RAD((float)last->pos.lat);
+    dir = RAD((float)last->dir);
     
     /* uniform rectilinear motion */ 
     v = last->speed / 3.6f;
@@ -409,9 +442,9 @@ int32_t vsm_get_dr_current(vam_stastatus_t *last, vam_stastatus_t *current)
     lon2 = lon1 + atan2( sin ¦È * sin dR * cos lat1, cos dR- sin lat1 * sin lat2 )
     where lat is latitude, lon is longitude, ¦Èis the bearing (clockwise from north), 
     dR is the angular distance d/R; d being the distance travelled, R the earth¡¯s radius */
-    dR = s / EARTH_RADIUS / 1000.0;
-    lat2 = asin(sin(lat1)*cos(dR) + cos(lat1)*sin(dR)*cos(dir));
-    lon2 = lon1 + atan2(sin(dir)*sin(dR)*cos(lat1), cos(dR)-sin(lat1)*sin(lat2));
+    dR = s / EARTH_RADIUS / 1000.0f;
+    lat2 = asin(arm_sin_f32(lat1)*arm_cos_f32(dR) + arm_cos_f32(lat1)*arm_sin_f32(dR)*arm_cos_f32(dir));
+    lon2 = lon1 + atan2(arm_sin_f32(dir)*arm_sin_f32(dR)*arm_cos_f32(lat1), arm_cos_f32(dR)-arm_sin_f32(lat1)*arm_sin_f32(lat2));
 
     current->time = t;
 

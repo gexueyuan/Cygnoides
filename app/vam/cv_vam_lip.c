@@ -10,8 +10,8 @@
 #include "cv_cms_def.h"
 #include "nmea.h"
 
-#define PI 3.1415926
-#define RAD(d) ((d)*PI/180.0)
+#define PI 3.1415926f
+#define RAD(d) ((d)*PI/180.0f)
 
 void lip_gps_proc(vam_envar_t *p_vam, uint8_t *databuf, uint32_t len)
 {
@@ -74,26 +74,26 @@ void lip_update_local(t_nmea_rmc *p_rmc, float *p_accu)
         if(!getGps)
         {
             p_vam->local.time = now;
-            p_vam->local.pos.lat = RAD((float)p_rmc->latitude);
-            p_vam->local.pos.lon = RAD((float)p_rmc->longitude);
+            p_vam->local.pos.lat = RAD(p_rmc->latitude);
+            p_vam->local.pos.lon = RAD(p_rmc->longitude);
             /* 解决停车speed<=3 heading=0的问题, 使用>5km/h的heading */
-            if((p_rmc->speed >= 5.0) && (p_rmc->heading <= 360.0))
+            if((p_rmc->speed >= 5.0f) && (p_rmc->heading <= 360.0f))
             {
-                p_vam->local.dir = (float)p_rmc->heading;
+                p_vam->local.dir = p_rmc->heading;
             }
-            p_vam->local.speed = (float)p_rmc->speed;
+            p_vam->local.speed = p_rmc->speed;
         }
         else if(res)
         {
             p_vam->local.time = now;
-            p_vam->local.pos.lat = RAD((float)p_rmc->latitude);
-            p_vam->local.pos.lon = RAD((float)p_rmc->longitude);
+            p_vam->local.pos.lat = RAD(p_rmc->latitude);
+            p_vam->local.pos.lon = RAD(p_rmc->longitude);
             /* 解决停车speed<=3 heading=0的问题, 使用>5km/h的heading */
-            if((p_rmc->speed >= 5.0) && (p_rmc->heading <= 360.0))
+            if((p_rmc->speed >= 5.0f) && (p_rmc->heading <= 360.0f))
             {
-                p_vam->local.dir = (float)p_rmc->heading;
+                p_vam->local.dir = p_rmc->heading;
             }
-            p_vam->local.speed = (float)p_rmc->speed;
+            p_vam->local.speed = p_rmc->speed;
         }
         else
         {

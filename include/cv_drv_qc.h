@@ -56,8 +56,8 @@ extern "C"{
 
 
 
-#define GSENSOR_THRESHOLD_LOW    (9.0)
-#define GSENSOR_THRESHOLD_HIGH    (11.0)
+#define GSENSOR_THRESHOLD_LOW    (9.0f)
+#define GSENSOR_THRESHOLD_HIGH    (11.0f)
 
 #define SHELL_QC_NULL         (0)
 #define SHELL_QC_NORMAL     (1)

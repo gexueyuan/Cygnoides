@@ -173,6 +173,28 @@ int32_t vam_get_peer_status(uint8_t *pid, vam_stastatus_t *local)
     return 0;
 }
 
+int32_t vam_set_peer_cnt(uint8_t *pid, uint8_t cnt)
+{
+    vam_envar_t *p_vam = p_vam_envar;
+    vam_sta_node_t *p_sta = NULL;
+
+    if(!pid){
+        return -1;
+    }
+    
+    osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
+
+	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
+        if (memcmp(p_sta->s.pid, pid, RCP_TEMP_ID_LEN)==0){
+            p_sta->s.cnt = cnt;
+            break;
+        }
+	}
+    osal_sem_release(p_vam->sem_sta);
+    
+    return 0;
+
+}
 int32_t vam_get_peer_current_status(uint8_t *pid, vam_stastatus_t *local)
 {
     vam_envar_t *p_vam = p_vam_envar;

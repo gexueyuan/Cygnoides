@@ -22,8 +22,8 @@ extern float	SHARP_SLOWDOWN_THRESOLD;
 void nmea_add(t_nmea_rmc *param);
 int32_t nmea_rmc_time(char *pStrS, char *pStrE, t_time *tt);
 int32_t nmea_rmc_date(char *pStrS, char *pStrE, t_time *tt);
-int32_t nmea_rmc_lat(char *pStrS, char *pStrE, double *latitude);
-int32_t nmea_rmc_lon(char *pStrS, char *pStrE, double *longitude);
+int32_t nmea_rmc_lat(char *pStrS, char *pStrE, float *latitude);
+int32_t nmea_rmc_lon(char *pStrS, char *pStrE, float *longitude);
 
 void nmea_init(void) {
     p_mutex_gps = osal_mutex_create("mutex_gps");
@@ -42,7 +42,7 @@ void nmea_add(t_nmea_rmc *param)
     //驾驶习惯发生点的信息
     static driving_rush_value_st G_tmp;
 
-    double deltaT = 0.0;
+    float deltaT = 0.0;
     static uint32_t t0;
     uint32_t t1;
 
@@ -61,7 +61,7 @@ void nmea_add(t_nmea_rmc *param)
     G_Action.speed = param->speed;
     G_Action.is_locate = IsLocate;
 
-    if (deltaT > 0.0){
+    if (deltaT > 0.0f){
         vehicle_acce = speed_diff / 3.6f /deltaT;		//速度单位m/s 时间单位s
     }
 
@@ -78,7 +78,7 @@ void nmea_add(t_nmea_rmc *param)
         /* 车停 */
         G_Action.carRun = 0;
     }
-    if(param->speed > 1.0 )
+    if(param->speed > 1.0f )
     {
         G_Action.carRun = 1;
         G_Action.vehicle_accel_value = vehicle_acce ;
@@ -196,7 +196,7 @@ int32_t nmea_rmc_date(char *pStrS, char *pStrE, t_time *tt)
     return 0;
 }
 
-int32_t nmea_rmc_lat(char *pStrS, char *pStrE, double *latitude)
+int32_t nmea_rmc_lat(char *pStrS, char *pStrE, float *latitude)
 {
     uint8_t TmpBuff[15];
     uint16_t i = 0;
@@ -208,7 +208,7 @@ int32_t nmea_rmc_lat(char *pStrS, char *pStrE, double *latitude)
     //度
     memset(TmpBuff, 0, sizeof(TmpBuff));
     memcpy(TmpBuff, pStrS, 2);
-    (*latitude) = (double)atoi((char *)TmpBuff);
+    (*latitude) = (float)atoi((char *)TmpBuff);
     //分
     memset(TmpBuff, 0, sizeof(TmpBuff));
     for(i = 0; i < 8; i++) {
@@ -224,7 +224,7 @@ int32_t nmea_rmc_lat(char *pStrS, char *pStrE, double *latitude)
     return 0;
 }
 
-int32_t nmea_rmc_lon(char *pStrS, char *pStrE, double *longitude)
+int32_t nmea_rmc_lon(char *pStrS, char *pStrE, float *longitude)
 {
     uint8_t TmpBuff[15];
     uint16_t i = 0;
@@ -236,7 +236,7 @@ int32_t nmea_rmc_lon(char *pStrS, char *pStrE, double *longitude)
     //度
     memset(TmpBuff, 0, sizeof(TmpBuff));
     memcpy(TmpBuff, pStrS, 3);
-    (*longitude) = (double)atoi((char *)TmpBuff);
+    (*longitude) = (float)atoi((char *)TmpBuff);
     //分
     memset(TmpBuff, 0, sizeof(TmpBuff));
     //memcpy(TmpBuff, pStrS + 3, 8);
@@ -259,10 +259,10 @@ void nmea_parse(uint8_t *buff, uint32_t len)
     uint8_t crcCp = 0x00;
     uint32_t index = 0;
     t_time tt;
-    double latitude = 0.0;
-    double longitude = 0.0;
-    double speed = 0.0;
-    double heading = 0.0;
+    float latitude = 0.0;
+    float longitude = 0.0;
+    float speed = 0.0;
+    float heading = 0.0;
     float accu = 0.0;
     char *pStrS = NULL;
     char *pStrE = NULL;
