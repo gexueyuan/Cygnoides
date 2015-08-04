@@ -1,0 +1,165 @@
+//    co-rv.lnt
+//    Compiler Options for the ARMCC Compiler Version 5.02.28
+//
+//    This file contains options to allow PC-lint to process source
+//    files for your compiler.  It is used as follows:
+//
+//    lint  co-rv.lnt  source-file(s)
+//
+//    You may contact ARM Germany GmbH in Europe at:
+//
+//    ARM Germany GmbH
+//    Bretonischer Ring 16
+//    D-85630 Grasbrunn
+//    Germany
+//    
+//    Sales direct   : +49 89 456040-0
+//    Sales fax      : +49 89 468162
+//    Support direct : +49 89 456040-24
+//    Sales email    : sales.intl@keil.com
+//    Support email  : support.intl@keil.com
+//
+//    You may contact ARM, Inc. in USA at:
+//
+//    ARM, Inc.
+//    4965 Preston Park Blvd, Suite 650
+//    Plano, Texas  75093
+//    Phone:  972-312-1107  Fax:  972-312-1159
+//    Sales:  800-348-8051
+//    Sales email: sales.us@keil.com
+//    Support email: support.us@keil.com
+
+
+-w2
+
+-hsb_3           // formatting options required for MicroVision IDE
+-format="*** LINT: %(%f(%l) %)%t %n: %m"
+-width(0,10)     // Don't break lines
+
+            // while processing compiler (library) header files ...
+-wlib(1)    // sets the warning level within library headers to 1
+            // (no warnings, just syntax errors).  Comment out if you
+            // are actually linting library headers.  This
+            // option makes obsolete options of the form -elib(axxx) where
+            // xxx >= 400 which may be retained for historical reasons.
++v
+
+
+-elib(652)  // suppress message about #define of earlier declared symbols
+-elib(762)  // suppress message about multiple identical declarations and
+-elib(760)  // suppress message about multiple identical macro defs
+
+-d__ram=
+-d__arm=
+-d__irq=
+-d__value_in_regs=
+-d__task=
+-d__softfp=
+-d__pure=
+-d__packed=
+
++rw(_gobble)              // activate the _gobble keyword
+                          // causes _gobble token to be both ignored
+-d__restrict=
+-d__isr=_gobble           // defines __isr    to be a _gobble
+-d__task=_gobble          // defines __task   to be a _gobble
+-d__at=_gobble            // defines __at     to be a _gobble
++rw(_ignore_init)         // activate this keyword
+-d__asm=_ignore_init
++rw(__declspec)           // activate this MS keyword
++rw(_to_brackets)         // activate this keyword
++d__attribute__=_to_brackets
+
+
+-sp4                      // size of pointer is 4 bytes
++d__sizeof_int=4          // set __sizeof_int to 4 bytes
++d__sizeof_long=4         // set __sizeof_long to 4 bytes
++d__sizeof_ptr=4          // set __sizeof_ptr to 4 bytes
+
++d__arm__=1               // this is an ARM compiler
++d__CC_ARM=1              // this is an ARM compiler
++d__thumb__=1             // this is set when compiling in thumb mode
++d__thumb=1               // this is set when compiling in thumb mode
++d__ARMCC_VERSION=502028  // set RealView compiler version to 5.02 build 28
++d__DATE__="AUG 22 2012"  // set RealView compiler date macro
++d__TIME__="11:55:00"     // set RealView compiler time macro
++d__FILE__="MYFILE.C"     // set RealView compiler file macro
++d__MODULE__="MYFILE.C"   // set RealView compiler module macro
++d__LINE__=100            // set RealView compiler line macro
++d__STDC__=1              // set RealView compiler STDC macro
+
++d__FUNCTION__="functions"
+
+//  The following functions exhibit variable return modes.
+//  That is, they may equally-usefully be called for a value
+//  as called just for their effects.  Accordingly we inhibit
+//  Warning 534 for these functions.
+//  Feel free to add to or subtract from this list.
+
+-esym(534,memcpy,memmove,memset,strncat,strncpy,memcmp)
+-esym(534,printf,putchar,puts,scanf,sprintf,sscanf,strcat,strcpy)
+
+-esym(526,memcpy,memmove,memset,strncat,strncpy,memcmp)
+-esym(526,printf,putchar,puts,scanf,sprintf,sscanf,strcat,strcpy)
+
+-esym(628,memcpy,memmove,memset,strncat,strncpy,memcmp)
+-esym(628,printf,putchar,puts,scanf,sprintf,sscanf,strcat,strcpy)
+
+//参数大小相同，如：如果int和pointer字节数相同，那么如果f()的参数应该
+//是pointer的话，用f(3)整型数调用就会报错，设置此项可以关闭告警
+-eas  
+
+//-esym(516,memcpy,memmove,memset,strncat,strncpy,memcmp)
+//-esym(516,printf,putchar,puts,scanf,sprintf,sscanf,strcat,strcpy)
+
+// inhibit error 123: Macro defined with arguments
+-esym(123,getchar,putchar)
+
+-emacro(413,offsetof)  // use of NULL pointer creates a stir
+-emacro(545,offsetof)  // addressing an array member is OK
+
+
+-d__align()
+
+//忽略以下警告
+-e46
+-e506 //Constant value Boolean
+-e509 
+-e525
+-e534 //忽略函数返回值
+-e537
+-e544
+-e636
+-e641
+-esym(526,timer_*)
+-emacro(19,FINSH_FUNCTION_EXPORT)
+-emacro(546,FINSH_FUNCTION_EXPORT)
+-emacro({413},list_for_each_entry)
+-emacro({413},list_first_entry)
+
+
+-i.
+-i..\include
+-i..\drivers\wifi
+-i..\drivers\wifi\chips\ralink\include
+-i..\library\STM32F4xx_Libraries\dsp_lib\Include
+-i..\library\STM32F4xx_Libraries\STM32_USB_Device_Library\Class\cdc\inc
+-i..\library\STM32F4xx_Libraries\STM32_USB_Device_Library\Core\inc
+-i..\library\STM32F4xx_Libraries\STM32_USB_HOST_Library\Class\HID\inc
+-i..\library\STM32F4xx_Libraries\STM32_USB_HOST_Library\Class\MSC\inc
+-i..\library\STM32F4xx_Libraries\STM32_USB_HOST_Library\Core\inc
+-i..\library\STM32F4xx_Libraries\STM32_USB_OTG_Driver\inc
+-i..\library\STM32F4xx_Libraries\STM32F4xx_StdPeriph_Driver\inc
+-i..\os\rtthread\include
+-i..\os\rtthread\components\CMSIS\Include
+-i..\os\rtthread\components\CMSIS\RTOS
+-i..\os\rtthread\components\drivers\include\drivers
+-i..\os\rtthread\components\drivers\include
+-i..\os\rtthread\components\finsh
+-i..\os\rtthread\components\init
+-i..\os\rtthread\components\pthreads
+-i..\os\rtthread\components\libc\minilibc 
+-i..\os\rtthread\components\libc\minilibc\sys 
+-i..\os\rtthread\components\libdl
+-i..\os\rtthread\components\pthreads
+-iD:\Keil\ARM\ARMCC\include

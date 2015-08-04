@@ -16,9 +16,12 @@
 extern RTMP_ADAPTER rtmp_adapter;
 extern int32_t wnet_dataframe_recv(uint8_t *databuf, uint32_t datalen);
 
+extern VOID ate_tx_complete(VOID);
+extern VOID ate_rx_frame(PRTMP_ADAPTER pAd, PUCHAR pData, ULONG RxBufferLength);
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
+extern UCHAR zero_macaddr[6];
 static UCHAR BroadcastAddr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 static UCHAR BssidForV2V[] = {0x00, 0x63, 0x73, 0x76, 0x32, 0x76};
 static UCHAR BeaconFixedElement[] = 
@@ -354,6 +357,44 @@ int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
     COPY_MAC_ADDR(pHeader_802_11->Addr1, BroadcastAddr);
     COPY_MAC_ADDR(pHeader_802_11->Addr2, pAd->CurrentAddress);
     COPY_MAC_ADDR(pHeader_802_11->Addr3, BssidForV2V);
+
+    MlmeHardTransmitMgmt(pAd, 0, (PUCHAR)pHeader_802_11, \
+                         length-WNET_LLC_HEADER_LEN+MAC_BODY_RESERVE_LENGTH+MAC_HEADER_LENGTH);
+
+    return 0;                         
+}
+
+
+int drv_wifi_send_test(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length)
+{
+    PRTMP_ADAPTER    pAd = &rtmp_adapter;
+    PHEADER_802_11    pHeader_802_11;
+    PUCHAR pPayload;
+
+
+    if (!pAd->init_complete) {
+        return -1;
+    }
+
+    /* fill the vendor specific element */
+    pPayload = pdata - MAC_BODY_RESERVE_LENGTH + WNET_LLC_HEADER_LEN;
+    /* move the LLC header */
+    memcpy(pPayload, pdata, WNET_LLC_HEADER_LEN);
+    memcpy(pPayload+WNET_LLC_HEADER_LEN, BeaconFixedElement, sizeof(BeaconFixedElement));
+    *(pPayload+MAC_BODY_RESERVE_LENGTH-1) = length - WNET_LLC_HEADER_LEN; /* Attention! length must be less than 256 */
+
+    /* fill the 802.11 header */
+    pHeader_802_11 = (PHEADER_802_11)(pPayload - MAC_HEADER_LENGTH);
+    memset(pHeader_802_11, 0, MAC_HEADER_LENGTH);
+    pHeader_802_11->FC.Type = BTYPE_MGMT;
+    pHeader_802_11->FC.SubType = SUBTYPE_BEACON;
+    pHeader_802_11->Sequence = pAd->Sequence++;
+    if (pAd->Sequence >0xfff) {
+        pAd->Sequence = 0;
+    }
+    COPY_MAC_ADDR(pHeader_802_11->Addr1, BroadcastAddr);
+    COPY_MAC_ADDR(pHeader_802_11->Addr2, zero_macaddr);
+    COPY_MAC_ADDR(pHeader_802_11->Addr3, zero_macaddr);
 
     MlmeHardTransmitMgmt(pAd, 0, (PUCHAR)pHeader_802_11, \
                          length-WNET_LLC_HEADER_LEN+MAC_BODY_RESERVE_LENGTH+MAC_HEADER_LENGTH);

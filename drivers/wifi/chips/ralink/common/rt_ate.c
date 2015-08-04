@@ -20,6 +20,7 @@ extern rt_mq_t queue_usbm;
 
 extern int drv_wifi_mac_header_len(void);
 extern int drv_wifi_send(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length);
+extern int drv_wifi_send_test(wnet_txinfo_t *txinfo, uint8_t *pdata, int32_t length);
 extern VOID RTMPReadChannelPwr(IN PRTMP_ADAPTER pAd);
 
 
@@ -32,10 +33,17 @@ UINT  ate_tx_enable = 0;
 UINT  ate_tx_period = 0;
 UINT  ate_rx_enable = 0;
 UINT  ate_rx_total_count = 0;
+UINT  ate_tx_total_count = 0;
+UINT  ate_tx_count = 0;
 UINT  ate_rx_count = 0;
+
+UCHAR ate_rx_filter_addr2[6] = {0x20,0x22,0x22,0x22,0x22,0x02};
+UCHAR ate_rx_filter_addr3[6] = {0x50,0x55,0x55,0x55,0x55,0x05};
 UCHAR zero_macaddr[6] = {0,0,0,0,0,0};
+UCHAR broadcast_macaddr[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
 __align(4) UCHAR ate_tx_data[1224];
 
+VOID ate_stop(VOID);
 /*****************************************************************************
  * implementation of functions                                               *
 *****************************************************************************/
@@ -47,7 +55,13 @@ VOID ate_tx_frame(VOID)
 
     pdest = &ate_tx_data[offset];
     memset(pdest, 0xAA, 1024);
-    drv_wifi_send(NULL, pdest, 1024);
+    drv_wifi_send_test(NULL, pdest, 1024); 
+    if ((ate_tx_total_count>0) && (++ate_tx_count >= ate_tx_total_count)) {
+        osal_printf("send %d frame succeed,stop send!\n",ate_tx_total_count);
+        ate_tx_count = 0;
+        ate_tx_total_count = 0;
+        ate_stop();
+    }
 }
 
 VOID ate_tx_complete(VOID)
@@ -100,9 +114,8 @@ VOID ate_rx_frame(PRTMP_ADAPTER pAd, PUCHAR pData, ULONG RxBufferLength)
 
     /* Filter the received frame */
     pHeader = (PHEADER_802_11) (pData + RT2870_RXDMALEN_FIELD_SIZE + RXWI_SIZE);
-    if ((memcmp(pHeader->Addr1, zero_macaddr, MAC_ADDR_LEN) != 0)
-        ||(memcmp(pHeader->Addr2, zero_macaddr, MAC_ADDR_LEN) != 0)
-        ||(memcmp(pHeader->Addr3, zero_macaddr, MAC_ADDR_LEN) != 0)) {
+    if ( ((memcmp(pHeader->Addr2, zero_macaddr, MAC_ADDR_LEN) != 0) &&(memcmp(pHeader->Addr2, ate_rx_filter_addr2, MAC_ADDR_LEN)!=0))
+        ||((memcmp(pHeader->Addr3, zero_macaddr, MAC_ADDR_LEN) != 0)&&(memcmp(pHeader->Addr2, ate_rx_filter_addr3, MAC_ADDR_LEN)!=0)) ) {
         goto exit;
     }
 
@@ -119,12 +132,12 @@ exit:
     }
 }
 
-VOID ate_tx(UCHAR Channel, UCHAR Rate, UCHAR Power, UINT period)
+VOID ate_tx(UCHAR Channel, UCHAR Rate, UCHAR Power, UINT period,UINT packet)
 {   
     PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)&rtmp_adapter;
     if(!ate_tx_enable){
-        rt_kprintf("Channel=%d, Rate=%d, Power=%d.\n", \
-            Channel, Rate, Power);
+        rt_kprintf("Channel=%d, Rate=%d, Power=%d,period=%d,packet=%d\n", \
+            Channel, Rate, Power,period,packet);
 
         pAd->CommonCfg.TxRate = Rate;
         memset(&system_eeprom_data[EEPROM_G_TX_PWR_OFFSET], Power, 56);
@@ -134,6 +147,13 @@ VOID ate_tx(UCHAR Channel, UCHAR Rate, UCHAR Power, UINT period)
 
         ate_tx_enable = TRUE;
 
+        if ((packet >0) &&((packet <= 10000))) {
+
+            ate_tx_total_count = packet;
+        }
+        else {
+            ate_tx_total_count= 0;
+        }
         if ((period > 0) && (period  < 1000) ) {
             ate_tx_period = period/10;
             if (ate_tx_period == 0) {
@@ -147,7 +167,7 @@ VOID ate_tx(UCHAR Channel, UCHAR Rate, UCHAR Power, UINT period)
         }
     }
 }
-FINSH_FUNCTION_EXPORT(ate_tx, @Channel:@Rate:@Power:@Period);
+FINSH_FUNCTION_EXPORT(ate_tx, @Channel:@Rate:@Power:@Period:@Packet);
 
 VOID ate_rx(UCHAR Channel, UINT TotalCount, UCHAR LNAGain)
 {

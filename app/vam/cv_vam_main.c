@@ -68,7 +68,7 @@ void vam_main_proc(vam_envar_t *p_vam, sys_msg_t *p_msg)
 
         case VAM_MSG_STOP:
 
-            if (p_vam->flag && VAM_FLAG_TX_BSM){
+            if (p_vam->flag & VAM_FLAG_TX_BSM){
                 vsm_stop_bsm_broadcast(p_vam);
             }
 
@@ -149,12 +149,13 @@ int vam_add_event_queue(vam_envar_t *p_vam,
         p_msg->argc = msg_argc;
         p_msg->argv = msg_argv;
         err = osal_queue_send(p_vam->queue_vam, p_msg);
-    }
-
-    if (err != OSAL_STATUS_SUCCESS) {
-        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
-                           __FUNCTION__, err, msg_id);
-        osal_free(p_msg);                   
+        
+    
+        if (err != OSAL_STATUS_SUCCESS) {
+            OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: failed=[%d], msg=%04x\n",\
+                               __FUNCTION__, err, msg_id);
+            osal_free(p_msg);                   
+        }
     }
 
     return err;

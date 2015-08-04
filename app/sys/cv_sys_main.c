@@ -18,11 +18,16 @@
 /*@{*/
 
 #include "cv_osal.h"
-
+#define OSAL_MODULE_DEBUG
+#define OSAL_MODULE_DEBUG_LEVEL OSAL_DEBUG_INFO
+#define MODULE_NAME "INIT"
+#include "cv_osal_dbg.h"
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
 #include "cv_drv_qc.h"
+#include "cv_drv_file.h"
+
 
 #define FIRMWARE_VERSION "V2.0.000" 
 #ifdef NDEBUG
@@ -58,9 +63,13 @@ void global_init(void)
 
 void rt_init_thread_entry(void *parameter)
 {
+    if (log_store.log_media &  LOG_SD_CARD) {
+        /* wait file systerm init */
+        osal_delay(100);
+    }
     global_init();
     param_init();
-    cpu_usage_init();
+    //cpu_usage_init();
     gps_init();
   	nmea_init();
     rt_led_init();
@@ -82,6 +91,11 @@ void rt_init_thread_entry(void *parameter)
 
 void qc_init_entry(void *parameter)
 {
+    if (log_store.log_media ==LOG_SD_CARD) {
+        osal_delay(100);
+    }
+    log_store.log_media = LOG_UART;
+    osal_printf("log will map to uart while run qc\n");
     global_init();
     param_init();
     qc_run_init();
@@ -96,11 +110,11 @@ int rt_application_init(void)
     rt_platform_init();
     osal_dbg_init();
 
-    osal_printf("\n\n");
-    osal_printf("CID : %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", 
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"\n\n");
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"CID : %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", 
                 des(0), des(1), des(2), des(3), des(4), des(5), des(6), des(7), des(8), des(9), des(10), des(11));
-    osal_printf("CLK : %dMHz\n", SystemCoreClock/1000000);
-    osal_printf("Firm: %s[%s,%s %s]\n\n", FIRMWARE_VERSION, FIRMWARE_IDEN, __TIME__, __DATE__);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"CLK : %dMHz\n", SystemCoreClock/1000000);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"Firm: %s[%s,%s %s]\n\n", FIRMWARE_VERSION, FIRMWARE_IDEN, __TIME__, __DATE__);
 
     active_qc_way = active_qc_check();
     if(ACTIVE_QC_NULL != active_qc_way) {

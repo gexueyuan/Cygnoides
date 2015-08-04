@@ -26,6 +26,7 @@ OSAL_DEBUG_ENTRY_DEFINE(vsa)
 #include "key.h"
 #include "math.h"
 #include "arm_math.h"
+#include "cv_drv_file.h"
 
 /*****************************************************************************
  * declaration of variables and functions                                    *
@@ -49,6 +50,7 @@ static int ebd_judge(vsa_envar_t *p_vsa);
 
 extern void test_comm(void);
 extern uint8_t vam_get_gps_status(void);
+extern void param_get(void);
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -443,6 +445,12 @@ void vsa_start(void)
 
     }
 
+    if (log_store.log_media == LOG_SD_CARD){
+
+        param_get();
+    }
+        
+
 }
 
 /*****************************************************************************
@@ -506,7 +514,7 @@ void vsa_cancel_ccw_warning(uint32_t warning_id)
     uint32_t list_search;
     alert_pend = p_vsa->alert_pend;
     list_search = vsa_search_warning(warning_id);
-    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,"pend is %d,research is %d\n\n",alert_pend,list_search);
+    OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"pend is %d,research is %d\n\n",alert_pend,list_search);
     if ((p_vsa->alert_pend & (1<<warning_id))&&(!vsa_search_warning(warning_id))){
     /* inform system to stop alert */
         p_vsa->alert_pend &= ~(1<<warning_id);
@@ -552,7 +560,7 @@ static int ccw_add_list(uint32_t warning_id,vsa_position_node_t *p_pnt)
                 if (memcmp(p_pnt->vsa_position.pid,pos->pid,RCP_TEMP_ID_LEN) == 0){
                     if(pos->ccw_id == warning_id){//have this id and vsa warning do nor change
                         if(pos->ccw_cnt >= CCW_DEBOUNCE){                          
-                            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,\
+                            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,\
                                                 "pid(%02X %02X %02X %02X) warning id=%d  dis=%d\n\n",p_crd->pid[0],p_crd->pid[1],p_crd->pid[2],\
                                                 p_crd->pid[3],warning_id,p_pnt->vsa_position.linear_distance);
                             vsa_send_ccw_warning(warning_id);
@@ -1266,7 +1274,7 @@ void vsa_init()
 
 
 
-    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "vsa module initial\n");
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n");
                              
 }
 

@@ -26,6 +26,7 @@
  * declaration of variables and functions                                    *
 *****************************************************************************/
 
+#define FOR_QC_TEST
 /**
     prority of all the tasks in system 
 */
@@ -57,12 +58,14 @@
 
 #define RT_INIT_THREAD_STACK_SIZE   (1024*2)
 #define RT_USBH_THREAD_STACK_SIZE   (1024*2)
-#define RT_SYS_THREAD_STACK_SIZE   (1024*2)
-#define RT_GPS_THREAD_STACK_SIZE   (1024*2)
+#define RT_SYS_THREAD_STACK_SIZE   (1024*1)
+#define RT_GPS_THREAD_STACK_SIZE   (1024*1)
 #define RT_MEMS_THREAD_STACK_SIZE   (1024*2)
 #define RT_VAM_THREAD_STACK_SIZE   (1024*2)
 #define RT_VSA_THREAD_STACK_SIZE   (1024*2)
-#define RT_HI_THREAD_STACK_SIZE   (1024*2)
+#define RT_ADPCM_THREAD_STACK_SIZE   (1024*1)
+#define RT_PLAY_THREAD_STACK_SIZE   (1024*1)
+#define RT_HI_THREAD_STACK_SIZE   (1024*1)
 #define RT_KEY_THREAD_STACK_SIZE    (512)
 
 #define QC_INIT_THREAD_STACK_SIZE   (1024*2)

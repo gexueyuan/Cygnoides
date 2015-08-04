@@ -24,6 +24,7 @@
 
 #include "bma250e.h"
 #include "arm_math.h"
+#include "cv_drv_file.h"
 
 static gsnr_log_level_t gsnr_log_lvl = GSNR_NOTICE;
 
@@ -45,7 +46,7 @@ uint8_t	SHARP_SPEEDUP_CNT		=	6;
 
 uint8_t	AHEAD_CNT				=	20;  //obd: 30
 uint8_t	STATIC_GSENSOR_CNT		=	20;  //obd: 30
-float	AHEAD_SPEED_THRESOD		=	15.0;
+float	AHEAD_SPEED_THRESOD		=	20.0;
 float   VEHICLE_ACCLE_VALE      =   0.1 ;
 float   VEHICLE_ANGLE	        =   5.0 ;
 
@@ -63,7 +64,7 @@ static void printAcc(gsnr_log_level_t level, char *des, float x, float y, float 
         sprintf(buf[1], "%.6f", y); 
         sprintf(buf[2], "%.6f", z); 
 
-        osal_printf("%s(%s, %s, %s)\r\n",\
+        OSAL_MODULE_DBGPRT(MODULE_NAME,level,"%s(%s, %s, %s)\r\n",\
                            des, buf[0], buf[1], buf[2]);
     }
 }
@@ -72,7 +73,11 @@ static void printAcc(gsnr_log_level_t level, char *des, float x, float y, float 
 //从Gesensor取出3轴加速度数值，并进行处理。
 void GsensorReadAcc(float* pfData)
 {
-    gsnr_get_acc(pfData);
+    if (take_spi_control(GSNR_WAIT_MUT_TIME)) {
+        gsnr_spi_phase_set();
+        gsnr_get_acc(pfData);
+        release_spi_control();
+    }
     printAcc(GSNR_DEBUG, "raw_xyz", pfData[0], pfData[1], pfData[2]);    
 
     g_info.x = pfData[0];
@@ -367,7 +372,7 @@ void AcceDetect(float acce_ahead, float acce_k, float acce_k_x)
 	}
 	else if(acce_ahead < SHARP_SLOWDOWN_THRESOLD)
 	{
-		printAcc(GSNR_NOTICE, "减速xyz",acce_ahead, acce_k, acce_k_x);
+		printAcc(GSNR_INFO, "减速xyz",acce_ahead, acce_k, acce_k_x);
 		cnt++;
 		if(cnt >= SHARP_SLOWDOWN_CNT)
 		{

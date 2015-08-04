@@ -403,6 +403,7 @@ void nmea_parse(uint8_t *buff, uint32_t len)
                 nmea_add(&nmeaRmc);
                 //UTC Ê±¼ä
                 //osal_printf("UTC: %d-%d-%d %d:%d:%d.%d\r\n", tt.year, tt.mon, tt.day, tt.hour, tt.min, tt.sec, tt.diffsec);
+                updata_rtc_time(&tt);
             }
             else return;
         }

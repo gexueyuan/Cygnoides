@@ -12,6 +12,7 @@
 #include "cv_osal.h"
 #include "cv_osal_dbg.h"
 #include "components.h"
+#include "cv_drv_file.h"
 
 #if (OSAL_GLOBAL_DEBUG)
 /*****************************************************************************
@@ -23,9 +24,9 @@
  */
 const debug_entry_t debug_entry_table_start = {NULL, NULL};
 OSAL_DEBUG_ENTRY_DECLARE(sysc)
-OSAL_DEBUG_ENTRY_DECLARE(vam)
+//OSAL_DEBUG_ENTRY_DECLARE(vam)
 OSAL_DEBUG_ENTRY_DECLARE(vsa)
-OSAL_DEBUG_ENTRY_DECLARE(voc)
+//OSAL_DEBUG_ENTRY_DECLARE(voc)
 
 
 // add your module here...
@@ -47,15 +48,17 @@ char osal_dbg_log_buffer[OSAL_DBG_LOG_LINES][OSAL_DBG_LOG_WIDTH] __attribute__((
 
 
 
-/** 
- * Configure of output device
- */
-#define LOG_DEVICE_UART
-#undef  LOG_DEVICE_SDCARD
+
 
 /* BEGIN: Added by wanglei, 2015/5/12 */
 int g_dbg_print_type = 0;
 /* END:   Added by wanglei, 2015/5/12 */
+
+
+unsigned char log_media_sd = FALSE;
+
+
+osal_sem_t*  log_sem;
 
 /*****************************************************************************
  * implementation of functions                                               *
@@ -105,11 +108,20 @@ void osal_log(const char *fmt, ...)
     static uint32_t line = 0;
     char *outbuf;
     va_list arg_ptr;
+    int err;
+    static uint8_t flag =1;
 
+    err = osal_sem_take(log_sem, OSAL_WAITING_NO);
+    if (err != OSAL_STATUS_SUCCESS) {
+        return;
+    }
     outbuf = osal_dbg_log_buffer[line];
     if (*outbuf > 0) {
         //Notice, the buffer is full.
-        osal_printf("!!!Log buffer is full!!!\n");
+        if (flag) {
+            osal_printf("!!!Log buffer is full!!!\n");
+            flag =0;
+        }
         return;
     }
 
@@ -129,9 +141,11 @@ void osal_log(const char *fmt, ...)
     if (++line >= OSAL_DBG_LOG_LINES) {
         line = 0;
     }
+
+    osal_sem_release(log_sem);
 }
 
-#ifdef LOG_DEVICE_UART
+
 static void output_to_uart(char *data, uint32_t length)
 {
     #if (defined(OS_RT_THREAD) && defined(RT_USING_DEVICE))
@@ -148,31 +162,45 @@ static void output_to_uart(char *data, uint32_t length)
     }
     #endif
 }
-#endif
 
-#ifdef LOG_DEVICE_SDCARD
+
 static void output_to_sdcard(char *data, uint32_t length)
 {
+    if (log_store.sd_state) {
+        log_file_write(data,length);
+    }
 }
-#endif
 
 void osal_dbg_thread_entry(void *parameter)
 {
     static uint32_t line = 0;
     char *outbuf = osal_dbg_log_buffer[0];
-
+	
+        rtc_init();
+        if (log_store.log_media & LOG_SD_CARD) {
+            if (log_sd_init() == TRUE) {
+                log_store.sd_state = TRUE;
+                log_media_sd = TRUE;
+                osal_printf("file system init ok, log will store in sd card\n");
+            }
+            else {
+                log_store.log_media =  LOG_UART;
+                log_store.sd_state = FALSE;
+                osal_printf("log will output to uart\n");
+            }
+        }
 	while(1){
+
 	    outbuf = osal_dbg_log_buffer[line];
 	    if (*outbuf) {
-            #ifdef LOG_DEVICE_UART
-            output_to_uart(outbuf+1, (uint32_t)*outbuf);
-            #endif
-            
-            #ifdef LOG_DEVICE_SDCARD
-            output_to_sdcard(outbuf+1, (uint32_t)*outbuf);
-            #endif
-
-            *outbuf = 0; /* clear the contant */
+                if (log_store.log_media & LOG_UART)  {
+                    output_to_uart(outbuf+1, (uint32_t)*outbuf);
+                }
+                if (log_store.log_media & LOG_SD_CARD) {
+                    output_to_sdcard(outbuf+1, (uint32_t)*outbuf);
+                }
+                
+                *outbuf = 0; /* clear the contant */
             
             if (++line >= OSAL_DBG_LOG_LINES) {
                 line = 0;
@@ -189,8 +217,20 @@ void osal_dbg_init(void)
     osal_task_t *task;
 
     memset(osal_dbg_log_buffer, 0, OSAL_DBG_LOG_LINES*OSAL_DBG_LOG_WIDTH);
+    
+    /* log output to sd card default */
+    memset(&log_store,0,sizeof(log_store));
+    log_store.log_media = LOG_SD_CARD;
+    memset(&share_spi,0x00,sizeof(share_spi));
+    if (log_store.log_media & LOG_SD_CARD) {
+        /* creat spi mutex manage */
+        share_spi.spi_mutex = osal_sem_create("spi_m",1);
+    }
 
-    task = osal_task_create("tdbg", osal_dbg_thread_entry, NULL, 1024, OSAL_DBG_LOG_TASK_PRIOPRITY);
+    log_sem = osal_sem_create("log_s", 1);
+    osal_assert(log_sem != NULL);
+
+    task = osal_task_create("tdbg", osal_dbg_thread_entry, NULL, 2048, OSAL_DBG_LOG_TASK_PRIOPRITY);
     osal_assert(task != NULL);
 }
 

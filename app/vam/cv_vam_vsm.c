@@ -19,8 +19,10 @@
 #include "components.h"
 #include "cv_vam.h"
 #include "cv_cms_def.h"
+#include "cv_drv_file.h"
 
 
+void vam_list_sta(void);
 /*****************************************************************************
  * declaration of variables and functions                                    *
 *****************************************************************************/
@@ -90,6 +92,26 @@ void vsm_pause_bsm_broadcast(vam_envar_t *p_vam)
     }
 }
 
+void dump_pos_lite(vam_stastatus_t *p_sta)
+{
+/*
+    char str[64];
+
+
+    sprintf(str,"%f", p_sta->pos.lat);
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"pos.lat:%s\n", str);
+    
+    sprintf(str,"%f", p_sta->pos.lon);
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"pos.lon:%s\n", str);
+    
+    sprintf(str,"%f", p_sta->speed);
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"pos.speed:%s\n", str);
+*/
+    OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"lat:%f, lon:%f, speed:%f\n",\
+                    p_sta->pos.lat,p_sta->pos.lon,p_sta->speed);
+}
+
+static uint8_t print_cnt = 0;
 void timer_send_bsm_callback(void* parameter)
 {
     vam_envar_t *p_vam = (vam_envar_t *)parameter;
@@ -115,6 +137,7 @@ void timer_send_bsm_callback(void* parameter)
         vam_add_event_queue(p_vam, VAM_MSG_RCPTX, 0, RCP_MSG_ID_BSM, NULL);
         #endif
     }
+        
 }
 
 /* update timeout time of the bsm broadcast timer*/
@@ -125,12 +148,24 @@ void vsm_update_bsm_bcast_timer(vam_envar_t *p_vam)
     if(p_vam->working_param.bsm_boardcast_mode == BSM_BC_MODE_AUTO)
     {
         period = _cal_peroid_from_speed(p_vam->local.speed, p_vam->working_param.bsm_boardcast_saftyfactor);
-        timeout = MS_TO_TICK(period);
-        if(p_vam->bsm_send_period_ticks != timeout)
-        {
-            osal_timer_change(p_vam->timer_send_bsm, timeout);
-            p_vam->bsm_send_period_ticks = timeout;
+    }
+    else
+    {
+        /* neighbour count <= 50, bsm send period 100ms
+           neighbour count > 50,  bsm send period 200ms */
+        if (p_vam->neighbour_cnt > 50){
+            period = 200;
         }
+        else {
+            period = p_vam->working_param.bsm_boardcast_period;
+        }
+    }
+
+    timeout = MS_TO_TICK(period);
+    if(p_vam->bsm_send_period_ticks != timeout)
+    {
+        osal_timer_change(p_vam->timer_send_bsm, timeout);
+        p_vam->bsm_send_period_ticks = timeout;
     }
 
 }
@@ -236,8 +271,14 @@ vam_sta_node_t *vam_find_sta(vam_envar_t *p_vam, uint8_t *temporary_id)
         osal_sem_release(p_vam->sem_sta);
 
         if (p_sta){
+            p_vam->neighbour_cnt ++;
+			memcpy(p_sta->s.pid, temporary_id, RCP_TEMP_ID_LEN);  
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour join\n");
-            memcpy(p_sta->s.pid, temporary_id, RCP_TEMP_ID_LEN);        
+            
+            if (log_store.log_media == LOG_SD_CARD){
+                OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"neighbor node:%d\n", p_vam->neighbour_cnt);
+            }
+                  
         }
         else{
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_WARN, "%s: no free sta.\n", __FUNCTION__);
@@ -256,7 +297,7 @@ void vam_update_sta(vam_envar_t *p_vam)
     vam_stastatus_t *p_sta[VAM_NEIGHBOUR_MAXNUM];
     static uint8_t gotNeighbour = 0;
     uint8_t isEmpty = 1;
-    int num_peer_alert_timeout = 0;
+    uint8_t num_peer_alert_timeout = 0;
 
     if (osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER) != RT_EOK){
         OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_ERROR, "semaphor return failed\n");
@@ -285,7 +326,12 @@ void vam_update_sta(vam_envar_t *p_vam)
 
         if (p_sta_node->life == 0 && p_sta_node->alert_life == 0){
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "one neighbour is kick out\n");
+
             list_move_tail(&p_sta_node->list, &p_vam->sta_free_list);
+            p_vam->neighbour_cnt--;
+            if (log_store.log_media == LOG_SD_CARD){
+                OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO,"neighbor node:%d\n", p_vam->neighbour_cnt);
+            }
         }
     }
     osal_sem_release(p_vam->sem_sta);
@@ -309,7 +355,10 @@ void vam_update_sta(vam_envar_t *p_vam)
             (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(NULL);
         }  
         gotNeighbour = 0;
+        p_vam->neighbour_cnt = 0;
     }
+
+    vsm_update_bsm_bcast_timer(p_vam);
     
 }
 
@@ -318,6 +367,12 @@ void timer_neigh_time_callback(void* parameter)
     vam_envar_t *p_vam = (vam_envar_t *)parameter;
 
     vam_add_event_queue(p_vam, VAM_MSG_NEIGH_TIMEOUT, 0, 0, NULL);
+
+    if((log_store.log_media == LOG_SD_CARD)&&(++print_cnt > 10)){
+
+        dump_pos_lite(&p_vam->local);
+        print_cnt = 0;
+    }
 }
 
 
@@ -343,7 +398,7 @@ void vam_list_sta(void)
         osal_printf("STA:[%02x-%02x-%02x-%02x], life:%d, alert_life:%d alert_mask:%d\n",\
             p_sta->s.pid[0],p_sta->s.pid[1],p_sta->s.pid[2],p_sta->s.pid[3],\
             p_sta->life, p_sta->alert_life, p_sta->s.alert_mask);
-	}
+    }
     osal_sem_release(p_vam->sem_sta);
 }
 FINSH_FUNCTION_EXPORT(vam_list_sta, list all neighbour sta);

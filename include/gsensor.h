@@ -11,6 +11,10 @@
 
 #define GSNR_POLL_TIME_INTERVAL MS_TO_TICK(200)
 
+//#define GSNR_WAIT_MUT_TIME      (50)  //500ms
+#define GSNR_WAIT_MUT_TIME      (-1)
+
+
 typedef enum {
     GSNR_CRIT = 0,
     GSNR_ERR,

@@ -154,13 +154,15 @@ void voc_play_complete(void)
     if(voc_session.encode_type == VOC_ENCODE_PCM){
         if ((voc_session.played_length >= voc_session.src_length)\
             ||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
-            osal_sem_release(sem_play_complete);
+            //osal_sem_release(sem_play_complete);
+            osal_sem_set(sem_play_complete,0);
             }
     }
     else if(voc_session.encode_type == VOC_ENCODE_ADPCM){
             if ((voc_session.played_length >= 8*voc_session.src_length)\
                 ||(VOC_STATUS_TST(VOC_STATUS_STOP))) {
-                osal_sem_release(sem_play_complete);
+                //osal_sem_release(sem_play_complete);
+                osal_sem_set(sem_play_complete,0);
             }
 
     }
@@ -169,11 +171,12 @@ void voc_play_complete(void)
 static int wait_for(osal_sem_t *sem)
 {
     osal_status_t err;
-    #define VOC_WAIT_TIMEOUT   5
+    #define VOC_WAIT_TIMEOUT   10
 
     do {
         err = osal_sem_take(sem,VOC_WAIT_TIMEOUT);
         if (VOC_STATUS_TST(VOC_STATUS_STOP)) {
+            osal_sem_set(sem_play_complete,0);
         	OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"Voc play is aborted.\n\n");
             return -1;
         }
@@ -290,7 +293,7 @@ void rt_play_thread_entry(void *parameter)
     while(1){
         err = osal_queue_recv(queue_play,&p_msg,RT_WAITING_FOREVER);
         if( err == OSAL_STATUS_SUCCESS){
-            
+            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"start sem_buf_voc is %d\n",sem_buffer_voc->value);
 
             VOC_STATUS_SET(VOC_STATUS_PLAYING); /* Here we should set it again. */
 
@@ -309,8 +312,8 @@ void rt_play_thread_entry(void *parameter)
                 pcm_play(session->src_data, session->src_length);
                 break;
             }
-            if(VOC_STATUS_TST(VOC_STATUS_DEV_BUSY))
-                osal_sem_take(sem_play_complete,OSAL_WAITING_FOREVER);
+
+            osal_sem_take(sem_play_complete,20);
 
             /* Recover to initial value */
             
@@ -323,6 +326,7 @@ void rt_play_thread_entry(void *parameter)
             if (session->complete_callback) {
                 (*session->complete_callback)();
             }
+            OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_TRACE,"finish sem_buf_voc is %d\n",sem_buffer_voc->value);
         }
         else{
             OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "%s: rt_mq_recv error [%d]\n", __FUNCTION__, err);         
@@ -356,12 +360,12 @@ void voc_init(void)
 
     thread = osal_task_create("t-play",
                            rt_play_thread_entry, NULL,
-                           RT_VSA_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
+                           RT_PLAY_THREAD_STACK_SIZE, RT_PLAY_THREAD_PRIORITY);
     osal_assert(thread != NULL);
 
     thread = osal_task_create("t-adpcm",
                            rt_adpcm_thread_entry, NULL,
-                           RT_VSA_THREAD_STACK_SIZE, RT_ADPCM_THREAD_PRIORITY);
+                           RT_ADPCM_THREAD_STACK_SIZE, RT_ADPCM_THREAD_PRIORITY);
     osal_assert(thread != NULL);
     
     OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "module initial\n\n");         
@@ -384,6 +388,7 @@ int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler c
     }
 
     if (err != OSAL_STATUS_SUCCESS) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME, OSAL_DEBUG_INFO, "send voc play error!!\n");         
         if (session) {
             osal_free(session);
         }

@@ -140,10 +140,10 @@ int32_t vam_get_all_peer_pid(uint8_t pid[][RCP_TEMP_ID_LEN], uint32_t maxitem, u
     
     osal_sem_take(p_vam->sem_sta, RT_WAITING_FOREVER);
 	list_for_each_entry(p_sta, vam_sta_node_t, &p_vam->neighbour_list, list){
-        memcpy(pid[count++], p_sta->s.pid, RCP_TEMP_ID_LEN);           
-        if (count >= maxitem){
-           break; 
+        if (count < maxitem){
+            memcpy(pid[count], p_sta->s.pid, RCP_TEMP_ID_LEN);           
         }
+        count++;
 	}    
     osal_sem_release(p_vam->sem_sta);
 

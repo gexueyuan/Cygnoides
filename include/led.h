@@ -67,13 +67,22 @@ typedef struct
 #elif defined (HARDWARE_MODULE_WIFI_V2)
 
 #define LED0_PIN                         GPIO_Pin_8
+#define LED0_GPIO_PORT                   GPIOC
+#define LED0_GPIO_CLK                    RCC_AHB1Periph_GPIOC  
+
+#define LED1_PIN                         GPIO_Pin_8
+#define LED1_GPIO_PORT                   GPIOA
+#define LED1_GPIO_CLK                    RCC_AHB1Periph_GPIOA
+
+/*20150728
+#define LED0_PIN                         GPIO_Pin_8
 #define LED0_GPIO_PORT                   GPIOA
 #define LED0_GPIO_CLK                    RCC_AHB1Periph_GPIOA  
 
 #define LED1_PIN                         GPIO_Pin_8
 #define LED1_GPIO_PORT                   GPIOC
 #define LED1_GPIO_CLK                    RCC_AHB1Periph_GPIOC 
-
+*/
 #define LED2_PIN                         GPIO_Pin_9
 #define LED2_GPIO_PORT                   GPIOC
 #define LED2_GPIO_CLK                    RCC_AHB1Periph_GPIOC

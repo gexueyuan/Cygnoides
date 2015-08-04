@@ -372,6 +372,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -464,8 +465,14 @@
         <newCpu>0</newCpu>
         <uProt>0</uProt>
       </DebugFlag>
-      <LintExecutable></LintExecutable>
-      <LintConfigFile></LintConfigFile>
+      <LintExecutable>D:\lint\lint-nt.exe</LintExecutable>
+      <LintConfigFile>..\..\..\..\base\Cygnoides\tools\lint\CO-RV.LNT</LintConfigFile>
+      <LintIncludes>
+        <Li>
+          <IntNumber>0</IntNumber>
+          <ItemText>..\os\rtthread\src</ItemText>
+        </Li>
+      </LintIncludes>
       <SystemViewers>
         <Entry>
           <Name>System Viewer\FLASH</Name>

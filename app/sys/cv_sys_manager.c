@@ -396,14 +396,22 @@ void sys_human_interface_proc(sys_envar_t *p_sys, sys_msg_t *p_msg)
         led_priod = MS_TO_TICK(1000);
      }
     else if(p_sys->status&(1<<HI_OUT_BSM_UPDATE)){
+        #ifdef FOR_QC_TEST
+        led_color = GREEN;//
+        #else 
         led_color = BLUE;//
+        #endif 
         led_state = LED_BLINK;
         led_priod = MS_TO_TICK(150);
     }
     else if(!(p_sys->status&(1<<HI_OUT_BSM_UPDATE))){
-        led_color = BLUE;//
+        #ifdef FOR_QC_TEST
+        led_color = GREEN;//
+        #else 
+        led_color = BLUE;//    
+        #endif 
         led_state = LED_BLINK;
-        led_priod = MS_TO_TICK(500);
+        led_priod = MS_TO_TICK(500); 
     }
     if((p_sys->led_color != led_color)||(p_sys->led_state != led_state)||(p_sys->led_period != led_priod)){
         p_sys->led_color = led_color;

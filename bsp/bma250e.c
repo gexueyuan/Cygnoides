@@ -12,6 +12,7 @@
 
 #include "bma250e.h"
 #include "gsensor.h"
+#include "cv_drv_file.h"
 
 /** @defgroup STM32F401_DISCOVERY_BMA250E_Private_Variables
   * @{
@@ -343,24 +344,57 @@ void gsnr_get_acc(float *pdata)
     }
 }
 
+
+void gsnr_spi_phase_set(void)
+{   
+    SPI_InitTypeDef  SPI_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    /* SPI SCK pin configuration */
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN; //GPIO_PuPd_NOPULL;//
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Pin = BMA250E_SPI_SCK_PIN;
+    GPIO_Init(BMA250E_SPI_SCK_GPIO_PORT, &GPIO_InitStructure);
+  
+    /* SPI configuration -------------------------------------------------------*/
+    SPI_I2S_DeInit(BMA250E_SPI);
+    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+    SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+    SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+    SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+    SPI_InitStructure.SPI_CRCPolynomial = 7;
+    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+    SPI_Init(BMA250E_SPI, &SPI_InitStructure);
+    /* Enable SPI1  */
+    SPI_Cmd(BMA250E_SPI, ENABLE);
+}
+
 void gsnr_drv_init()
 {
-  /* Configure the low level interface ---------------------------------------*/
-    BMA250E_LowLevel_Init();
-    /* Configure MEMS: data rate, power mode, full scale and axes */
-    gsnr_write_reg(0x34, 0x00);       //config spi 4 wire mode
-    gsnr_write_reg(0x14, 0xB6);       //software reset
-    gsnr_write_reg(0x0F, 0x03);       //set full scale 2g range
-    gsnr_write_reg(0x10, 0x0C);       //Selection of data filter bandwidth: 125Hz
+    if (take_spi_control(GSNR_WAIT_MUT_TIME))
+    {
+      /* Configure the low level interface ---------------------------------------*/
+        BMA250E_LowLevel_Init();
+        /* Configure MEMS: data rate, power mode, full scale and axes */
+        gsnr_write_reg(0x34, 0x00);       //config spi 4 wire mode
+        gsnr_write_reg(0x14, 0xB6);       //software reset
+        gsnr_write_reg(0x0F, 0x03);       //set full scale 2g range
+        gsnr_write_reg(0x10, 0x0C);       //Selection of data filter bandwidth: 125Hz
 
-    gsnr_write_reg(0x24, 0xC3);       //high_hy: 3, low_mode: single-axis mode, low_hy: 3
-    gsnr_write_reg(0x27, 0x03);       //set slope_dur = 3
-    gsnr_write_reg(0x21, 0x00);       //Interrupt mode: non-latched
-    gsnr_write_reg(0x28, 0x60);       //slope_th: the threshold definition for the any-motion interrupt: 0x08
-    gsnr_write_reg(0x19, 0x04);       //map slope interrupt to INT1 pin
-    gsnr_write_reg(0x1B, 0x04);       //map slope interrupt to INT2 pin
-    gsnr_write_reg(0x16, 0x07);       //enabled slope_en_z, slope_en_y, slope_en_x 
-
+        gsnr_write_reg(0x24, 0xC3);       //high_hy: 3, low_mode: single-axis mode, low_hy: 3
+        gsnr_write_reg(0x27, 0x03);       //set slope_dur = 3
+        gsnr_write_reg(0x21, 0x00);       //Interrupt mode: non-latched
+        gsnr_write_reg(0x28, 0x60);       //slope_th: the threshold definition for the any-motion interrupt: 0x08
+        gsnr_write_reg(0x19, 0x04);       //map slope interrupt to INT1 pin
+        gsnr_write_reg(0x1B, 0x04);       //map slope interrupt to INT2 pin
+        gsnr_write_reg(0x16, 0x07);       //enabled slope_en_z, slope_en_y, slope_en_x 
+        release_spi_control();
+    }
     //gsnr_int_config(ENABLE);
 }
 

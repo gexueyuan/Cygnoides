@@ -23,6 +23,10 @@
 #define OSAL_DEBUG_TRACE        4
 #define OSAL_DEBUG_LOUD         5
 
+
+#define OSAL_SD_DEBUG_LEVEL OSAL_DEBUG_INFO
+extern unsigned char log_media_sd;
+
 /** 
  *  Global debug control
  *
@@ -48,6 +52,7 @@ static char *osal_debug_level_str[] = {
 
 #define OSAL_MODULE_DBGPRT(module, level, fmt, ...)	\
 do { \
+    if (log_media_sd) {osal_module_debug_level = OSAL_SD_DEBUG_LEVEL;}\
     if ((level > OSAL_DEBUG_OFF)&&(level <= osal_module_debug_level)) {\
         osal_log("(%d.%03d)[%s]%s: "fmt, (osal_get_systemtime()>>10), \
         ((osal_get_systemtime()&0x3FF)>999 ? 999:(osal_get_systemtime()&0x3FF)), \

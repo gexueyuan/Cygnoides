@@ -21,6 +21,7 @@
 #include "led.h"
 #include "gps.h"
 #include "voc.h"
+#include "cv_drv_file.h"
 
 
 #define QC_WAIT_TIME    50
@@ -261,14 +262,14 @@ static void qc_led_init(void)
     qc_led_type = QC_LED_OK;
 }
 
-static __inline led_light_yellow(void)
+static __inline void led_light_yellow(void)
 {
     STM_EVAL_LEDOn(LED_RED);
     STM_EVAL_LEDOff(LED_BLUE);
     STM_EVAL_LEDOn(LED_GREEN);
 }
 
-static __inline led_all_off(void)
+static __inline void led_all_off(void)
 {
     STM_EVAL_LEDOff(LED_RED);
     STM_EVAL_LEDOff(LED_BLUE);
@@ -384,7 +385,7 @@ static uint8_t qc_gps_test(void)
 {
     rt_device_t dev ;
     uint32_t time_base;
-    uint8_t error_count;
+    uint8_t error_count = 0;
     uint8_t tmp = 0 ;
     uint8_t change_sgn = FALSE;
     
@@ -432,6 +433,12 @@ static void qc_test_report(void)
     }else {
         OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,">>G-sensor test error:%d\n",p_qc->qc_periph.gsensor.error);
         qc_led_type = (qc_led_type > QC_LED_010)?QC_LED_010:qc_led_type;
+    }
+
+    if(TRUE == log_store.sd_state) {
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,">>TF card test OK.\n");
+    }else {
+        OSAL_MODULE_DBGPRT(MODULE_NAME,OSAL_DEBUG_INFO,">>TF card test error.\n");
     }
 }
 

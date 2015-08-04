@@ -44,8 +44,8 @@
 /* for test roadside alert */
 #define VAM_FLAG_TX_RSA       (0x0100)
 
-#define VAM_NEIGHBOUR_MAXNUM   (10)  //
-#define VAM_NEIGHBOUR_MAXLIFE  (15)  //unit: second
+#define VAM_NEIGHBOUR_MAXNUM   (80)  //
+#define VAM_NEIGHBOUR_MAXLIFE  (5)   //unit: second
 
 
 /* BEGIN: Added by wanglei, 2014/8/1 */
@@ -207,6 +207,8 @@ typedef struct _vam_envar{
     uint8_t tx_bsm_msg_cnt;
     uint8_t tx_evam_msg_cnt;
     uint8_t tx_rsa_msg_cnt;
+
+    uint8_t neighbour_cnt;
 
     vam_stastatus_t local;
     vam_sta_node_t remote[VAM_NEIGHBOUR_MAXNUM];

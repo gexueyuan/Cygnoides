@@ -20,6 +20,8 @@
 #include "cv_osal.h"
 #include "cv_osal_dmem.h"
 
+#define DMEMADDR (CCMDATARAM_BASE+1024*8+4)
+
 #if (OSAL_DMEM_EN > 0)
 
 
@@ -365,7 +367,7 @@ int OS_FreeMem(VOID *memory)
 }
 
 
-static uint32_t sysemPool[OS_DMEM_POOL_SIZE/4];
+static uint32_t sysemPool[OS_DMEM_POOL_SIZE/4]__attribute__((at(DMEMADDR)));
 
 void osal_dmem_init(void)
 {

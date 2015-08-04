@@ -291,6 +291,23 @@ static __inline void osal_leave_critical(void)
     rt_hw_interrupt_enable(cpu_sr);
 }
 
+/**
+ * This function will lock the thread scheduler.
+ */
+static __inline void osal_enter_task_critical(void) 
+{
+    rt_enter_critical();
+}
+
+
+/**
+ * This function will unlock the thread scheduler.
+ */
+static __inline void osal_leave_task_critical(void) 
+{
+    rt_exit_critical();
+}
+
 #if OSAL_DMEM_EN > 0
 void *osal_malloc(uint32_t size);
 void osal_free(void *pointer);

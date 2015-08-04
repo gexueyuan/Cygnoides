@@ -306,8 +306,7 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
         //dump_pos(&p_sta->s);
 
         /* for test  */
-        if (1 == g_dbg_print_type)
-				{
+        if (1 == g_dbg_print_type){
             rcp_dbg_distance = vsm_get_distance(&p_vam->local.pos, &p_sta->s.pos); 
         }
 
@@ -315,7 +314,7 @@ int rcp_parse_bsm(vam_envar_t *p_vam,
             (p_vam->evt_handler[VAM_EVT_PEER_UPDATE])(&p_sta->s);
         }
 
-        if(datalen > sizeof(rcp_msg_basic_safty_t) - sizeof(vehicle_safety_ext_t)){
+        if(datalen > (sizeof(rcp_msg_basic_safty_t) - sizeof(vehicle_safety_ext_t))){
             p_sta->alert_life = VAM_REMOTE_ALERT_MAXLIFE;
             alert_mask = decode_vehicle_alert(p_bsm->safetyExt.events);
             p_sta->s.alert_mask = alert_mask;

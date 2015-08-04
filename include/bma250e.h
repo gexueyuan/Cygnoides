@@ -215,6 +215,7 @@ void gsnr_write_reg(uint8_t reg, uint8_t data);
 
 void gsnr_get_acc(float *pdata);
 void gsnr_drv_init(void);
+void gsnr_spi_phase_set(void);
 
 
 #ifdef __cplusplus
