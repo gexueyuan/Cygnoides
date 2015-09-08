@@ -24,7 +24,8 @@
 #include "voc.h"
 #include "components.h"
 
-
+extern const unsigned char test_8K_16bits[];
+extern const unsigned int test_8K_16bitsLen;
 short buffer_voc[BUFFER_COUNT][BUFFER_SIZE/2]; 
 
 static uint8_t cursor_decode;
@@ -399,6 +400,13 @@ int voc_play(uint32_t encode_type, uint8_t *data, uint32_t length, voc_handler c
 
     return OSAL_STATUS_SUCCESS;
 }
+
+void play_test(void)
+{
+    voc_play(VOC_ENCODE_ADPCM,(uint8_t *)test_8K_16bits,test_8K_16bitsLen, NULL);
+
+}
+FINSH_FUNCTION_EXPORT(play_test,play test);
 
 void voc_stop(uint32_t b_wait)
 {

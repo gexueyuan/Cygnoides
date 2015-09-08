@@ -61,6 +61,12 @@ static void voice_play_once(uint32_t alert_type, void *complete)
     uint32_t length;
 
     switch (alert_type) {
+        
+    case 0:
+        data = (uint8_t *)test_8K_16bits;
+        length = test_8K_16bitsLen;
+        break;
+        
     case HI_OUT_CRD_ALERT:
         data = (uint8_t *)CFCW_8K_16bits;
         length = CFCW_8K_16bitsLen;

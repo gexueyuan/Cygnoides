@@ -239,7 +239,7 @@ int32_t  vsa_preprocess_pos(void)
     if (peer_count != 0) {
         vam_get_local_current_status(&local_status);
         for (i = 0;i < peer_count;i++) {
-            vam_get_peer_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/  
+            vam_get_peer_current_status(peer_pid[i],&remote_status); /*!!查询不到的风险!!*/  
             
             p_pnt = &p_vsa->position_node[i];
 
